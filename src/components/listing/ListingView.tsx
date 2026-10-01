@@ -1,5 +1,5 @@
 "use client";
-import { ArrowRight, Bath, BedDouble, ChevronDown, Maximize } from "lucide-react";
+import { ArrowRight, BadgeCheck, Bath, BedDouble, ChevronDown, Maximize } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { CountUp } from "@/components/ui/CountUp";
@@ -139,6 +139,29 @@ export function ListingView({
               </span>
             </div>
             <div className="text-xs text-neutral-700">{meta}</div>
+            {!l.isSample && (
+              <div className="mt-2 flex items-center gap-3 rounded-[18px] border border-divider p-3">
+                <div className="grid h-12 w-12 flex-none place-items-center overflow-hidden rounded-full bg-neutral-300 font-bold text-neutral-600">
+                  {l.agentPhotoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={l.agentPhotoUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    l.agentName.slice(0, 1)
+                  )}
+                </div>
+                <div className="min-w-0 flex-1 leading-tight">
+                  <div className="text-[11px] text-neutral-700">Listed by</div>
+                  <div className="truncate text-sm font-bold">{l.agentName}</div>
+                  <div className="truncate text-xs text-neutral-700">{l.brokerage}</div>
+                </div>
+                {l.agentVerified && (
+                  <span className="tag tag-accent flex-none font-semibold">
+                    <BadgeCheck size={13} />
+                    Licensed agent
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Headline comparison */}

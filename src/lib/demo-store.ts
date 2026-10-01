@@ -17,6 +17,21 @@ export const DEMO_AGENT: Agent = {
   phone: "317-555-0100",
 };
 
+const AGENT_FILE = path.join(DIR, "agent.json");
+
+/** The demo agent, with any profile edits saved locally. */
+export async function demoAgent(): Promise<Agent> {
+  try {
+    return { ...DEMO_AGENT, ...JSON.parse(await fs.readFile(AGENT_FILE, "utf8")), id: DEMO_AGENT.id };
+  } catch {
+    return { ...DEMO_AGENT, verificationStatus: "pending" };
+  }
+}
+export async function saveDemoAgent(patch: Partial<Agent>) {
+  await fs.mkdir(DIR, { recursive: true });
+  await fs.writeFile(AGENT_FILE, JSON.stringify({ ...(await demoAgent()), ...patch }, null, 2));
+}
+
 async function readAll(): Promise<Listing[]> {
   try {
     return JSON.parse(await fs.readFile(FILE, "utf8"));

@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { INVITE_COOKIE, openInvite } from "@/lib/invites";
 import { sendLeadEmail } from "@/lib/lead-email";
 import { supabaseConfigured } from "@/lib/supabase/env";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -76,7 +76,8 @@ export async function POST(req: Request) {
     notify();
     return NextResponse.json({ ok: true, demo: true });
   }
-  const admin = createAdminClient();
+  // Service key if present; otherwise the public insert policy (migration 0003).
+  const admin = createAdminClient() ?? (await createClient());
   if (!admin) {
     console.error("SUPABASE_SERVICE_ROLE_KEY missing; cannot store lead");
     return NextResponse.json({ error: "We couldn't send that right now. Please try again later." }, { status: 503 });

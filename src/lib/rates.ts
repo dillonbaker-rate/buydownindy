@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { parsePmms } from "./pmms";
 import { indyToday, type RateInfo } from "./rate-info";
+import { LENDER } from "@/content/lender";
 import { supabaseConfigured } from "./supabase/env";
 import { createAdminClient, createClient } from "./supabase/server";
 
@@ -53,9 +54,9 @@ export async function saveDaily(d: DailyRates, userId: string | null): Promise<s
     await fs.writeFile(DEMO_FILE, JSON.stringify(all, null, 2));
     return null;
   }
-  const admin = createAdminClient();
-  if (!admin) return "SUPABASE_SERVICE_ROLE_KEY is not set.";
-  const { error } = await admin
+  // Service key if present; otherwise the signed-in admin's session (RLS: public.is_admin()).
+  const sb = createAdminClient() ?? (await createClient());
+  const { error } = await sb
     .from("daily_rates")
     .upsert({ rate_date: d.date, conventional: d.conventional, fha: d.fha, va: d.va, entered_by: userId });
   return error?.message ?? null;
@@ -100,5 +101,7 @@ export async function getRateInfo(): Promise<RateInfo> {
 export function isRateAdmin(email: string | null | undefined): boolean {
   if (!supabaseConfigured) return process.env.NODE_ENV !== "production";
   const list = (process.env.ADMIN_EMAILS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  list.push(LENDER.email.toLowerCase()); // also listed in the public.admins table (migration 0003)
   return !!email && list.includes(email.toLowerCase());
 }
+export const isAdmin = isRateAdmin;

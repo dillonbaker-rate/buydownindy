@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { AgentHeader, SetupNotice } from "@/components/agent/AgentHeader";
 import { Dashboard } from "@/components/agent/Dashboard";
-import { ProfileForm } from "@/components/agent/ProfileForm";
+import { AgentProfileForm } from "@/components/agent/AgentProfileForm";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent, getMyListings } from "@/lib/data";
 import { listInvites } from "@/lib/invites";
@@ -24,8 +24,8 @@ export default async function AgentPage() {
     return (
       <AppShell header={<AgentHeader />}>
         <div className="min-h-0 flex-1 overflow-auto">
-          <div className="mx-auto max-w-[560px] p-4 lg:p-8">
-            <ProfileForm email={me.email} />
+          <div className="mx-auto max-w-[720px] p-4 lg:p-8">
+            <AgentProfileForm agent={null} email={me.email} userId={me.userId} onboarding />
           </div>
         </div>
       </AppShell>

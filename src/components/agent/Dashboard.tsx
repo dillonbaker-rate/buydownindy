@@ -9,6 +9,7 @@ import { usd } from "@/lib/buydown";
 import { daysLeft } from "@/lib/format";
 import type { Invite } from "@/lib/invites";
 import type { Agent, Listing } from "@/lib/types";
+import { VerificationBadge } from "./AgentProfileForm";
 import { InviteClients } from "./InviteClients";
 
 type Action = "renew" | "pending" | "sold" | "live";
@@ -47,10 +48,23 @@ export function Dashboard({ agent, listings, invites }: { agent: Agent; listings
     <div className="min-h-0 flex-1 overflow-auto">
       <div className="mx-auto max-w-[1080px] p-4 lg:p-8">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-[26px] lg:text-[32px]">My listings</h1>
-            <div className="text-[13px] text-neutral-700">
-              {agent.name} · {agent.brokerage}
+          <div className="flex items-center gap-3">
+            <Link href="/agent/profile" aria-label="My profile" className="relative grid h-14 w-14 flex-none place-items-center overflow-hidden rounded-full bg-neutral-300 text-neutral-600">
+              {agent.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={agent.photoUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-lg font-bold">{agent.name.slice(0, 1)}</span>
+              )}
+            </Link>
+            <div>
+              <h1 className="text-[26px] lg:text-[32px]">My listings</h1>
+              <div className="flex flex-wrap items-center gap-2 text-[13px] text-neutral-700">
+                <span>
+                  {agent.name} · {agent.brokerage}
+                </span>
+                <VerificationBadge status={agent.verificationStatus} />
+              </div>
             </div>
           </div>
           <Link href="/agent/post" className="btn btn-primary">
@@ -58,6 +72,18 @@ export function Dashboard({ agent, listings, invites }: { agent: Agent; listings
             Post a listing
           </Link>
         </div>
+        {!agent.licenseNumber && (
+          <Link
+            href="/agent/profile"
+            className="mb-4 flex items-center justify-between gap-3 rounded-[18px] p-4 text-sm text-ink no-underline"
+            style={{ background: "var(--color-warn-bg)", border: "1px solid var(--color-warn-border)" }}
+          >
+            <span>
+              <strong>Finish your profile.</strong> Add your headshot and Indiana license number so buyers see a verified agent.
+            </span>
+            <span className="font-semibold text-accent-700">Update profile →</span>
+          </Link>
+        )}
         <InviteClients invites={invites} agentName={agent.name} />
         <div className="mb-3 grid grid-cols-2 gap-3">
           {["Listing views", "Buyer leads"].map((t) => (

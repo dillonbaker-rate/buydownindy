@@ -7,10 +7,18 @@ export function AgentHeader({ onDash, admin }: { onDash?: boolean; admin?: boole
       <Link href="/agent" className="btn btn-ghost text-[13px] font-semibold">
         My listings
       </Link>
+      <Link href="/agent/profile" className="btn btn-ghost text-[13px] font-semibold">
+        My profile
+      </Link>
       {admin && (
-        <Link href="/agent/rates" className="btn btn-ghost text-[13px] font-semibold">
-          Today&apos;s rates
-        </Link>
+        <>
+          <Link href="/agent/rates" className="btn btn-ghost text-[13px] font-semibold">
+            Today&apos;s rates
+          </Link>
+          <Link href="/agent/admin" className="btn btn-ghost text-[13px] font-semibold">
+            Agents
+          </Link>
+        </>
       )}
       {onDash && (
         <Link href="/agent/post" className="btn btn-ghost text-[13px] font-semibold">

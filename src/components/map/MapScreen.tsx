@@ -10,6 +10,7 @@ import { calc, kUsd, pct, saving, usd, type LoanType } from "@/lib/buydown";
 import { useIsDesktop } from "@/lib/hooks";
 import { CENTER_DESK, CENTER_PHONE } from "@/lib/map-config";
 import { COUNTIES, type Listing } from "@/lib/types";
+import { inArea, type Area } from "@/lib/areas";
 import type { InviteGreeting } from "@/lib/invites";
 import { rateFor, rateNoun, type RateInfo } from "@/lib/rate-info";
 import type { LeafletMapHandle } from "./LeafletMap";
@@ -30,11 +31,14 @@ export function MapScreen({
   listings,
   rateInfo,
   invite,
+  area,
 }: {
   listings: Listing[];
   rateInfo: RateInfo;
   /** Set when the visitor arrived through their agent's invite link. */
   invite?: InviteGreeting | null;
+  /** City, county, or ZIP chosen on the search screen. */
+  area?: Area | null;
 }) {
   const [inviteOn, setInviteOn] = useState(true);
   const desk = useIsDesktop();
@@ -51,9 +55,21 @@ export function MapScreen({
 
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => setF((s) => ({ ...s, [k]: v }));
 
+  const inPlace = useMemo(() => (area ? listings.filter((l) => inArea(area, l)) : listings), [listings, area]);
+  // Center on the area's homes if it has any, otherwise on the place itself.
+  const areaView = useMemo((): { center: [number, number]; zoom: number } | null => {
+    if (!area) return null;
+    if (inPlace.length) {
+      const lat = inPlace.reduce((a, l) => a + l.lat, 0) / inPlace.length;
+      const lng = inPlace.reduce((a, l) => a + l.lng, 0) / inPlace.length;
+      return { center: [lat, lng], zoom: area.zoom ?? 12.5 };
+    }
+    return area.center ? { center: area.center, zoom: area.zoom ?? 12 } : null;
+  }, [area, inPlace]);
+
   const shown = useMemo(
     () =>
-      listings.filter(
+      inPlace.filter(
         (l) =>
           (f.county === "All counties" || l.county === f.county) &&
           (!f.min || l.price >= f.min) &&
@@ -61,7 +77,7 @@ export function MapScreen({
           l.concession >= f.conc &&
           (f.loan === "Any" || l.loanTypes.includes(f.loan)),
       ),
-    [listings, f],
+    [inPlace, f],
   );
   const sorted = selId ? [...shown].sort((a, b) => Number(b.id === selId) - Number(a.id === selId)) : shown;
   const nf =
@@ -126,8 +142,8 @@ export function MapScreen({
             ref={mapRef}
             pins={pins}
             selectedId={selId}
-            center={desk ? CENTER_DESK : CENTER_PHONE}
-            zoom={10}
+            center={areaView?.center ?? (desk ? CENTER_DESK : CENTER_PHONE)}
+            zoom={areaView?.zoom ?? 10}
             zoomControl={desk}
             viewKey={desk ? "desk" : "phone"}
             onPick={pick}
@@ -278,8 +294,21 @@ export function MapScreen({
           <div className="mr-auto min-w-0">
             <div className="text-base font-bold">
               {shown.length} listing{shown.length === 1 ? "" : "s"}
+              {area ? ` in ${area.value}` : ""}
             </div>
-            <div className="text-xs text-neutral-700">Seller pays concessions · Indy metro</div>
+            {area ? (
+              <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                <Link href="/homes" className="tag tag-accent font-semibold no-underline" aria-label={`Clear ${area.label}`}>
+                  {area.label}
+                  <X size={12} />
+                </Link>
+                <Link href="/" className="text-xs font-semibold">
+                  New search
+                </Link>
+              </div>
+            ) : (
+              <div className="text-xs text-neutral-700">Seller pays concessions · Indy metro</div>
+            )}
           </div>
           {phone && (
             <button
@@ -379,7 +408,22 @@ export function MapScreen({
             </div>
           )}
 
-          {listings.length === 0 ? (
+          {area && inPlace.length === 0 && listings.length > 0 ? (
+            <div className="flex flex-col items-start gap-2 border-t border-divider py-6">
+              <div className="text-xl font-bold">No listings in {area.label} yet</div>
+              <p className="m-0 text-sm text-neutral-700">
+                There are {listings.length} Indy-area home{listings.length === 1 ? "" : "s"} with seller concessions right now.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/homes" className="btn btn-primary">
+                  See all homes
+                </Link>
+                <Link href="/" className="btn btn-secondary">
+                  Search another area
+                </Link>
+              </div>
+            </div>
+          ) : listings.length === 0 ? (
             <div className="flex flex-col items-start gap-2 border-t border-divider py-6">
               <div className="text-xl font-bold">No listings yet</div>
               <p className="m-0 text-sm text-neutral-700">

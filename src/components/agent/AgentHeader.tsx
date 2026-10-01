@@ -22,7 +22,7 @@ export function SetupNotice() {
           This deployment is showing sample listings only. Connect Supabase (see README) to turn on agent sign-in,
           posting, and photo uploads.
         </p>
-        <Link href="/" className="btn btn-primary self-start">
+        <Link href="/homes" className="btn btn-primary self-start">
           Back to the map
         </Link>
       </div>

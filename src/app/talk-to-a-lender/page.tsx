@@ -11,7 +11,7 @@ type Props = { searchParams: Promise<{ listing?: string; topic?: string }> };
 export default async function TalkToALender({ searchParams }: Props) {
   const { listing: id, topic } = await searchParams;
   const l = id ? await getListing(id) : null;
-  const back = l ? `/listing/${l.id}` : "/";
+  const back = l ? `/listing/${l.id}` : "/homes";
   return (
     <AppShell
       header={

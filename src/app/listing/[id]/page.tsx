@@ -27,7 +27,7 @@ export default async function ListingPage({ params, searchParams }: Params) {
   return (
     <AppShell
       header={
-        <Link href="/" className="btn btn-ghost text-[13px] font-semibold">
+        <Link href="/homes" className="btn btn-ghost text-[13px] font-semibold">
           <ArrowLeft size={16} />
           <span>
             Back<span className="hidden sm:inline"> to map</span>

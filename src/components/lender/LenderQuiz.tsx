@@ -69,7 +69,7 @@ export function LenderQuiz({ listing, topic }: { listing: QuizListing | null; to
   const total = seq.length + 1; // + contact step
   const onContact = i >= seq.length;
   const q = onContact ? null : seq[i];
-  const backHref = listing ? `/listing/${listing.id}` : "/";
+  const backHref = listing ? `/listing/${listing.id}` : "/homes";
 
   const set = (id: string, v: Value) => setAnswers((s) => ({ ...s, [id]: v }));
   const next = () => setI((n) => Math.min(n + 1, seq.length));

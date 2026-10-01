@@ -1,8 +1,5 @@
--- Demo data: the 12 sample listings from the design, labeled "Sample" in the UI.
+-- Optional demo data: the 12 sample listings from the design, labeled "Sample" in the UI.
 -- Delete with: delete from public.listings where is_sample;
-
-insert into public.rate_snapshots (week_of, rate_30yr) values ('2026-09-24', 6.25)
-on conflict (week_of) do nothing;
 
 delete from public.listings where is_sample;
 

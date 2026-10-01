@@ -42,7 +42,7 @@ export const fullDisclaimer = (example: DisclosureSection): DisclosureSection[] 
   },
   {
     title: "Buydown pricing changes daily",
-    body: "Temporary buydown costs shown here are estimated as the difference between the full payment and the reduced payment, paid by the seller at closing. Actual buydown costs are set by the lender and change with daily rate pricing. Permanent buydown estimates assume about a 0.25% rate reduction per discount point (1% of the loan amount), rounded down to the nearest 0.125%. Real point pricing varies daily and by lender and may cost more or less than shown.",
+    body: "Temporary buydown costs shown here are estimated as the difference between the full payment and the reduced payment, paid by the seller at closing. Actual buydown costs are set by the lender and change with daily rate pricing. Permanent buydowns (discount points) are not estimated here because point pricing changes daily and differs by lender and investor; a loan officer can quote current options.",
   },
   {
     title: "Temporary buydowns",

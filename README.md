@@ -49,7 +49,9 @@ Import the GitHub repo in Vercel, add the env vars from `.env.example`, deploy. 
 | `src/content/program-rules.ts` | **Loan program rules** from Rate's official Buydown & IPC Calculator: concession limits, MI/MIP, FHA UFMIP, VA funding fee, 4%-of-loan closing-cost estimate |
 | `src/lib/rate-calc-parity.test.ts` | Checks the engine against Rate's calculator formulas across 96 scenarios |
 | `src/components/map/` | Map screen: Leaflet wrapper, bottom sheet, filters, hero |
-| `src/components/listing/` | Listing page, option cards, gallery, lender modal |
+| `src/components/listing/` | Listing page, option cards, gallery |
+| `src/content/lender-quiz.ts` | **"Talk to a lender" quiz questions** and follow-ups (edit here) |
+| `src/components/lender/` | The quiz at `/talk-to-a-lender?listing=<id>[&topic=points]` |
 | `src/components/agent/` | Posting wizard, photo grid (dnd-kit), dashboard, login |
 | `src/app/api/` | `leads`, `listings`, `agent`, `geocode`, `cron/rate` |
 | `supabase/` | Schema, RLS policies, storage bucket, seed |
@@ -64,4 +66,5 @@ Search the code for `COMPLIANCE:`. Open items:
 - **Advertised-rate rules**: the PMMS average is labeled a sample rate.
 - **EHO logo**: `src/components/ui/EhoLogo.tsx` is drawn to match HUD's mark; confirm or swap in the official file.
 - A production **tile provider** key (`NEXT_PUBLIC_MAPTILER_KEY` or `NEXT_PUBLIC_TILE_URL`).
-- Lead notifications: leads are stored in the `leads` table; nothing emails them yet.
+- Lead notifications: leads (with quiz answers) are stored in the `leads` table; nothing emails them yet.
+- Privacy policy: the quiz collects income, debts and credit range, so a privacy policy should be linked before launch.

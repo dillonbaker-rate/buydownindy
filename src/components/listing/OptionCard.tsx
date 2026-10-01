@@ -1,4 +1,5 @@
-import { Check, Lock, TriangleAlert } from "lucide-react";
+import { ArrowRight, Check, Lock, MessageCircle, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { saving, usd, type BuydownOption, type OptionState } from "@/lib/buydown";
 
@@ -52,6 +53,18 @@ export const STATE_STYLE: Record<OptionState, StateStyle> = {
     hi: "var(--color-ink)",
     note: "var(--color-warn-text)",
   },
+  ask: {
+    bg: "var(--color-surface)",
+    border: "var(--color-divider)",
+    borderStyle: "solid",
+    tagBg: "var(--color-neutral-200)",
+    tagFg: "var(--color-neutral-800)",
+    label: "Ask a lender",
+    icon: <MessageCircle size={12} />,
+    dim: 1,
+    hi: "var(--color-ink)",
+    note: "var(--color-neutral-800)",
+  },
   avail: {
     bg: "var(--color-bg)",
     border: "var(--color-divider)",
@@ -77,8 +90,39 @@ export function StatePill({ state, style }: { state: OptionState; style?: CSSPro
 }
 
 /** One option in "What $X can do". Savings bars are scaled to the largest saving on the page. */
-export function OptionCard({ o, base, maxSave }: { o: BuydownOption; base: number; maxSave: number }) {
+export function OptionCard({
+  o,
+  base,
+  maxSave,
+  askHref,
+}: {
+  o: BuydownOption;
+  base: number;
+  maxSave: number;
+  /** Where "Ask a lender" options send the buyer. */
+  askHref: string;
+}) {
   const st = STATE_STYLE[o.state];
+  if (o.state === "ask")
+    return (
+      <div className="flex flex-col gap-2.5 rounded-[20px] p-4" style={{ background: st.bg, border: `1.5px solid ${st.border}` }}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="text-[17px] leading-[1.2] font-bold">{o.name}</div>
+            <div className="text-xs text-neutral-700">{o.sub}</div>
+          </div>
+          <StatePill state={o.state} />
+        </div>
+        <p className="m-0 flex-1 text-[13px] text-neutral-800">
+          The seller&apos;s money can also pay for discount points, which lower your rate for as long as you keep the loan.
+          Unlike a temporary buydown, you&apos;d qualify at the lower rate. {o.note}
+        </p>
+        <Link href={askHref} className="btn btn-secondary btn-flush px-4">
+          Ask a lender about points
+          <ArrowRight size={16} className="ml-auto" />
+        </Link>
+      </div>
+    );
   return (
     <div
       className="lift lift-sm flex flex-col gap-2.5 rounded-[20px] p-4"
@@ -129,7 +173,7 @@ export function OptionCard({ o, base, maxSave }: { o: BuydownOption; base: numbe
         </div>
         <div className="flex justify-between gap-2">
           <span>Closing costs you pay (est.)</span>
-          <span className="font-semibold">{usd(o.buyerClosing)}</span>
+          <span className="font-semibold">{o.buyerClosing == null ? "—" : usd(o.buyerClosing)}</span>
         </div>
       </div>
       <div className="flex items-start gap-1.5 text-[13px] font-semibold" style={{ color: st.note }}>

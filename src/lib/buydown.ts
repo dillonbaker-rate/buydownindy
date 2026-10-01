@@ -26,7 +26,7 @@ export const CREDIT_RANGES = [
   { label: "620–659", adj: 0.875 },
 ] as const;
 
-export type OptionState = "unlocked" | "locked" | "over" | "avail";
+export type OptionState = "unlocked" | "locked" | "over" | "avail" | "ask";
 export type OptionKey = "cut" | "t1" | "t2" | "t3" | "perm" | "cc";
 
 export interface OptionRow {
@@ -46,13 +46,12 @@ export interface BuydownOption {
   note: string;
   /** Year-1 payment, used to pick the best option. */
   y1: number;
-  /** Estimated closing costs the buyer still pays with this option. */
-  buyerClosing: number;
+  /** Estimated closing costs the buyer still pays with this option (null when it depends on lender pricing). */
+  buyerClosing: number | null;
   /** Temporary buydown length (1, 2 or 3). */
   k?: number;
   cost?: number;
   pays?: number[];
-  newRate?: number;
 }
 
 export interface CalcResult {
@@ -200,26 +199,18 @@ export function calc(
     });
   }
 
-  const budget = Math.min(conc, limit);
-  const red = Math.floor(((budget / loan) * 100 * 0.25) / 0.125 + 1e-9) * 0.125;
-  const pts = red / 0.25;
-  const pcost = (pts * loan) / 100;
-  const pp = pmt(loan, rate - red);
-  const ptsL = pts % 1 ? pts.toFixed(1) : String(pts);
+  // Permanent buydown (discount points): point pricing is set daily by each lender and investor,
+  // so we don't estimate a rate or payment. The card sends buyers to a loan officer instead.
   opts.push({
     key: "perm",
     name: "Permanent buydown",
-    sub: red > 0 ? `About ${ptsL} points buys ${pct(rate - red)}` : "Buys points to lower the rate for life",
-    state: red > 0 ? "unlocked" : "locked",
-    costLabel: red > 0 ? `~${ptsL} points (${usd(pcost)})` : "—",
-    y1: pp,
-    newRate: rate - red,
-    buyerClosing: red > 0 ? buyerPays(conc - pcost) : closingCosts,
-    rows: [{ label: "Life of loan", v: red > 0 ? pp : base, hi: red > 0 }],
-    note:
-      red > 0
-        ? `Saves ${usd(saving(base, pp))}/mo for life` + (conc > limit ? ", capped at the program limit" : "")
-        : `Needs ${usd(loan * 0.005 - conc)} more`,
+    sub: "Discount points lower the rate for the life of the loan",
+    state: "ask",
+    costLabel: "Set by the lender",
+    y1: base,
+    buyerClosing: null,
+    rows: [],
+    note: "Point pricing changes daily and differs by lender. Ask a loan officer for today's options.",
   });
 
   const ccOver = !vaUncapped && conc > limit;
@@ -254,7 +245,6 @@ export function typeFor(accepted: LoanType[], preferred?: LoanType | "Any"): Loa
 export function bestNote(c: CalcResult): string {
   const b = c.best;
   if (!b) return "No buydown is available at this concession.";
-  if (b.key === "perm") return `Lower rate of ${pct(b.newRate!)} for the life of the loan.`;
   if (b.k === 1) return `Then ${usd(c.base)} from year 2.`;
   if (b.k === 2) return `Then ${usd(b.pays![1])} in year 2 and ${usd(c.base)} from year 3.`;
   return `Then ${usd(b.pays![1])} in year 2, ${usd(b.pays![2])} in year 3, and ${usd(c.base)} after.`;

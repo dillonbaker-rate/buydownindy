@@ -139,3 +139,7 @@ alter table public.daily_rates enable row level security;
 drop policy if exists daily_rates_read on public.daily_rates;
 create policy daily_rates_read on public.daily_rates for select using (true);
 -- Writes go through /api/rates (admin check + service role).
+
+-- ── Lead quiz answers (added with the "Talk to a lender" quiz) ─────────────
+alter table public.leads add column if not exists topic text not null default 'general';
+alter table public.leads add column if not exists answers jsonb not null default '[]'::jsonb;

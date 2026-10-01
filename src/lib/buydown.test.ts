@@ -53,13 +53,11 @@ describe("brief fixture: $350,000 / $10,000 / Conventional 5% / 6.25%", () => {
     expect(o.note).toBe("Needs $4,675 more");
   });
 
-  it("permanent buydown", () => {
+  it("permanent buydown is not priced (lender pricing changes daily)", () => {
     const o = opt(c, "perm");
-    expect(o.newRate).toBe(5.5);
-    expect(o.costLabel).toBe("~3 points ($9,975)");
-    expect(r(o.y1)).toBe(1888);
-    expect(saving(c.base, o.y1)).toBe(159);
-    expect(o.state).toBe("unlocked");
+    expect(o.state).toBe("ask");
+    expect(o.rows).toEqual([]);
+    expect(o.buyerClosing).toBeNull();
   });
 
   it("closing cost credit", () => {
@@ -81,7 +79,6 @@ describe("over-limit fixture: $299,900 / $15,000 / 5% down", () => {
     expect(opt(c, "t3").state).toBe("over");
     expect(opt(c, "t3").note).toBe("Over limit: Conventional 3% limit is $8,997");
     expect(opt(c, "cc").state).toBe("over");
-    expect(opt(c, "perm").note).toContain("capped at the program limit");
   });
 
   it("FHA's 6% limit ($17,994) unlocks them", () => {

@@ -1,5 +1,6 @@
 "use client";
 import { ArrowRight, Bath, BedDouble, ChevronDown, Maximize } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { CountUp } from "@/components/ui/CountUp";
 import { Segmented } from "@/components/ui/Segmented";
@@ -30,7 +31,6 @@ import { useIsDesktop } from "@/lib/hooks";
 import { longDate, rateFor, type RateInfo } from "@/lib/rate-info";
 import type { Listing } from "@/lib/types";
 import { Gallery } from "./Gallery";
-import { LenderModal } from "./LenderModal";
 import { OptionCard } from "./OptionCard";
 
 export function ListingView({
@@ -50,7 +50,6 @@ export function ListingView({
   };
   const [sc, setSc] = useState(defaults);
   const [discOpen, setDiscOpen] = useState(false);
-  const [lender, setLender] = useState(false);
 
   const adj = CREDIT_RANGES[sc.credit].adj;
   const baseRate = rateFor(rateInfo, sc.type);
@@ -70,6 +69,7 @@ export function ListingView({
         : pct(rateInfo.rates.Conventional),
   });
 
+  const lenderHref = `/talk-to-a-lender?listing=${encodeURIComponent(l.id)}`;
   const contact = () => {
     if (l.agentPhone) window.location.href = `tel:${l.agentPhone.replace(/[^0-9+]/g, "")}`;
     else if (l.agentEmail)
@@ -93,10 +93,10 @@ export function ListingView({
         Contact listing agent
         <ArrowRight size={16} className="ml-auto" />
       </button>
-      <button className="btn btn-secondary btn-flush px-4 py-3.5 text-[15px]" onClick={() => setLender(true)}>
+      <Link href={lenderHref} className="btn btn-secondary btn-flush px-4 py-3.5 text-[15px]">
         Talk to a lender
         <ArrowRight size={16} className="ml-auto" />
-      </button>
+      </Link>
       <div className="text-xs text-neutral-700">{FREE_TO_USE}</div>
     </div>
   );
@@ -276,7 +276,7 @@ export function ListingView({
             </p>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
               {c.opts.map((o) => (
-                <OptionCard key={o.key} o={o} base={c.base} maxSave={maxSave} />
+                <OptionCard key={o.key} o={o} base={c.base} maxSave={maxSave} askHref={`${lenderHref}&topic=points`} />
               ))}
             </div>
           </div>
@@ -332,15 +332,14 @@ export function ListingView({
             <button className="btn btn-primary btn-flush min-h-12" onClick={contact}>
               Contact listing agent
             </button>
-            <button className="btn btn-secondary btn-flush min-h-12" onClick={() => setLender(true)}>
+            <Link href={lenderHref} className="btn btn-secondary btn-flush min-h-12">
               Talk to a lender
-            </button>
+            </Link>
           </div>
           <div className="text-[11px] text-neutral-700">{FREE_TO_USE}</div>
         </div>
       )}
 
-      <LenderModal open={lender} onClose={() => setLender(false)} listing={l} />
     </div>
   );
 }

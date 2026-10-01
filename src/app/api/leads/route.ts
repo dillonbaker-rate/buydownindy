@@ -6,9 +6,13 @@ import { createAdminClient } from "@/lib/supabase/server";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const Answer = z.object({ id: z.string().max(40), question: z.string().max(200), answer: z.string().max(400) });
+
 const Lead = z.object({
-  listingId: z.string().max(64),
-  listingLabel: z.string().max(200),
+  listingId: z.string().max(64).optional(),
+  listingLabel: z.string().max(200).optional(),
+  topic: z.enum(["general", "points"]).default("general"),
+  answers: z.array(Answer).max(20).default([]),
   name: z.string().trim().min(1).max(120),
   email: z.string().trim().regex(/^\S+@\S+\.\S+$/).max(200),
   phone: z
@@ -28,8 +32,10 @@ export async function POST(req: Request) {
   if (d.consentText !== LENDER_CONSENT) return NextResponse.json({ error: "Consent text is out of date. Refresh the page." }, { status: 400 });
 
   const row = {
-    listing_id: UUID.test(d.listingId) ? d.listingId : null,
-    listing_label: d.listingLabel,
+    listing_id: d.listingId && UUID.test(d.listingId) ? d.listingId : null,
+    listing_label: d.listingLabel ?? null,
+    topic: d.topic,
+    answers: d.answers,
     name: d.name,
     email: d.email,
     phone: d.phone,
@@ -40,7 +46,7 @@ export async function POST(req: Request) {
   };
 
   if (!supabaseConfigured) {
-    console.info("[demo] lead received (Supabase not configured):", row.listing_label, row.email);
+    console.info("[demo] lead received (Supabase not configured):", row.listing_label, row.email, row.topic, row.answers);
     return NextResponse.json({ ok: true, demo: true });
   }
   const admin = createAdminClient();

@@ -154,6 +154,8 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
   const pb = pc.best;
   const unlocks = pc.opts.filter((o) => o.key !== "cut");
   const unlockedN = unlocks.filter((o) => o.state === "unlocked").length;
+  // Permanent buydowns aren't priced (lender pricing), so the meter counts the other options.
+  const pricedN = unlocks.filter((o) => o.state !== "ask").length;
   const low = pb ? pb.y1 : pc.cut;
   const lowWhen = pb ? (pb.key === "perm" ? "for life" : "in year 1") : "with a price cut";
 
@@ -419,11 +421,11 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
                     <span className="text-[11px] font-semibold">Options unlocked</span>
                     <span className="text-[32px] leading-none font-bold tracking-[-0.03em]">
                       {unlockedN}
-                      <span className="text-[15px] text-neutral-600"> / 5</span>
+                      <span className="text-[15px] text-neutral-600"> / {pricedN}</span>
                     </span>
                   </div>
                   <div className="flex gap-1">
-                    {unlocks.map((o) => (
+                    {unlocks.filter((o) => o.state !== "ask").map((o) => (
                       <span
                         key={o.key}
                         className="h-2.5 flex-1 rounded-full transition-[background] duration-300"
@@ -602,7 +604,7 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
               <div className="text-[11px] text-neutral-700">Live preview</div>
               {PreviewCard}
               <div className="text-xs text-neutral-700">
-                {unlockedN} of 5 options unlocked at {conc ? usd(conc) : "$0"}.
+                {unlockedN} of {pricedN} options unlocked at {conc ? usd(conc) : "$0"}.
               </div>
             </div>
           )}

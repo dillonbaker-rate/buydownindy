@@ -72,9 +72,9 @@ describe("Rate rules applied", () => {
   it("estimates closing costs at 4% of the loan amount and shows what the buyer still pays", () => {
     const c = calc(350000, 10000, "Conventional", 5, 0, 6.25);
     expect(c.closingCosts).toBe(13300); // 4% of $332,500
-    expect(r(c.opts.find((o) => o.key === "t2")!.buyerClosing)).toBe(10773); // $13,300 − $2,527 left over
+    expect(r(c.opts.find((o) => o.key === "t2")!.buyerClosing!)).toBe(10773); // $13,300 − $2,527 left over
     expect(c.opts.find((o) => o.key === "cc")!.buyerClosing).toBe(3300);
-    expect(r(c.opts.find((o) => o.key === "cut")!.buyerClosing)).toBe(12920); // 4% of the smaller $323,000 loan
+    expect(r(c.opts.find((o) => o.key === "cut")!.buyerClosing!)).toBe(12920); // 4% of the smaller $323,000 loan
   });
 
   it("FHA closing costs use the loan with financed UFMIP", () => {

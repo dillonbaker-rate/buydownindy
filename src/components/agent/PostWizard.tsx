@@ -14,6 +14,7 @@ import { commas, digitsOnly, num } from "@/lib/format";
 import { useIsDesktop } from "@/lib/hooks";
 import { rateFor, rateNoun, type RateInfo } from "@/lib/rate-info";
 import type { Listing } from "@/lib/types";
+import { MapErrorBoundary } from "@/components/map/MapErrorBoundary";
 import { PhotoGrid, type FormPhoto } from "./PhotoGrid";
 
 const LeafletMap = dynamic(() => import("@/components/map/LeafletMap").then((m) => m.LeafletMap), { ssr: false });
@@ -326,6 +327,7 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
                   <div className="-mt-2 text-xs text-neutral-700">{lookupErr}</div>
                 )}
                 <div className="relative h-60 overflow-hidden rounded-[18px] border border-divider bg-neutral-200">
+                  <MapErrorBoundary className="absolute inset-0">
                   <LeafletMap
                     className="absolute inset-0"
                     interactive={false}
@@ -335,6 +337,7 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
                     pins={f.lat != null ? [{ id: "new", lat: f.lat, lng: f.lng!, label: conc ? kUsd(conc) : "New", title: f.address }] : []}
                     selectedId="new"
                   />
+                  </MapErrorBoundary>
                   {f.lat == null && (
                     <div className="tag tag-neutral absolute bottom-3 left-3 z-[500]">Pick an address to drop the pin</div>
                   )}

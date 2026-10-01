@@ -12,6 +12,7 @@ import { CENTER_DESK, CENTER_PHONE } from "@/lib/map-config";
 import { COUNTIES, type Listing } from "@/lib/types";
 import { rateFor, rateNoun, type RateInfo } from "@/lib/rate-info";
 import type { LeafletMapHandle } from "./LeafletMap";
+import { MapErrorBoundary } from "./MapErrorBoundary";
 
 const LeafletMap = dynamic(() => import("./LeafletMap").then((m) => m.LeafletMap), { ssr: false });
 
@@ -109,6 +110,7 @@ export function MapScreen({ listings, rateInfo }: { listings: Listing[]; rateInf
       {view === "map" && (
         <>
           <div className="absolute inset-y-0 right-0" style={{ left: desk ? 440 : 0 }}>
+          <MapErrorBoundary className="absolute inset-0">
           <LeafletMap
             ref={mapRef}
             pins={pins}
@@ -126,6 +128,7 @@ export function MapScreen({ listings, rateInfo }: { listings: Listing[]; rateInf
             }}
             className="absolute inset-0 bg-neutral-200"
           />
+          </MapErrorBoundary>
           </div>
           {anySample && (
             <span

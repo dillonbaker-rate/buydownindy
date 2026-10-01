@@ -50,7 +50,12 @@ export const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMa
   useImperativeHandle(ref, () => ({
     flyTo: (lat, lng, minZoom = 11.5) => {
       const m = map.current;
-      if (m) m.flyTo([lat, lng], Math.max(m.getZoom(), minZoom), { duration: 0.45, easeLinearity: 0.2 });
+      if (!m) return;
+      try {
+        m.flyTo([lat, lng], Math.max(m.getZoom(), minZoom), { duration: 0.45, easeLinearity: 0.2 });
+      } catch {
+        m.setView([lat, lng], Math.max(m.getZoom(), minZoom), { animate: false });
+      }
     },
   }));
 
@@ -68,6 +73,10 @@ export const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMa
         zoomControl: false,
         scrollWheelZoom: o.interactive,
         dragging: true,
+        // The mini map in the posting form just jumps to the pin: animations there were crash-prone.
+        zoomAnimation: o.interactive,
+        markerZoomAnimation: o.interactive,
+        fadeAnimation: o.interactive,
       });
       m.setView(o.center, o.zoom);
       lf.tileLayer(TILE_URL, { attribution: TILE_ATTRIBUTION, ...TILE_OPTIONS }).addTo(m);
@@ -116,7 +125,11 @@ export const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMa
 
   const pinKey = pins.map((p) => p.id + ":" + p.label + ":" + p.lat + "," + p.lng).join("|") + "#" + selectedId;
   useEffect(() => {
-    drawPins();
+    try {
+      drawPins();
+    } catch (e) {
+      console.error("map pins", e);
+    }
      
   }, [pinKey]);
 
@@ -125,9 +138,12 @@ export const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMa
   useEffect(() => {
     const m = map.current;
     if (!m) return;
-    m.invalidateSize();
-    if (interactive) m.setView(center, zoom);
-    else m.flyTo(center, zoom, { duration: 0.6 });
+    try {
+      m.invalidateSize();
+      m.setView(center, zoom, { animate: false });
+    } catch (e) {
+      console.error("map setView", e);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [centerKey]);
 

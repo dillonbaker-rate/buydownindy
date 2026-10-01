@@ -28,6 +28,12 @@ explain that setup is needed.
 
 Remove the demo data later with `delete from listings where is_sample;`.
 
+## Lead emails
+
+Every lead is saved, then emailed to `LEAD_NOTIFY_TO` through Resend (`src/lib/lead-email.ts`) with the
+quiz answers and consent record. Reply-To is the buyer, so replying answers them directly. With no
+`RESEND_API_KEY` the email is skipped; the lead is still saved.
+
 ## Daily rates
 
 Admins (emails in `ADMIN_EMAILS`) enter Rate's 30-year fixed Conventional, FHA and VA rates at
@@ -66,5 +72,5 @@ Search the code for `COMPLIANCE:`. Open items:
 - **Advertised-rate rules**: the PMMS average is labeled a sample rate.
 - **EHO logo**: `src/components/ui/EhoLogo.tsx` is drawn to match HUD's mark; confirm or swap in the official file.
 - A production **tile provider** key (`NEXT_PUBLIC_MAPTILER_KEY` or `NEXT_PUBLIC_TILE_URL`).
-- Lead notifications: leads (with quiz answers) are stored in the `leads` table; nothing emails them yet.
+- Lead emails: set `RESEND_API_KEY`, `LEAD_NOTIFY_TO` and a verified `LEAD_NOTIFY_FROM` (see `.env.example`).
 - Privacy policy: the quiz collects income, debts and credit range, so a privacy policy should be linked before launch.

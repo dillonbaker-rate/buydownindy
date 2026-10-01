@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { LENDER_CONSENT } from "@/content/disclosures";
+import { sendLeadEmail } from "@/lib/lead-email";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -45,8 +46,26 @@ export async function POST(req: Request) {
     user_agent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
   };
 
+  // Email Dillon after the response is sent, so the buyer never waits on it.
+  const notify = () =>
+    after(() =>
+      sendLeadEmail({
+        name: row.name,
+        email: row.email,
+        phone: row.phone,
+        message: row.message,
+        topic: d.topic,
+        listingId: d.listingId ?? null,
+        listingLabel: row.listing_label,
+        answers: d.answers,
+        consentAt: row.consent_at,
+        consentText: row.consent_text,
+      }),
+    );
+
   if (!supabaseConfigured) {
     console.info("[demo] lead received (Supabase not configured):", row.listing_label, row.email, row.topic, row.answers);
+    notify();
     return NextResponse.json({ ok: true, demo: true });
   }
   const admin = createAdminClient();
@@ -59,5 +78,6 @@ export async function POST(req: Request) {
     console.error("lead insert", error.message);
     return NextResponse.json({ error: "We couldn't send that right now. Please try again later." }, { status: 500 });
   }
+  notify();
   return NextResponse.json({ ok: true });
 }

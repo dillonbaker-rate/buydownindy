@@ -10,7 +10,7 @@ import { Footer } from "./Footer";
 
 export function Wordmark() {
   return (
-    <Link href="/" aria-label="BuyDown Indy, search homes" className="flex min-h-9 items-center no-underline">
+    <Link href="/homes" aria-label="BuyDown Indy, back to the map" className="flex min-h-9 items-center no-underline">
       <span className="flex items-stretch text-[18px] leading-none font-bold tracking-[-0.03em]">
         <span className="py-1.5 pr-0.5 text-ink">BuyDown</span>
         <span className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-[5px] text-white">

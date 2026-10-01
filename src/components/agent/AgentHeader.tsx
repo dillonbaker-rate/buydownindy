@@ -1,36 +1,15 @@
 import Link from "next/link";
-import { supabaseConfigured } from "@/lib/supabase/env";
 
-export function AgentHeader({ onDash, admin }: { onDash?: boolean; admin?: boolean }) {
-  return (
-    <>
-      <Link href="/agent" className="btn btn-ghost text-[13px] font-semibold">
-        My listings
-      </Link>
-      <Link href="/agent/profile" className="btn btn-ghost text-[13px] font-semibold">
-        My profile
-      </Link>
-      {admin && (
-        <>
-          <Link href="/agent/rates" className="btn btn-ghost text-[13px] font-semibold">
-            Today&apos;s rates
-          </Link>
-          <Link href="/agent/admin" className="btn btn-ghost text-[13px] font-semibold">
-            Agents
-          </Link>
-        </>
-      )}
-      {onDash && (
-        <Link href="/agent/post" className="btn btn-ghost text-[13px] font-semibold">
-          Post a listing
-        </Link>
-      )}
-      {supabaseConfigured && (
-        <form action="/auth/signout" method="post">
-          <button className="btn btn-ghost text-[13px] font-semibold text-neutral-700">Sign out</button>
-        </form>
-      )}
-    </>
+/** Page links on agent screens. Profile, admin pages and sign out live in the account menu (top-left). */
+export function AgentHeader({ onDash }: { onDash?: boolean; admin?: boolean }) {
+  return onDash ? (
+    <Link href="/agent/post" className="btn btn-ghost text-[13px] font-semibold">
+      Post a listing
+    </Link>
+  ) : (
+    <Link href="/agent" className="btn btn-ghost text-[13px] font-semibold">
+      My listings
+    </Link>
   );
 }
 

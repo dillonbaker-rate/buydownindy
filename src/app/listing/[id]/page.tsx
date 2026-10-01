@@ -29,7 +29,9 @@ export default async function ListingPage({ params, searchParams }: Params) {
       header={
         <Link href="/" className="btn btn-ghost text-[13px] font-semibold">
           <ArrowLeft size={16} />
-          Back to map
+          <span>
+            Back<span className="hidden sm:inline"> to map</span>
+          </span>
         </Link>
       }
     >

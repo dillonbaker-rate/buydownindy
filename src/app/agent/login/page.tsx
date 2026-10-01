@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     );
   if (await getCurrentAgent()) redirect(next?.startsWith("/agent") ? next : "/agent");
   return (
-    <AppShell>
+    <AppShell hideSignIn>
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-auto max-w-[460px] p-4 lg:p-8">
           <LoginForm next={next} linkError={!!error} />

@@ -18,7 +18,7 @@ export default async function Home() {
   return (
     <AppShell
       header={
-        <Link href="/agent/post" className="btn btn-ghost text-[13px] font-semibold">
+        <Link href="/agent/post" className="btn btn-ghost hidden text-[13px] font-semibold sm:inline-flex">
           Agents: post a listing
         </Link>
       }

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import type { LoanType } from "./buydown";
 import { SAMPLE_LISTINGS } from "./sample-data";
 import { DEMO_AGENT, demoAgent, demoListings } from "./demo-store";
@@ -135,7 +136,10 @@ export async function getMyListings(agentId: string): Promise<Listing[]> {
   return ((data ?? []) as ListingRow[]).map(fromRow);
 }
 
-export async function getCurrentAgent(): Promise<{ userId: string; email: string; agent: Agent | null } | null> {
+/** The signed-in agent. Wrapped in React cache() so the header and the page share one lookup per request. */
+export const getCurrentAgent = cache(getCurrentAgentUncached);
+
+async function getCurrentAgentUncached(): Promise<{ userId: string; email: string; agent: Agent | null } | null> {
   if (demoMode) return { userId: DEMO_AGENT.id, email: DEMO_AGENT.email, agent: await demoAgent() };
   if (!supabaseConfigured) return null;
   const sb = await createClient();

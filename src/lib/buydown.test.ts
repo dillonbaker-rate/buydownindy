@@ -96,3 +96,10 @@ describe("credit adjustment", () => {
     expect(c.base).toBeGreaterThan(2047);
   });
 });
+
+describe("price cut shows the new price and loan", () => {
+  it("$350,000 − $10,000 at 5% down", () => {
+    const c = calc(350000, 10000, "Conventional", 5, 0, RATE);
+    expect(opt(c, "cut").priceCut).toEqual({ oldPrice: 350000, newPrice: 340000, newLoan: 323000, newDown: 17000 });
+  });
+});

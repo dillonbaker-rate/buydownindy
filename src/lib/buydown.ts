@@ -57,6 +57,8 @@ export interface BuydownOption {
   k?: number;
   cost?: number;
   pays?: number[];
+  /** Price cut only: the price and loan after the cut, so buyers can see where the payment comes from. */
+  priceCut?: { oldPrice: number; newPrice: number; newLoan: number; newDown: number };
 }
 
 export interface CalcResult {
@@ -166,6 +168,7 @@ export function calc(
       state: "avail",
       costLabel: usd(conc),
       rows: [{ label: "Every month", v: cut, hi: false }],
+      priceCut: { oldPrice: price, newPrice: price - conc, newLoan: loanFor(price - conc), newDown: ((price - conc) * down) / 100 },
       note: `Saves ${usd(saving(base, cut))}/mo`,
       y1: cut,
       buyerClosing: buyerPays(0, closingFor(price - conc)),

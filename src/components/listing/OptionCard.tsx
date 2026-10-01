@@ -136,6 +136,20 @@ export function OptionCard({
         </div>
         <StatePill state={o.state} />
       </div>
+      {o.priceCut && (
+        <div className="flex flex-col gap-1 rounded-[14px] bg-surface p-3 text-[13px]">
+          <div className="flex items-baseline justify-between gap-2">
+            <span>New home price</span>
+            <span className="text-[17px] font-bold tracking-[-0.02em]">{usd(o.priceCut.newPrice)}</span>
+          </div>
+          <div className="flex justify-between gap-2 text-xs text-neutral-700">
+            <span>
+              Was <span className="line-through">{usd(o.priceCut.oldPrice)}</span>
+            </span>
+            <span>New loan {usd(o.priceCut.newLoan)}</span>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col" style={{ opacity: st.dim }}>
         {o.rows.length > 0 && (
           <div className="text-[11px] font-semibold text-neutral-700">Monthly payment (principal &amp; interest)</div>

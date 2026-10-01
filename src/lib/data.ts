@@ -77,12 +77,15 @@ export function fromRow(r: ListingRow): Listing {
 }
 
 /** Live, unexpired listings for the map. Featured example first. */
+/** The design's 12 demo listings, off unless SHOW_SAMPLE_LISTINGS=true (only applies without Supabase). */
+const SAMPLES = process.env.SHOW_SAMPLE_LISTINGS === "true" ? SAMPLE_LISTINGS : [];
+
 export async function getLiveListings(): Promise<Listing[]> {
   if (!supabaseConfigured) {
-    if (!demoMode) return SAMPLE_LISTINGS;
+    if (!demoMode) return SAMPLES;
     const now = Date.now();
     const mine = (await demoListings()).filter((l) => l.status === "live" && new Date(l.expiresAt).getTime() > now);
-    return [SAMPLE_LISTINGS[0], ...mine, ...SAMPLE_LISTINGS.slice(1)];
+    return [...SAMPLES.slice(0, 1), ...mine, ...SAMPLES.slice(1)];
   }
   const sb = await createClient();
   const { data, error } = await sb
@@ -103,7 +106,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function getListing(id: string): Promise<Listing | null> {
   if (!supabaseConfigured) {
-    const sample = SAMPLE_LISTINGS.find((l) => l.id === id);
+    const sample = SAMPLES.find((l) => l.id === id);
     if (sample || !demoMode) return sample ?? null;
     return (await demoListings()).find((l) => l.id === id) ?? null;
   }

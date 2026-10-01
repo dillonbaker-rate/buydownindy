@@ -1,6 +1,7 @@
 "use client";
 import { ChevronDown, ChevronUp, List, Map as MapIcon, SlidersHorizontal, X } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { ListingCard } from "@/components/listing/ListingCard";
 import { PriceRange } from "@/components/ui/DualRange";
@@ -341,7 +342,17 @@ export function MapScreen({ listings, rateInfo }: { listings: Listing[]; rateInf
             </div>
           )}
 
-          {shown.length > 0 ? (
+          {listings.length === 0 ? (
+            <div className="flex flex-col items-start gap-2 border-t border-divider py-6">
+              <div className="text-xl font-bold">No listings yet</div>
+              <p className="m-0 text-sm text-neutral-700">
+                Listing agents are adding Indy-area homes where the seller will pay concessions. Check back soon.
+              </p>
+              <Link href="/agent/post" className="btn btn-primary">
+                Agents: post a listing
+              </Link>
+            </div>
+          ) : shown.length > 0 ? (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
               {sorted.map((l) => (
                 <ListingCard

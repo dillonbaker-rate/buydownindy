@@ -436,7 +436,12 @@ export function MapScreen({
               </Link>
             </div>
           ) : shown.length > 0 ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
+            <div
+              className={`grid gap-3 ${
+                // Beside the map, cards stretch to fill the panel; full-screen list keeps even columns.
+                view === "map" ? "grid-cols-[repeat(auto-fit,minmax(260px,1fr))]" : "grid-cols-[repeat(auto-fill,minmax(300px,1fr))]"
+              }`}
+            >
               {sorted.map((l) => (
                 <ListingCard
                   key={l.id}

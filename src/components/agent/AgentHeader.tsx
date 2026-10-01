@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { supabaseConfigured } from "@/lib/supabase/env";
 
 export function AgentHeader({ onDash, admin }: { onDash?: boolean; admin?: boolean }) {
   return (
@@ -15,6 +16,11 @@ export function AgentHeader({ onDash, admin }: { onDash?: boolean; admin?: boole
         <Link href="/agent/post" className="btn btn-ghost text-[13px] font-semibold">
           Post a listing
         </Link>
+      )}
+      {supabaseConfigured && (
+        <form action="/auth/signout" method="post">
+          <button className="btn btn-ghost text-[13px] font-semibold text-neutral-700">Sign out</button>
+        </form>
       )}
     </>
   );

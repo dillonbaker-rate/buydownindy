@@ -142,7 +142,7 @@ export function LenderQuiz({ listing, topic }: { listing: QuizListing | null; to
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="sticky top-0 z-10 -mx-1 bg-bg px-1 pt-1 pb-1">
+      <div>
         <LenderStrip />
       </div>
       <div className="flex flex-col gap-1">

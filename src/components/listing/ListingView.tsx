@@ -197,7 +197,7 @@ export function ListingView({
 
           {/* Scenario */}
           <div
-            className="flex flex-col gap-4 self-start border-b border-divider py-5 lg:sticky lg:top-4 lg:border-b-0"
+            className="flex flex-col gap-4 self-start border-b border-divider py-5 lg:border-b-0"
             style={{ gridArea: "side" }}
           >
             <div className="flex items-baseline justify-between">

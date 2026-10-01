@@ -1,92 +1,161 @@
 "use client";
-import { Check, Copy, Mail, MessageSquare, Share2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Check, Copy, Mail, MessageSquare, MoreHorizontal, Share2, X } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 
-/** "Share this house": the phone's share sheet when available, otherwise copy / text / email / Facebook. */
-export function ShareListing({ title, text }: { title: string; text: string }) {
+/** Brand-colored round share button, like Eventbrite's "Share with friends" row. */
+function Round({ label, bg, href, onClick, children }: { label: string; bg: string; href?: string; onClick?: () => void; children: ReactNode }) {
+  const circle = (
+    <span className="grid h-12 w-12 place-items-center rounded-full text-white transition-transform group-hover:scale-105" style={{ background: bg }}>
+      {children}
+    </span>
+  );
+  const cls = "group flex w-16 flex-col items-center gap-1.5 text-[11px] text-ink no-underline hover:text-ink";
+  return href ? (
+    <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className={cls} aria-label={`Share on ${label}`}>
+      {circle}
+      {label}
+    </a>
+  ) : (
+    <button type="button" onClick={onClick} className={`${cls} cursor-pointer`} aria-label={label}>
+      {circle}
+      {label}
+    </button>
+  );
+}
+
+const Glyph = ({ t, size = 18 }: { t: string; size?: number }) => <span style={{ fontWeight: 800, fontSize: size, lineHeight: 1, fontFamily: "Arial, sans-serif" }}>{t}</span>;
+
+function useCopy() {
+  const [copied, setCopied] = useState<string | null>(null);
+  const copy = async (key: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 1800);
+    } catch {
+      window.prompt("Copy this:", text);
+    }
+  };
+  return { copied, copy };
+}
+
+/** "Share this house": a share window with social buttons, the link, and a ready-to-copy social post. */
+export function ShareListing({ title, text, post }: { title: string; text: string; post: string }) {
   const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const url = () => window.location.origin + window.location.pathname;
+  const [url, setUrl] = useState("");
+  const [canNative, setCanNative] = useState(false);
+  const { copied, copy } = useCopy();
+
+  useEffect(() => {
+    setUrl(window.location.origin + window.location.pathname);
+    setCanNative(typeof navigator.share === "function");
+  }, []);
 
   useEffect(() => {
     if (!open) return;
-    const close = (e: MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)) setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
     };
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", close);
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", close);
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
     };
   }, [open]);
 
-  const share = async () => {
-    // Phones and tablets: the native share sheet (Messages, AirDrop, WhatsApp…).
-    const touch = window.matchMedia("(pointer: coarse)").matches;
-    if (touch && typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title, text, url: url() });
-        return;
-      } catch (e) {
-        if ((e as Error).name === "AbortError") return; // they closed the sheet
-      }
-    }
-    setOpen((o) => !o);
-  };
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(url());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      window.prompt("Copy this link:", url());
-    }
-  };
-
-  const message = () => `${text} ${url()}`;
-  const item = "flex min-h-11 w-full cursor-pointer items-center gap-2.5 px-4 text-left text-sm text-ink no-underline hover:bg-accent-100 hover:text-ink";
+  const e = encodeURIComponent;
+  const message = `${text} ${url}`;
+  const socialPost = post.replace("{link}", url);
 
   return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={share} aria-expanded={open} className="btn btn-secondary min-h-10 text-[13px]">
+    <>
+      <button type="button" onClick={() => setOpen(true)} className="btn btn-secondary min-h-10 text-[13px]">
         <Share2 size={15} />
         Share this house
       </button>
       {open && (
-        <div role="menu" className="absolute top-full left-0 z-[2500] mt-1.5 w-64 overflow-hidden rounded-[14px] border border-divider bg-bg py-1 shadow-lg">
-          <div className="flex items-center justify-between border-b border-divider py-1.5 pr-1.5 pl-4">
-            <span className="text-xs font-semibold text-neutral-700">Share with a buyer</span>
-            <button type="button" aria-label="Close" onClick={() => setOpen(false)} className="grid h-8 w-8 cursor-pointer place-items-center text-neutral-600">
-              <X size={14} />
-            </button>
-          </div>
-          <button type="button" role="menuitem" className={item} onClick={copy}>
-            {copied ? <Check size={16} className="text-accent" /> : <Copy size={16} />}
-            {copied ? "Link copied" : "Copy link"}
-          </button>
-          <a role="menuitem" className={item} href={`sms:?&body=${encodeURIComponent(message())}`}>
-            <MessageSquare size={16} />
-            Text message
-          </a>
-          <a role="menuitem" className={item} href={`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(message())}`}>
-            <Mail size={16} />
-            Email
-          </a>
-          <a
-            role="menuitem"
-            className={item}
-            target="_blank"
-            rel="noopener noreferrer"
-            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url())}`}
+        <div onClick={() => setOpen(false)} className="fixed inset-0 z-[2500] flex items-end justify-center bg-neutral-900/55 lg:items-center lg:p-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Share this house"
+            onClick={(ev) => ev.stopPropagation()}
+            className="flex max-h-[92dvh] w-full flex-col gap-5 overflow-auto rounded-t-[24px] bg-bg p-5 shadow-lg lg:w-[min(520px,100%)] lg:rounded-[24px]"
           >
-            <span className="grid h-4 w-4 place-items-center rounded-[3px] bg-ink text-[10px] font-bold text-white">f</span>
-            Facebook
-          </a>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-xl font-bold">Share this house</div>
+                <div className="text-[13px] text-neutral-700">{title}</div>
+              </div>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="grid h-10 w-10 flex-none cursor-pointer place-items-center rounded-full hover:bg-surface">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex flex-wrap justify-start gap-x-2 gap-y-3">
+              <Round label="Facebook" bg="#1877F2" href={`https://www.facebook.com/sharer/sharer.php?u=${e(url)}`}>
+                <Glyph t="f" size={24} />
+              </Round>
+              <Round label="Messenger" bg="#0084FF" href={`fb-messenger://share/?link=${e(url)}`}>
+                <Glyph t="m" size={22} />
+              </Round>
+              <Round label="LinkedIn" bg="#0A66C2" href={`https://www.linkedin.com/sharing/share-offsite/?url=${e(url)}`}>
+                <Glyph t="in" />
+              </Round>
+              <Round label="X" bg="#000000" href={`https://twitter.com/intent/tweet?text=${e(text)}&url=${e(url)}`}>
+                <Glyph t="𝕏" size={20} />
+              </Round>
+              <Round label="WhatsApp" bg="#25D366" href={`https://wa.me/?text=${e(message)}`}>
+                <MessageSquare size={20} />
+              </Round>
+              <Round label="Email" bg="#5a636e" href={`mailto:?subject=${e(title)}&body=${e(message)}`}>
+                <Mail size={20} />
+              </Round>
+              <Round label="Text" bg="#1c5aa6" href={`sms:?&body=${e(message)}`}>
+                <MessageSquare size={20} />
+              </Round>
+              {canNative && (
+                <Round
+                  label="More"
+                  bg="#9aa3ae"
+                  onClick={async () => {
+                    try {
+                      await navigator.share({ title, text, url });
+                    } catch {}
+                  }}
+                >
+                  <MoreHorizontal size={20} />
+                </Round>
+              )}
+            </div>
+
+            <div className="field">
+              <label htmlFor="share-url">Listing link</label>
+              <div className="flex gap-2">
+                <input id="share-url" readOnly value={url} className="input" onFocus={(ev) => ev.currentTarget.select()} />
+                <button type="button" className="btn btn-primary flex-none" onClick={() => copy("link", url)}>
+                  {copied === "link" ? <Check size={15} /> : <Copy size={15} />}
+                  {copied === "link" ? "Copied" : "Copy"}
+                </button>
+              </div>
+            </div>
+
+            <div className="field">
+              <label htmlFor="share-post">Social media post</label>
+              <textarea id="share-post" readOnly rows={9} value={socialPost} className="input !text-[13px] leading-snug" onFocus={(ev) => ev.currentTarget.select()} />
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[11px] text-neutral-700">Paste into Facebook, Instagram, or LinkedIn. Keep the last line: it&apos;s the required disclosure.</span>
+                <button type="button" className="btn btn-secondary" onClick={() => copy("post", socialPost)}>
+                  {copied === "post" ? <Check size={15} /> : <Copy size={15} />}
+                  {copied === "post" ? "Post copied" : "Copy post"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

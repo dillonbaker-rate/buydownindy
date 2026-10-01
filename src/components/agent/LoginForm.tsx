@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 export function LoginForm({ next, linkError }: { next?: string; linkError?: boolean }) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [err, setErr] = useState<string | null>(linkError ? "That sign-in link expired or was already used. Send a new one." : null);
+  const [err, setErr] = useState<string | null>(linkError ? "That sign-in link didn't work. It may have expired, or it was opened in a different browser than the one you requested it from. Send a new one and open it on this device." : null);
   const [busy, setBusy] = useState(false);
 
   const send = async (e: React.FormEvent) => {

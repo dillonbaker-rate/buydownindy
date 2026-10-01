@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
+import { AuthHashHandler } from "@/components/auth/AuthHashHandler";
 import { ToastProvider } from "@/components/ui/Toast";
+import { supabaseConfigured } from "@/lib/supabase/env";
 import "./globals.css";
 
 const figtree = Figtree({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-figtree" });
@@ -18,7 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={figtree.variable}>
       <body>
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          {supabaseConfigured && <AuthHashHandler />}
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

@@ -129,14 +129,16 @@ export function MapScreen({
   const heroDesk = desk && heroOn && hero;
   const href = (l: Listing) => `/listing/${l.id}` + (f.loan !== "Any" ? `?type=${f.loan}` : "");
 
-  const paneTop = desk ? "0px" : view === "list" ? "0px" : expanded ? "64px" : "calc(100% - 262px)";
-  const paneW = desk ? (view === "list" ? "100%" : "440px") : "100%";
+  // Split: list 40%, map 60% (desktop width; phone sheet starts at 40% of the height).
+  const LIST_SHARE = "40%";
+  const paneTop = desk ? "0px" : view === "list" ? "0px" : expanded ? "64px" : "60%";
+  const paneW = desk ? (view === "list" ? "100%" : LIST_SHARE) : "100%";
 
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden">
       {view === "map" && (
         <>
-          <div className="absolute inset-y-0 right-0" style={{ left: desk ? 440 : 0 }}>
+          <div className="absolute inset-y-0 right-0" style={{ left: desk ? LIST_SHARE : 0 }}>
           <MapErrorBoundary className="absolute inset-0">
           <LeafletMap
             ref={mapRef}
@@ -160,7 +162,7 @@ export function MapScreen({
           {anySample && (
             <span
               className="tag tag-ink absolute z-[500] font-semibold"
-              style={{ top: heroPhone ? 92 : 12, left: desk ? 456 : 12 }}
+              style={{ top: heroPhone ? 92 : 12, left: desk ? `calc(${LIST_SHARE} + 16px)` : 12 }}
             >
               Sample listings
             </span>

@@ -36,7 +36,7 @@ export function AreaSearch({ listingZips, count }: { listingZips: string[]; coun
       className="relative flex min-h-0 flex-1 flex-col overflow-auto bg-accent-800 bg-cover bg-center"
       style={{
         // Photo with a blue wash so the white headline stays readable. Falls back to solid blue.
-        backgroundImage: `linear-gradient(180deg, rgba(14,47,90,0.62) 0%, rgba(14,47,90,0.38) 55%, rgba(14,47,90,0.55) 100%), url(${SEARCH_BG})`,
+        backgroundImage: `linear-gradient(180deg, rgba(14,47,90,0.6) 0%, rgba(14,47,90,0.28) 50%, rgba(14,47,90,0.5) 100%), url(${SEARCH_BG})`,
       }}
     >
       <div className="mx-auto flex w-full max-w-[720px] flex-1 flex-col justify-center gap-6 px-4 py-10 lg:py-16">

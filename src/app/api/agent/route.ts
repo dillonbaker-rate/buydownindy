@@ -3,6 +3,7 @@ import { z } from "zod";
 import { saveDemoAgent } from "@/lib/demo-store";
 import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/rates";
 import { COUNTIES } from "@/lib/types";
 
 const phone = z
@@ -28,7 +29,7 @@ const Profile = z.object({
     .string()
     .trim()
     .toUpperCase()
-    .regex(/^[A-Z0-9-]{6,14}$/, "Enter your Indiana real estate license number, e.g. RB14012345."),
+    .refine((v) => v === "" || /^[A-Z0-9-]{6,14}$/.test(v), "Enter your Indiana real estate license number, e.g. RB14012345."),
   mlsId: optText(40),
   teamName: optText(120),
   officePhone: optPhone,
@@ -79,13 +80,16 @@ export async function PUT(req: Request) {
     data: { user },
   } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+  // Agents need a license number; admins (the lender) don't hold a real estate license.
+  if (!d.licenseNumber && !isAdmin(user.email))
+    return NextResponse.json({ error: "Enter your Indiana real estate license number, e.g. RB14012345." }, { status: 400 });
   const { error } = await sb.from("agents").upsert({
     id: user.id,
     email: user.email,
     name: d.name,
     brokerage: d.brokerage,
     phone: d.phone,
-    license_number: d.licenseNumber,
+    license_number: d.licenseNumber || null,
     mls_id: blank(d.mlsId),
     team_name: blank(d.teamName),
     office_phone: blank(d.officePhone),

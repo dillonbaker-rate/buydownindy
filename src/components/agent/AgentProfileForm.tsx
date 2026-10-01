@@ -78,7 +78,19 @@ export function VerificationBadge({ status }: { status?: Agent["verificationStat
   );
 }
 
-export function AgentProfileForm({ agent, email, userId, onboarding }: { agent: Agent | null; email: string; userId: string; onboarding?: boolean }) {
+export function AgentProfileForm({
+  agent,
+  email,
+  userId,
+  onboarding,
+  isAdmin = false,
+}: {
+  agent: Agent | null;
+  email: string;
+  userId: string;
+  onboarding?: boolean;
+  isAdmin?: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [f, setF] = useState<F>(() => fromAgent(agent));
@@ -192,7 +204,7 @@ export function AgentProfileForm({ agent, email, userId, onboarding }: { agent: 
       <section className="flex flex-col gap-3">
         <h2 className="text-[17px]">License</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          {text("licenseNumber", "Indiana real estate license # *", { placeholder: "RB14012345", autoCapitalize: "characters" })}
+          {text("licenseNumber", isAdmin ? "Indiana real estate license # (optional for admins)" : "Indiana real estate license # *", { placeholder: "RB14012345", autoCapitalize: "characters" })}
           {text("mlsId", "MLS ID (MIBOR / BLC)")}
         </div>
         <p className="m-0 text-xs text-neutral-700">

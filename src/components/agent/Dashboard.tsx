@@ -23,7 +23,18 @@ function statusOf(l: Listing) {
   return { label: `Live · ${d} days left`, bg: "var(--color-accent-100)", fg: "var(--color-accent-800)" };
 }
 
-export function Dashboard({ agent, listings, invites }: { agent: Agent; listings: Listing[]; invites: Invite[] }) {
+export function Dashboard({
+  agent,
+  listings,
+  invites,
+  isAdmin = false,
+}: {
+  agent: Agent;
+  listings: Listing[];
+  invites: Invite[];
+  /** Admins (the lender) don't hold a real estate license, so skip the license prompt. */
+  isAdmin?: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
@@ -72,7 +83,7 @@ export function Dashboard({ agent, listings, invites }: { agent: Agent; listings
             Post a listing
           </Link>
         </div>
-        {!agent.licenseNumber && (
+        {!agent.licenseNumber && !isAdmin && (
           <Link
             href="/agent/profile"
             className="mb-4 flex items-center justify-between gap-3 rounded-[18px] p-4 text-sm text-ink no-underline"

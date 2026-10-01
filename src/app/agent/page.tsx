@@ -33,7 +33,7 @@ export default async function AgentPage() {
   const [listings, invites] = await Promise.all([getMyListings(me.userId), listInvites(me.userId)]);
   return (
     <AppShell header={<AgentHeader onDash admin={isRateAdmin(me.email)} />}>
-      <Dashboard agent={me.agent} listings={listings} invites={invites} />
+      <Dashboard agent={me.agent} listings={listings} invites={invites} isAdmin={isRateAdmin(me.email)} />
     </AppShell>
   );
 }

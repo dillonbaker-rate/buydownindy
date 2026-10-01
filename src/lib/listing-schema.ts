@@ -22,7 +22,13 @@ export const ListingInput = z.object({
   insuranceYr: money.nullish(),
   hoaMo: money.nullish(),
   photos: z
-    .array(z.object({ url: z.string().url(), path: z.string().max(300).optional() }))
+    .array(
+      z.object({
+        // Storage URL, or a local demo-mode upload served by /api/demo/photos.
+        url: z.string().max(500).refine((u) => /^https:\/\//.test(u) || u.startsWith("/api/demo/photos/")),
+        path: z.string().max(300).optional(),
+      }),
+    )
     .min(1)
     .max(MAX_PHOTOS),
   photoRightsConfirmed: z.literal(true),

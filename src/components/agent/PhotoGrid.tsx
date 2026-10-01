@@ -14,6 +14,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Camera, Plus, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { supabaseConfigured } from "@/lib/supabase/env";
 import { MAX_PHOTOS } from "@/lib/types";
 
 export interface FormPhoto {
@@ -108,29 +109,38 @@ export function PhotoGrid({
     const room = MAX_PHOTOS - photos.length;
     const list = Array.from(files).slice(0, room);
     if (files.length > room) setErr(`Only ${MAX_PHOTOS} photos fit. Added the first ${room}.`);
-    const sb = createClient();
     setUploading(list.length);
     for (const f of list) {
       const blob = await shrink(f);
       const ext = blob.type === "image/jpeg" ? "jpg" : (f.name.split(".").pop() ?? "jpg").toLowerCase();
-      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await sb.storage
-        .from("listing-photos")
-        .upload(path, blob, { contentType: blob.type || f.type, cacheControl: "31536000" });
-      if (error) {
-        setErr(`Couldn't upload ${f.name}: ${error.message}`);
-      } else {
-        const url = sb.storage.from("listing-photos").getPublicUrl(path).data.publicUrl;
-        onChange([...latest.current, { id: path, url, path, fresh: true }]);
-      }
+      const res = supabaseConfigured ? await uploadSupabase(blob, f.type, ext) : await uploadDemo(blob, f.name);
+      if ("error" in res) setErr(`Couldn't upload ${f.name}: ${res.error}`);
+      else onChange([...latest.current, { id: res.path, url: res.url, path: res.path, fresh: true }]);
       setUploading((n) => n - 1);
     }
     if (input.current) input.current.value = "";
   };
 
+  const uploadSupabase = async (blob: Blob, type: string, ext: string) => {
+    const sb = createClient();
+    const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await sb.storage.from("listing-photos").upload(path, blob, { contentType: blob.type || type, cacheControl: "31536000" });
+    if (error) return { error: error.message };
+    return { path, url: sb.storage.from("listing-photos").getPublicUrl(path).data.publicUrl };
+  };
+
+  // Local demo mode: saved under .data/uploads by /api/demo/photos.
+  const uploadDemo = async (blob: Blob, name: string) => {
+    const fd = new FormData();
+    fd.append("file", blob, name);
+    const r = await fetch("/api/demo/photos", { method: "POST", body: fd });
+    const j = await r.json().catch(() => ({}));
+    return r.ok ? { path: j.path as string, url: j.url as string } : { error: (j.error as string) ?? "Upload failed" };
+  };
+
   const remove = (p: FormPhoto) => {
     onChange(photos.filter((x) => x.id !== p.id));
-    if (p.fresh && p.path) createClient().storage.from("listing-photos").remove([p.path]);
+    if (supabaseConfigured && p.fresh && p.path) createClient().storage.from("listing-photos").remove([p.path]);
   };
 
   return (

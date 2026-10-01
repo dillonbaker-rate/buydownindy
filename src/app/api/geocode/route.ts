@@ -17,21 +17,104 @@ const served = (c: string) => (COUNTIES as readonly string[]).includes(c);
 
 /**
  * Address typeahead. Uses Mapbox when MAPBOX_TOKEN is set (recommended for production);
- * otherwise Photon (OSM-based, free, fair-use).
+ * otherwise Photon (OSM-based, free, fair-use). OSM is missing many house numbers, so when Photon only
+ * knows the street we confirm the exact address with the US Census geocoder (free, no key).
  */
 export async function GET(req: Request) {
   const q = new URL(req.url).searchParams.get("q")?.trim() ?? "";
   if (q.length < 3) return NextResponse.json({ suggestions: [] });
   try {
-    const out = process.env.MAPBOX_TOKEN ? await mapbox(q, process.env.MAPBOX_TOKEN) : await photon(q);
-    return NextResponse.json({ suggestions: out.filter((s) => served(s.county)).slice(0, 6) });
+    const out = process.env.MAPBOX_TOKEN
+      ? await mapbox(q, process.env.MAPBOX_TOKEN)
+      : await photonWithCensus(q);
+    return NextResponse.json({
+      suggestions: out.filter((s) => served(s.county)).slice(0, 6),
+    });
   } catch (e) {
     console.error("geocode", e);
-    return NextResponse.json({ suggestions: [], error: "Address lookup is unavailable right now." }, { status: 502 });
+    return NextResponse.json(
+      { suggestions: [], error: "Address lookup is unavailable right now." },
+      { status: 502 },
+    );
   }
 }
 
-async function photon(q: string): Promise<Suggestion[]> {
+interface PhotonFeature {
+  geometry: { coordinates: [number, number] };
+  properties: Record<string, string>;
+}
+
+async function photonWithCensus(q: string): Promise<Suggestion[]> {
+  const houses = await photon(q, "house");
+  const num = q.match(/^\s*(\d+[a-z]?)\s+\S/i)?.[1];
+  if (houses.length || !num) return houses;
+  // Photon knows the street but not this house number: ask the Census geocoder about each street.
+  const streets = (
+    await photonRaw(q.replace(/^\s*\d+[a-z]?\s+/i, ""), "street")
+  )
+    .filter(
+      (f) =>
+        f.properties.name &&
+        f.properties.city &&
+        /indiana/i.test(f.properties.state ?? ""),
+    )
+    .map((f) => ({ street: f.properties.name, city: f.properties.city }));
+  const unique = [
+    ...new Map(streets.map((s) => [`${s.street}|${s.city}`, s])).values(),
+  ].slice(0, 3);
+  const found = await Promise.all(
+    unique.map((s) => census(`${num} ${s.street}, ${s.city}, IN`)),
+  );
+  return found.flat();
+}
+
+async function census(address: string): Promise<Suggestion[]> {
+  const u = new URL(
+    "https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress",
+  );
+  u.searchParams.set("address", address);
+  u.searchParams.set("benchmark", "Public_AR_Current");
+  u.searchParams.set("vintage", "Current_Current");
+  u.searchParams.set("layers", "Counties");
+  u.searchParams.set("format", "json");
+  try {
+    const r = await fetch(u, {
+      next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!r.ok) return [];
+    const j = (await r.json()) as {
+      result: {
+        addressMatches: {
+          matchedAddress: string;
+          coordinates: { x: number; y: number };
+          addressComponents: { zip?: string };
+          geographies: { Counties?: { BASENAME: string }[] };
+        }[];
+      };
+    };
+    const title = (t: string) =>
+      t.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase());
+    return j.result.addressMatches.map((m) => {
+      const [street, city] = m.matchedAddress.split(",").map((x) => x.trim());
+      return {
+        address: title(street),
+        city: title(city ?? ""),
+        county: m.geographies.Counties?.[0]?.BASENAME ?? "",
+        zip: m.addressComponents.zip,
+        lat: m.coordinates.y,
+        lng: m.coordinates.x,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+async function photonRaw(
+  q: string,
+  layer: "house" | "street",
+): Promise<PhotonFeature[]> {
   const u = new URL("https://photon.komoot.io/api/");
   u.searchParams.set("q", q);
   u.searchParams.set("limit", "10");
@@ -39,17 +122,30 @@ async function photon(q: string): Promise<Suggestion[]> {
   u.searchParams.set("lat", "39.8");
   u.searchParams.set("lon", "-86.15");
   u.searchParams.set("bbox", BBOX.join(","));
-  u.searchParams.set("layer", "house");
-  const r = await fetch(u, { headers: { "user-agent": "BuyDownIndy/1.0" }, next: { revalidate: 3600 } });
+  u.searchParams.set("layer", layer);
+  const r = await fetch(u, {
+    headers: { "user-agent": "BuyDownIndy/1.0" },
+    next: { revalidate: 3600 },
+  });
   if (!r.ok) throw new Error("photon " + r.status);
-  const j = (await r.json()) as {
-    features: { geometry: { coordinates: [number, number] }; properties: Record<string, string> }[];
-  };
-  return j.features
-    .filter((f) => f.properties.housenumber && f.properties.street && /indiana/i.test(f.properties.state ?? ""))
+  return ((await r.json()) as { features: PhotonFeature[] }).features;
+}
+
+async function photon(q: string, layer: "house"): Promise<Suggestion[]> {
+  return (await photonRaw(q, layer))
+    .filter(
+      (f) =>
+        f.properties.housenumber &&
+        f.properties.street &&
+        /indiana/i.test(f.properties.state ?? ""),
+    )
     .map((f) => ({
       address: `${f.properties.housenumber} ${f.properties.street}`,
-      city: f.properties.city ?? f.properties.district ?? f.properties.locality ?? "",
+      city:
+        f.properties.city ??
+        f.properties.district ??
+        f.properties.locality ??
+        "",
       county: countyName(f.properties.county),
       zip: f.properties.postcode,
       lng: f.geometry.coordinates[0],
@@ -77,7 +173,10 @@ async function mapbox(q: string, token: string): Promise<Suggestion[]> {
   };
   return j.features.map((f) => ({
     address: f.properties.name,
-    city: f.properties.context.place?.name ?? f.properties.context.locality?.name ?? "",
+    city:
+      f.properties.context.place?.name ??
+      f.properties.context.locality?.name ??
+      "",
     county: countyName(f.properties.context.district?.name),
     zip: f.properties.context.postcode?.name,
     lng: f.geometry.coordinates[0],

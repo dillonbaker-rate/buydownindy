@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { ListingInput, StatusAction, toRow } from "@/lib/listing-schema";
+import { demoUpdate } from "@/lib/demo-store";
+import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { LISTING_DAYS } from "@/lib/types";
 
@@ -17,6 +19,14 @@ async function authed() {
 // Edit a listing (full wizard payload) or change its status: { action: renew | pending | sold | live }.
 export async function PATCH(req: Request, { params }: Ctx) {
   const { id } = await params;
+  if (demoMode) {
+    const body = await req.json().catch(() => null);
+    const act = StatusAction.safeParse(body);
+    const input = act.success ? null : ListingInput.safeParse(body);
+    if (input && !input.success) return NextResponse.json({ error: "Check the listing details.", issues: input.error.issues }, { status: 400 });
+    const ok = await demoUpdate(id, act.success ? { action: act.data.action } : { input: input!.data! });
+    return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "Listing not found." }, { status: 404 });
+  }
   const { sb, user } = await authed();
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   const body = await req.json().catch(() => null);

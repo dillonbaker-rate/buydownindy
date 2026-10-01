@@ -4,14 +4,14 @@ import { PostWizard } from "@/components/agent/PostWizard";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent, getListing } from "@/lib/data";
 import { getRateInfo } from "@/lib/rates";
-import { supabaseConfigured } from "@/lib/supabase/env";
+import { agentsEnabled } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Edit listing · BuyDown Indy" };
 
 export default async function EditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!supabaseConfigured) redirect("/agent");
+  if (!agentsEnabled) redirect("/agent");
   const me = await getCurrentAgent();
   if (!me) redirect(`/agent/login?next=/agent/edit/${id}`);
   const [l, rateInfo] = await Promise.all([getListing(id), getRateInfo()]);

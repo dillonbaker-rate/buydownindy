@@ -3,13 +3,13 @@ import { SetupNotice } from "@/components/agent/AgentHeader";
 import { LoginForm } from "@/components/agent/LoginForm";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent } from "@/lib/data";
-import { supabaseConfigured } from "@/lib/supabase/env";
+import { agentsEnabled } from "@/lib/supabase/env";
 
 export const metadata = { title: "Agent sign in · BuyDown Indy" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams;
-  if (!supabaseConfigured)
+  if (!agentsEnabled)
     return (
       <AppShell>
         <SetupNotice />

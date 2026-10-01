@@ -1,7 +1,8 @@
 import "server-only";
 import type { LoanType } from "./buydown";
 import { SAMPLE_LISTINGS } from "./sample-data";
-import { supabaseConfigured } from "./supabase/env";
+import { DEMO_AGENT, demoListings } from "./demo-store";
+import { demoMode, supabaseConfigured } from "./supabase/env";
 import { createClient } from "./supabase/server";
 import type { Agent, Listing, Photo } from "./types";
 
@@ -77,7 +78,12 @@ export function fromRow(r: ListingRow): Listing {
 
 /** Live, unexpired listings for the map. Featured example first. */
 export async function getLiveListings(): Promise<Listing[]> {
-  if (!supabaseConfigured) return SAMPLE_LISTINGS;
+  if (!supabaseConfigured) {
+    if (!demoMode) return SAMPLE_LISTINGS;
+    const now = Date.now();
+    const mine = (await demoListings()).filter((l) => l.status === "live" && new Date(l.expiresAt).getTime() > now);
+    return [SAMPLE_LISTINGS[0], ...mine, ...SAMPLE_LISTINGS.slice(1)];
+  }
   const sb = await createClient();
   const { data, error } = await sb
     .from("listings")
@@ -96,7 +102,11 @@ export async function getLiveListings(): Promise<Listing[]> {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function getListing(id: string): Promise<Listing | null> {
-  if (!supabaseConfigured) return SAMPLE_LISTINGS.find((l) => l.id === id) ?? null;
+  if (!supabaseConfigured) {
+    const sample = SAMPLE_LISTINGS.find((l) => l.id === id);
+    if (sample || !demoMode) return sample ?? null;
+    return (await demoListings()).find((l) => l.id === id) ?? null;
+  }
   if (!UUID.test(id)) return null;
   const sb = await createClient();
   const { data } = await sb.from("listings").select(SELECT).eq("id", id).maybeSingle();
@@ -104,6 +114,7 @@ export async function getListing(id: string): Promise<Listing | null> {
 }
 
 export async function getMyListings(agentId: string): Promise<Listing[]> {
+  if (demoMode) return (await demoListings()).filter((l) => l.agentId === agentId);
   const sb = await createClient();
   const { data } = await sb
     .from("listings")
@@ -114,6 +125,7 @@ export async function getMyListings(agentId: string): Promise<Listing[]> {
 }
 
 export async function getCurrentAgent(): Promise<{ userId: string; email: string; agent: Agent | null } | null> {
+  if (demoMode) return { userId: DEMO_AGENT.id, email: DEMO_AGENT.email, agent: DEMO_AGENT };
   if (!supabaseConfigured) return null;
   const sb = await createClient();
   const {

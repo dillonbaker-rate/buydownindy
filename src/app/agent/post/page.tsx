@@ -4,13 +4,13 @@ import { PostWizard } from "@/components/agent/PostWizard";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent } from "@/lib/data";
 import { getRateInfo } from "@/lib/rates";
-import { supabaseConfigured } from "@/lib/supabase/env";
+import { agentsEnabled } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Post a listing · BuyDown Indy" };
 
 export default async function PostPage() {
-  if (!supabaseConfigured)
+  if (!agentsEnabled)
     return (
       <AppShell>
         <SetupNotice />

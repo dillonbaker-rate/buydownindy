@@ -5,13 +5,13 @@ import { ProfileForm } from "@/components/agent/ProfileForm";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent, getMyListings } from "@/lib/data";
 import { isRateAdmin } from "@/lib/rates";
-import { supabaseConfigured } from "@/lib/supabase/env";
+import { agentsEnabled } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My listings · BuyDown Indy" };
 
 export default async function AgentPage() {
-  if (!supabaseConfigured)
+  if (!agentsEnabled)
     return (
       <AppShell>
         <SetupNotice />

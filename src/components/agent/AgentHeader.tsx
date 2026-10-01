@@ -26,7 +26,7 @@ export function SetupNotice() {
       <div className="mx-auto flex max-w-[560px] flex-col gap-2.5 p-4 lg:p-8">
         <h1 className="text-[26px]">Agent accounts aren&apos;t set up yet</h1>
         <p className="m-0 text-sm text-neutral-700">
-          This deployment is running in demo mode with sample listings. Connect Supabase (see README) to turn on agent sign-in,
+          This deployment is showing sample listings only. Connect Supabase (see README) to turn on agent sign-in,
           posting, and photo uploads.
         </p>
         <Link href="/" className="btn btn-primary self-start">

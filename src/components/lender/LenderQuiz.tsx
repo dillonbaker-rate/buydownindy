@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { FREE_TO_CHOOSE, LENDER_CONSENT } from "@/content/disclosures";
 import { priceRangeFor, QUIZ, type QuizAnswer, type QuizQuestion } from "@/content/lender-quiz";
 import { kUsd, usd } from "@/lib/buydown";
+import { LenderStrip } from "./LenderCard";
 import { commas, digitsOnly } from "@/lib/format";
 
 export interface QuizListing {
@@ -118,6 +119,9 @@ export function LenderQuiz({ listing, topic }: { listing: QuizListing | null; to
   if (sent)
     return (
       <div className="flex flex-col items-start gap-2.5">
+        <div className="mb-2 w-full">
+          <LenderStrip />
+        </div>
         <span className="grid h-11 w-11 place-items-center rounded-full bg-accent text-white">
           <Check size={16} strokeWidth={2.5} />
         </span>
@@ -138,6 +142,9 @@ export function LenderQuiz({ listing, topic }: { listing: QuizListing | null; to
 
   return (
     <div className="flex flex-col gap-5">
+      <div className="sticky top-0 z-10 -mx-1 bg-bg px-1 pt-1 pb-1">
+        <LenderStrip />
+      </div>
       <div className="flex flex-col gap-1">
         <div className="text-xs text-neutral-700">
           {topic === "points" ? "Permanent buydowns (points)" : "Talk to a lender"}

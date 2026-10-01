@@ -30,6 +30,7 @@ import { CLOSING_COST_PCT } from "@/content/program-rules";
 import { useIsDesktop } from "@/lib/hooks";
 import { longDate, rateFor, type RateInfo } from "@/lib/rate-info";
 import type { Listing } from "@/lib/types";
+import { LenderCard } from "@/components/lender/LenderCard";
 import { Gallery } from "./Gallery";
 import { OptionCard } from "./OptionCard";
 
@@ -93,11 +94,9 @@ export function ListingView({
         Contact listing agent
         <ArrowRight size={16} className="ml-auto" />
       </button>
-      <Link href={lenderHref} className="btn btn-secondary btn-flush px-4 py-3.5 text-[15px]">
-        Talk to a lender
-        <ArrowRight size={16} className="ml-auto" />
-      </Link>
-      <div className="text-xs text-neutral-700">{FREE_TO_USE}</div>
+      <div className="mt-2">
+        <LenderCard contactHref={lenderHref} />
+      </div>
     </div>
   );
 
@@ -112,7 +111,7 @@ export function ListingView({
             gridTemplateColumns: desk ? "minmax(0,1fr) 360px" : "minmax(0,1fr)",
             gridTemplateAreas: desk
               ? '"details side" "headline side" "options side" "disc side"'
-              : '"details" "headline" "side" "options" "disc"',
+              : '"details" "headline" "side" "options" "lender" "disc"',
           }}
         >
           {/* Details */}
@@ -252,7 +251,7 @@ export function ListingView({
                 )}
                 <span>
                   Cash to close with no concession: {usd(c.downPayment + c.closingCosts)} ({usd(c.downPayment)} down +{" "}
-                  {usd(c.closingCosts)} est. closing costs).
+                  {usd(c.closingCosts)} est. closing costs, including estimated taxes and insurance).
                 </span>
               </div>
             </div>
@@ -269,6 +268,12 @@ export function ListingView({
             </div>
             {desk && actions}
           </div>
+
+          {!desk && (
+            <div className="pb-5" style={{ gridArea: "lender" }}>
+              <LenderCard contactHref={lenderHref} />
+            </div>
+          )}
 
           {/* Options */}
           <div className="py-5" style={{ gridArea: "options" }}>

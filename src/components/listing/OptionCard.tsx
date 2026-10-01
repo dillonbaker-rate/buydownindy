@@ -171,7 +171,7 @@ export function OptionCard({
           <div className="flex flex-col">
             {[
               ["Down payment", usd(o.cash.down), "Seller credit can't pay this"],
-              ["Closing costs (est.)", usd(o.cash.closing), `${CLOSING_COST_PCT}% of the loan`],
+              ["Closing costs (est.)", usd(o.cash.closing), `${CLOSING_COST_PCT}% of the loan, incl. estimated taxes & insurance`],
               ["Seller credit", o.cash.credit > 0.5 ? "−" + usd(o.cash.credit) : "$0", "Toward closing costs only"],
             ].map(([label, v, hint]) => (
               <div key={label} className="flex items-baseline justify-between gap-2 border-b border-divider py-[7px]">
@@ -183,7 +183,10 @@ export function OptionCard({
               </div>
             ))}
             <div className="flex items-baseline justify-between gap-2 py-[7px]">
-              <span className="text-[13px] font-semibold">Cash to close (est.)</span>
+              <span className="flex flex-col">
+                <span className="text-[13px] font-semibold">Cash to close (est.)</span>
+                <span className="text-[11px] text-neutral-700">Estimate; see disclosures</span>
+              </span>
               <span className="text-[22px] font-bold tracking-[-0.03em]" style={{ color: o.state === "unlocked" ? st.hi : undefined }}>
                 {usd(o.cash.total)}
               </span>

@@ -1,0 +1,57 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { LENDER_CONSENT } from "@/content/disclosures";
+import { supabaseConfigured } from "@/lib/supabase/env";
+import { createAdminClient } from "@/lib/supabase/server";
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const Lead = z.object({
+  listingId: z.string().max(64),
+  listingLabel: z.string().max(200),
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().regex(/^\S+@\S+\.\S+$/).max(200),
+  phone: z
+    .string()
+    .max(40)
+    .refine((p) => p.replace(/\D/g, "").length >= 10),
+  message: z.string().max(2000).optional(),
+  consent: z.literal(true),
+  consentText: z.string(),
+});
+
+export async function POST(req: Request) {
+  const parsed = Lead.safeParse(await req.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Please check the form and try again." }, { status: 400 });
+  const d = parsed.data;
+  // COMPLIANCE: store the exact consent wording shown, plus a server timestamp.
+  if (d.consentText !== LENDER_CONSENT) return NextResponse.json({ error: "Consent text is out of date. Refresh the page." }, { status: 400 });
+
+  const row = {
+    listing_id: UUID.test(d.listingId) ? d.listingId : null,
+    listing_label: d.listingLabel,
+    name: d.name,
+    email: d.email,
+    phone: d.phone,
+    message: d.message ?? null,
+    consent_at: new Date().toISOString(),
+    consent_text: LENDER_CONSENT,
+    user_agent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
+  };
+
+  if (!supabaseConfigured) {
+    console.info("[demo] lead received (Supabase not configured):", row.listing_label, row.email);
+    return NextResponse.json({ ok: true, demo: true });
+  }
+  const admin = createAdminClient();
+  if (!admin) {
+    console.error("SUPABASE_SERVICE_ROLE_KEY missing; cannot store lead");
+    return NextResponse.json({ error: "We couldn't send that right now. Please try again later." }, { status: 503 });
+  }
+  const { error } = await admin.from("leads").insert(row);
+  if (error) {
+    console.error("lead insert", error.message);
+    return NextResponse.json({ error: "We couldn't send that right now. Please try again later." }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}

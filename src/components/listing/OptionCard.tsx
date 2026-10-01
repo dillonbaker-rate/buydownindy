@@ -1,0 +1,135 @@
+import { Check, Lock, TriangleAlert } from "lucide-react";
+import type { CSSProperties, ReactNode } from "react";
+import { saving, usd, type BuydownOption, type OptionState } from "@/lib/buydown";
+
+interface StateStyle {
+  bg: string;
+  border: string;
+  borderStyle: "solid" | "dashed";
+  tagBg: string;
+  tagFg: string;
+  label: string;
+  icon: ReactNode;
+  dim: number;
+  hi: string;
+  note: string;
+}
+
+export const STATE_STYLE: Record<OptionState, StateStyle> = {
+  unlocked: {
+    bg: "var(--color-bg)",
+    border: "var(--color-accent-300)",
+    borderStyle: "solid",
+    tagBg: "var(--color-accent)",
+    tagFg: "#fff",
+    label: "Unlocked",
+    icon: <Check size={12} strokeWidth={2.5} />,
+    dim: 1,
+    hi: "var(--color-accent)",
+    note: "var(--color-accent-700)",
+  },
+  locked: {
+    bg: "transparent",
+    border: "var(--color-neutral-400)",
+    borderStyle: "dashed",
+    tagBg: "var(--color-neutral-200)",
+    tagFg: "var(--color-neutral-800)",
+    label: "Locked",
+    icon: <Lock size={12} />,
+    dim: 0.45,
+    hi: "var(--color-ink)",
+    note: "var(--color-neutral-800)",
+  },
+  over: {
+    bg: "var(--color-warn-bg)",
+    border: "var(--color-warn-border)",
+    borderStyle: "solid",
+    tagBg: "var(--color-warn-tag)",
+    tagFg: "var(--color-warn-text)",
+    label: "Over limit",
+    icon: <TriangleAlert size={12} />,
+    dim: 0.55,
+    hi: "var(--color-ink)",
+    note: "var(--color-warn-text)",
+  },
+  avail: {
+    bg: "var(--color-bg)",
+    border: "var(--color-divider)",
+    borderStyle: "solid",
+    tagBg: "var(--color-neutral-200)",
+    tagFg: "var(--color-neutral-800)",
+    label: "Available",
+    icon: null,
+    dim: 1,
+    hi: "var(--color-ink)",
+    note: "var(--color-neutral-800)",
+  },
+};
+
+export function StatePill({ state, style }: { state: OptionState; style?: CSSProperties }) {
+  const st = STATE_STYLE[state];
+  return (
+    <span className="tag flex-none font-semibold" style={{ background: st.tagBg, color: st.tagFg, ...style }}>
+      {st.icon}
+      {st.label}
+    </span>
+  );
+}
+
+/** One option in "What $X can do". Savings bars are scaled to the largest saving on the page. */
+export function OptionCard({ o, base, maxSave }: { o: BuydownOption; base: number; maxSave: number }) {
+  const st = STATE_STYLE[o.state];
+  return (
+    <div
+      className="lift lift-sm flex flex-col gap-2.5 rounded-[20px] p-4"
+      style={{ background: st.bg, border: `1.5px ${st.borderStyle} ${st.border}` }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="text-[17px] leading-[1.2] font-bold">{o.name}</div>
+          <div className="text-xs text-neutral-700">{o.sub}</div>
+        </div>
+        <StatePill state={o.state} />
+      </div>
+      <div className="flex flex-col" style={{ opacity: st.dim }}>
+        {o.rows.map((r) => {
+          const sv = saving(base, r.v);
+          const color = r.hi && o.state === "unlocked" ? st.hi : "var(--color-ink)";
+          const bar =
+            o.state === "unlocked"
+              ? "var(--color-accent)"
+              : o.state === "avail"
+                ? "var(--color-ink)"
+                : "var(--color-neutral-500)";
+          return (
+            <div key={r.label} className="flex flex-col gap-1 border-b border-divider py-[7px]">
+              <div className="flex items-baseline justify-between">
+                <span className="text-[13px]">{r.label}</span>
+                <span className="text-[22px] font-bold tracking-[-0.03em]" style={{ color }}>
+                  {usd(r.v)}
+                </span>
+              </div>
+              <div className="grid grid-cols-[minmax(0,1fr)_52px] items-center gap-2">
+                <span className="h-1.5 overflow-hidden rounded-full bg-neutral-200">
+                  <span
+                    className="block h-full rounded-full transition-[width] duration-500 ease-[cubic-bezier(.2,.8,.2,1)]"
+                    style={{ width: sv > 0.5 ? Math.max(3, (sv / maxSave) * 100) + "%" : "0%", background: bar }}
+                  />
+                </span>
+                <span className="text-right text-[11px] font-semibold">{sv > 0.5 ? "−" + usd(sv) : "—"}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex justify-between gap-2 text-xs text-neutral-800">
+        <span>Cost to seller</span>
+        <span className="font-semibold">{o.costLabel}</span>
+      </div>
+      <div className="flex items-start gap-1.5 text-[13px] font-semibold" style={{ color: st.note }}>
+        {o.state === "over" && <TriangleAlert size={15} className="mt-0.5 flex-none" />}
+        <span>{o.note}</span>
+      </div>
+    </div>
+  );
+}

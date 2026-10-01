@@ -94,7 +94,7 @@ export const QUIZ: MainQuestion[] = [
             id: "lenderChoice",
             kind: "single",
             prompt: "What will decide which lender you choose?",
-            options: opts("Lowest rate", "Lowest fees", "Closing on time", "Clear communication", "Someone local"),
+            options: opts("Lowest rate", "Lowest monthly payment", "Lowest fees", "Clear communication", "Someone local"),
           },
   },
   {

@@ -4,7 +4,8 @@ import { LENDER_CONSENT } from "@/content/disclosures";
 import { cookies } from "next/headers";
 import { INVITE_COOKIE, openInvite } from "@/lib/invites";
 import { sendLeadEmail } from "@/lib/lead-email";
-import { supabaseConfigured } from "@/lib/supabase/env";
+import { saveDemoLead } from "@/lib/leads";
+import { demoMode, supabaseConfigured } from "@/lib/supabase/env";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -73,6 +74,22 @@ export async function POST(req: Request) {
 
   if (!supabaseConfigured) {
     console.info("[demo] lead received (Supabase not configured):", row.listing_label, row.email, row.topic, "invite:", row.invite_code, row.answers);
+    if (demoMode)
+      await saveDemoLead({
+        createdAt: new Date().toISOString(),
+        name: row.name,
+        email: row.email,
+        phone: row.phone,
+        message: row.message,
+        topic: d.topic,
+        listingId: d.listingId ?? null,
+        listingLabel: row.listing_label,
+        answers: d.answers,
+        consentAt: row.consent_at,
+        consentText: row.consent_text,
+        inviteCode: row.invite_code,
+        invitedBy: invite ? `${invite.agentName}, ${invite.brokerage}` : null,
+      });
     notify();
     return NextResponse.json({ ok: true, demo: true });
   }

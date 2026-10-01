@@ -9,6 +9,9 @@ export interface AccountSummary {
   email: string;
   photoUrl: string | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
+  /** Unworked leads, shown on the Leads menu item (super admin). */
+  newLeads: number;
   /** Signed in but hasn't saved an agent profile yet. */
   needsProfile: boolean;
   canSignOut: boolean;
@@ -48,6 +51,7 @@ export function AccountMenu({ me }: { me: AccountSummary }) {
           {me.photoUrl ? <img src={me.photoUrl} alt="" className="h-full w-full object-cover" /> : first.slice(0, 1).toUpperCase()}
         </span>
         <span className="hidden max-w-[140px] truncate text-sm font-semibold sm:inline">{first}</span>
+        {me.newLeads > 0 && <span className="h-2 w-2 rounded-full bg-accent" aria-label={`${me.newLeads} new leads`} />}
         <ChevronDown size={14} className="text-neutral-600" />
       </button>
       {open && (
@@ -75,7 +79,15 @@ export function AccountMenu({ me }: { me: AccountSummary }) {
           )}
           {me.isAdmin && (
             <>
-              <div className="border-t border-divider px-4 pt-2 pb-1 text-[11px] text-neutral-700">Admin</div>
+              <div className="border-t border-divider px-4 pt-2 pb-1 text-[11px] text-neutral-700">
+                {me.isSuperAdmin ? "Super admin" : "Admin"}
+              </div>
+              {me.isSuperAdmin && (
+                <Link href="/agent/leads" role="menuitem" className={item} onClick={() => setOpen(false)}>
+                  <span className="flex-1">Leads</span>
+                  {me.newLeads > 0 && <span className="tag bg-accent font-semibold text-white">{me.newLeads} new</span>}
+                </Link>
+              )}
               <Link href="/agent/rates" role="menuitem" className={item} onClick={() => setOpen(false)}>
                 Today&apos;s rates
               </Link>

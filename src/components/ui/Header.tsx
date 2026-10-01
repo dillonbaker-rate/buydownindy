@@ -2,6 +2,7 @@ import { Star } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { getCurrentAgent } from "@/lib/data";
+import { countNewLeads, isSuperAdmin } from "@/lib/leads";
 import { isAdmin } from "@/lib/rates";
 import { agentsEnabled, supabaseConfigured } from "@/lib/supabase/env";
 import { AccountMenu } from "./AccountMenu";
@@ -27,6 +28,8 @@ export function Wordmark() {
  */
 export async function Header({ children, hideSignIn }: { children?: ReactNode; hideSignIn?: boolean }) {
   const me = agentsEnabled ? await getCurrentAgent().catch(() => null) : null;
+  const superAdmin = !!me && isSuperAdmin(me.email);
+  const newLeads = superAdmin ? await countNewLeads().catch(() => 0) : 0;
   return (
     <header className="flex flex-none items-center gap-2 border-b border-divider bg-bg px-4 py-2.5 lg:px-8">
       <div className="mr-auto flex min-w-0 items-center gap-2 sm:gap-3">
@@ -37,7 +40,9 @@ export async function Header({ children, hideSignIn }: { children?: ReactNode; h
               name: me.agent?.name ?? "",
               email: me.email,
               photoUrl: me.agent?.photoUrl ?? null,
-              isAdmin: isAdmin(me.email),
+              isAdmin: isAdmin(me.email) || superAdmin,
+              isSuperAdmin: superAdmin,
+              newLeads,
               needsProfile: !me.agent,
               canSignOut: supabaseConfigured,
             }}

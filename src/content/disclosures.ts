@@ -4,12 +4,20 @@
 export const FOOTER_LINE =
   "Powered by Dillon Baker, NMLS #2681440 | Rate NMLS #2611 | Equal Housing Opportunity";
 
-export const RATE_LINE = (weekOf: string, rate: string) =>
-  ({
-    lead: `Rate as of week of ${weekOf}:`,
-    // COMPLIANCE: advertised-rate rules — this is a survey average labeled as a sample, not an offered rate.
-    body: `${rate} sample rate, based on the Freddie Mac Primary Mortgage Market Survey weekly average for a 30-year fixed-rate mortgage. All figures on this page are estimates for illustration only. They are not a loan offer, a rate quote, a Loan Estimate, or a commitment to lend.`,
-  }) as const;
+export const RATE_LINE = (info: { source: "daily" | "pmms"; date: string; rates: string }) =>
+  info.source === "daily"
+    ? ({
+        lead: `Rates as of ${info.date}:`,
+        // COMPLIANCE: Rate's own daily rates are advertised rates. Before launch compliance must
+        // approve this wording and supply the pricing assumptions (points, credit score, LTV, loan
+        // amount, occupancy) and APR that have to appear with them.
+        body: `${info.rates} 30-year fixed rates offered by Rate on this date, used here as example rates. Your rate depends on your credit, down payment, loan amount, and other factors. All figures on this page are estimates for illustration only. They are not a loan offer, a rate quote, a Loan Estimate, or a commitment to lend.`,
+      } as const)
+    : ({
+        lead: `Rate as of week of ${info.date}:`,
+        // COMPLIANCE: advertised-rate rules — this is a survey average labeled as a sample, not an offered rate.
+        body: `${info.rates} sample rate, based on the Freddie Mac Primary Mortgage Market Survey weekly average for a 30-year fixed-rate mortgage. All figures on this page are estimates for illustration only. They are not a loan offer, a rate quote, a Loan Estimate, or a commitment to lend.`,
+      } as const);
 
 export const EDUCATIONAL_LINE =
   "BuyDown Indy is an educational tool. It does not provide tax, legal, or financial advice. Talk to a licensed loan officer and a tax professional about your situation.";

@@ -27,6 +27,7 @@ import {
 } from "@/lib/buydown";
 import { CLOSING_COST_PCT } from "@/content/program-rules";
 import { useIsDesktop } from "@/lib/hooks";
+import { longDate, rateFor, type RateInfo } from "@/lib/rate-info";
 import type { Listing } from "@/lib/types";
 import { Gallery } from "./Gallery";
 import { LenderModal } from "./LenderModal";
@@ -34,13 +35,11 @@ import { OptionCard } from "./OptionCard";
 
 export function ListingView({
   listing: l,
-  rate: baseRate,
-  weekOf,
+  rateInfo,
   preferredType,
 }: {
   listing: Listing;
-  rate: number;
-  weekOf: string;
+  rateInfo: RateInfo;
   preferredType?: LoanType;
 }) {
   const desk = useIsDesktop();
@@ -54,6 +53,7 @@ export function ListingView({
   const [lender, setLender] = useState(false);
 
   const adj = CREDIT_RANGES[sc.credit].adj;
+  const baseRate = rateFor(rateInfo, sc.type);
   const c = calc(l.price, l.concession, sc.type, sc.down, adj, baseRate);
   const b = c.best;
   const bestY1 = b ? b.y1 : c.base;
@@ -61,7 +61,14 @@ export function ListingView({
   const cutW = b ? Math.max(2, ((c.base - c.cut) / (c.base - b.y1)) * 100) + "%" : "100%";
   const bestLabel = b ? (b.key === "perm" ? "Permanent buydown" : `${b.name}, year 1`) : "No buydown unlocked";
   const bestShort = b ? (b.key === "perm" ? "Permanent buydown" : b.name) : "Buydown";
-  const rateLine = RATE_LINE(weekOf, pct(baseRate));
+  const rateLine = RATE_LINE({
+    source: rateInfo.source,
+    date: longDate(rateInfo.date),
+    rates:
+      rateInfo.source === "daily"
+        ? `Conventional ${pct(rateInfo.rates.Conventional)}, FHA ${pct(rateInfo.rates.FHA)}, and VA ${pct(rateInfo.rates.VA)}`
+        : pct(rateInfo.rates.Conventional),
+  });
 
   const contact = () => {
     if (l.agentPhone) window.location.href = `tel:${l.agentPhone.replace(/[^0-9+]/g, "")}`;
@@ -255,7 +262,7 @@ export function ListingView({
                 onChange={(v) => setSc((s) => ({ ...s, credit: v }))}
                 options={CREDIT_RANGES.map((r, i) => ({ value: i, label: r.label }))}
               />
-              <div className="mt-1 text-[11px] text-neutral-700">Sample rate for this range: {pct(c.rate)}</div>
+              <div className="mt-1 text-[11px] text-neutral-700">{rateInfo.source === "daily" ? "Example rate" : "Sample rate"} for this range: {pct(c.rate)}</div>
             </div>
             {desk && actions}
           </div>

@@ -51,12 +51,6 @@ export interface Agent {
   phone: string;
 }
 
-export interface RateSnapshot {
-  weekOf: string; // ISO date
-  rate30yr: number;
-  source: "Freddie Mac PMMS";
-}
-
 export const COUNTIES = ["Boone", "Hamilton", "Hancock", "Hendricks", "Johnson", "Marion"] as const;
 export const LISTING_DAYS = 30;
 export const MAX_PHOTOS = 7;

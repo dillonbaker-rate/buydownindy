@@ -4,6 +4,7 @@ import { Dashboard } from "@/components/agent/Dashboard";
 import { ProfileForm } from "@/components/agent/ProfileForm";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent, getMyListings } from "@/lib/data";
+import { isRateAdmin } from "@/lib/rates";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +31,7 @@ export default async function AgentPage() {
     );
   const listings = await getMyListings(me.userId);
   return (
-    <AppShell header={<AgentHeader onDash />}>
+    <AppShell header={<AgentHeader onDash admin={isRateAdmin(me.email)} />}>
       <Dashboard agent={me.agent} listings={listings} />
     </AppShell>
   );

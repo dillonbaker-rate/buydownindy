@@ -1,8 +1,5 @@
 import type { LoanType } from "./buydown";
-import type { Listing, RateSnapshot } from "./types";
-
-/** Fallback rate when no RateSnapshot is available (the brief's sample). */
-export const FALLBACK_RATE: RateSnapshot = { weekOf: "2026-09-24", rate30yr: 6.25, source: "Freddie Mac PMMS" };
+import type { Listing } from "./types";
 
 const C3: LoanType[] = ["Conventional", "FHA", "VA"];
 const C2: LoanType[] = ["Conventional", "FHA"];

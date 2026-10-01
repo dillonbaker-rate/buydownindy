@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { MapScreen } from "@/components/map/MapScreen";
 import { AppShell } from "@/components/ui/Header";
-import { getLiveListings, getRate } from "@/lib/data";
+import { getLiveListings } from "@/lib/data";
+import { getRateInfo } from "@/lib/rates";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  const [listings, rate] = await Promise.all([getLiveListings(), getRate()]);
+  const [listings, rateInfo] = await Promise.all([getLiveListings(), getRateInfo()]);
   return (
     <AppShell
       header={
@@ -15,7 +16,7 @@ export default async function Home() {
         </Link>
       }
     >
-      <MapScreen listings={listings} rate={rate.rate30yr} />
+      <MapScreen listings={listings} rateInfo={rateInfo} />
     </AppShell>
   );
 }

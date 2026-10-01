@@ -2,7 +2,8 @@ import { redirect } from "next/navigation";
 import { AgentHeader, SetupNotice } from "@/components/agent/AgentHeader";
 import { PostWizard } from "@/components/agent/PostWizard";
 import { AppShell } from "@/components/ui/Header";
-import { getCurrentAgent, getRate } from "@/lib/data";
+import { getCurrentAgent } from "@/lib/data";
+import { getRateInfo } from "@/lib/rates";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
@@ -18,10 +19,10 @@ export default async function PostPage() {
   const me = await getCurrentAgent();
   if (!me) redirect("/agent/login?next=/agent/post");
   if (!me.agent) redirect("/agent");
-  const rate = await getRate();
+  const rateInfo = await getRateInfo();
   return (
     <AppShell header={<AgentHeader />}>
-      <PostWizard rate={rate.rate30yr} userId={me.userId} />
+      <PostWizard rateInfo={rateInfo} userId={me.userId} />
     </AppShell>
   );
 }

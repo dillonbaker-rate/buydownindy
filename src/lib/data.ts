@@ -1,9 +1,9 @@
 import "server-only";
 import type { LoanType } from "./buydown";
-import { FALLBACK_RATE, SAMPLE_LISTINGS } from "./sample-data";
+import { SAMPLE_LISTINGS } from "./sample-data";
 import { supabaseConfigured } from "./supabase/env";
 import { createClient } from "./supabase/server";
-import type { Agent, Listing, Photo, RateSnapshot } from "./types";
+import type { Agent, Listing, Photo } from "./types";
 
 // Columns + the listing agent's public contact info.
 const SELECT = "*, agent:agents(name, brokerage, email, phone)";
@@ -123,25 +123,3 @@ export async function getCurrentAgent(): Promise<{ userId: string; email: string
   const { data } = await sb.from("agents").select("*").eq("id", user.id).maybeSingle();
   return { userId: user.id, email: user.email ?? "", agent: (data as Agent | null) ?? null };
 }
-
-export async function getRate(): Promise<RateSnapshot> {
-  if (!supabaseConfigured) return FALLBACK_RATE;
-  const sb = await createClient();
-  const { data } = await sb
-    .from("rate_snapshots")
-    .select("week_of, rate_30yr")
-    .order("week_of", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!data) return FALLBACK_RATE;
-  return { weekOf: data.week_of, rate30yr: Number(data.rate_30yr), source: "Freddie Mac PMMS" };
-}
-
-/** "September 24, 2026" */
-export const formatWeek = (iso: string) =>
-  new Date(iso + "T12:00:00Z").toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });

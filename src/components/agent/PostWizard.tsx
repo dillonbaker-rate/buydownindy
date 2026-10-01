@@ -12,6 +12,7 @@ import { PHOTO_RIGHTS } from "@/content/disclosures";
 import { calc, kUsd, LOAN_TYPES, MIN_DOWN, pct, usd, type LoanType } from "@/lib/buydown";
 import { commas, digitsOnly, num } from "@/lib/format";
 import { useIsDesktop } from "@/lib/hooks";
+import { rateFor, rateNoun, type RateInfo } from "@/lib/rate-info";
 import type { Listing } from "@/lib/types";
 import { PhotoGrid, type FormPhoto } from "./PhotoGrid";
 
@@ -104,7 +105,7 @@ const HINTS = [
   "",
 ];
 
-export function PostWizard({ rate, userId, editing }: { rate: number; userId: string; editing?: Listing }) {
+export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; userId: string; editing?: Listing }) {
   const router = useRouter();
   const toast = useToast();
   const desk = useIsDesktop();
@@ -148,6 +149,7 @@ export function PostWizard({ rate, userId, editing }: { rate: number; userId: st
   const conc = num(f.conc);
   const ptype = LOAN_TYPES.find((t) => f.loans[t]) ?? "Conventional";
   const pdown = Math.max(f.down, MIN_DOWN[ptype]);
+  const rate = rateFor(rateInfo, ptype);
   const pc = useMemo(() => calc(price, conc, ptype, pdown, 0, rate), [price, conc, ptype, pdown, rate]);
   const pb = pc.best;
   const unlocks = pc.opts.filter((o) => o.key !== "cut");
@@ -463,7 +465,7 @@ export function PostWizard({ rate, userId, editing }: { rate: number; userId: st
                     ))}
                   </div>
                   <div className="text-xs text-neutral-700">
-                    Based on {num(f.price) ? usd(price) : "a sample $350,000 price"}, {ptype}, {pdown}% down, {pct(rate)} sample rate.
+                    Based on {num(f.price) ? usd(price) : "a sample $350,000 price"}, {ptype}, {pdown}% down, {pct(rate)} {rateNoun(rateInfo)}.
                   </div>
                 </div>
               </>

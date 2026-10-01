@@ -1,11 +1,12 @@
 import { House } from "lucide-react";
 import Link from "next/link";
 import { calc, kUsd, MIN_DOWN, typeFor, usd, type LoanType } from "@/lib/buydown";
+import { rateFor, type RateInfo } from "@/lib/rate-info";
 import type { Listing } from "@/lib/types";
 
-export function cardNumbers(l: Listing, rate: number, loanFilter?: LoanType | "Any") {
+export function cardNumbers(l: Listing, info: RateInfo, loanFilter?: LoanType | "Any") {
   const type = typeFor(l.loanTypes, loanFilter);
-  const c = calc(l.price, l.concession, type, Math.max(l.defaultDownPct, MIN_DOWN[type]), 0, rate);
+  const c = calc(l.price, l.concession, type, Math.max(l.defaultDownPct, MIN_DOWN[type]), 0, rateFor(info, type));
   const b = c.best;
   return {
     type,
@@ -26,18 +27,18 @@ export function PhotoOrPlaceholder({ url, alt, iconSize = 36 }: { url?: string; 
 
 export function ListingCard({
   listing: l,
-  rate,
+  rateInfo,
   loanFilter,
   selected,
   href,
 }: {
   listing: Listing;
-  rate: number;
+  rateInfo: RateInfo;
   loanFilter?: LoanType | "Any";
   selected?: boolean;
   href: string;
 }) {
-  const n = cardNumbers(l, rate, loanFilter);
+  const n = cardNumbers(l, rateInfo, loanFilter);
   return (
     <Link
       href={href}

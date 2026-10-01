@@ -124,3 +124,18 @@ create policy photos_insert_own on storage.objects for insert to authenticated
 drop policy if exists photos_delete_own on storage.objects;
 create policy photos_delete_own on storage.objects for delete to authenticated
   using (bucket_id = 'listing-photos' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ── Daily rates entered by Dillon (Rate's 30-yr fixed by program) ─────────
+-- If no row exists for today (Indianapolis time) the site falls back to Freddie Mac PMMS.
+create table if not exists public.daily_rates (
+  rate_date date primary key,
+  conventional numeric(5,3) not null check (conventional between 1 and 20),
+  fha numeric(5,3) not null check (fha between 1 and 20),
+  va numeric(5,3) not null check (va between 1 and 20),
+  entered_by uuid references auth.users (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+alter table public.daily_rates enable row level security;
+drop policy if exists daily_rates_read on public.daily_rates;
+create policy daily_rates_read on public.daily_rates for select using (true);
+-- Writes go through /api/rates (admin check + service role).

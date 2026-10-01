@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { ListingView } from "@/components/listing/ListingView";
 import { AppShell } from "@/components/ui/Header";
 import { kUsd, LOAN_TYPES, usd, type LoanType } from "@/lib/buydown";
-import { formatWeek, getListing, getRate } from "@/lib/data";
+import { getListing } from "@/lib/data";
+import { getRateInfo } from "@/lib/rates";
 
 type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ type?: string }> };
 
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function ListingPage({ params, searchParams }: Params) {
   const [{ id }, { type }] = await Promise.all([params, searchParams]);
-  const [l, rate] = await Promise.all([getListing(id), getRate()]);
+  const [l, rateInfo] = await Promise.all([getListing(id), getRateInfo()]);
   if (!l) notFound();
   const preferred = LOAN_TYPES.includes(type as LoanType) ? (type as LoanType) : undefined;
   return (
@@ -32,7 +33,7 @@ export default async function ListingPage({ params, searchParams }: Params) {
         </Link>
       }
     >
-      <ListingView listing={l} rate={rate.rate30yr} weekOf={formatWeek(rate.weekOf)} preferredType={preferred} />
+      <ListingView listing={l} rateInfo={rateInfo} preferredType={preferred} />
     </AppShell>
   );
 }

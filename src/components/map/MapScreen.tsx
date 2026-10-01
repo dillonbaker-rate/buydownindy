@@ -9,6 +9,7 @@ import { calc, kUsd, pct, saving, usd, type LoanType } from "@/lib/buydown";
 import { useIsDesktop } from "@/lib/hooks";
 import { CENTER_DESK, CENTER_PHONE } from "@/lib/map-config";
 import { COUNTIES, type Listing } from "@/lib/types";
+import { rateFor, rateNoun, type RateInfo } from "@/lib/rate-info";
 import type { LeafletMapHandle } from "./LeafletMap";
 
 const LeafletMap = dynamic(() => import("./LeafletMap").then((m) => m.LeafletMap), { ssr: false });
@@ -22,7 +23,7 @@ interface Filters {
 }
 const NO_FILTERS: Filters = { county: "All counties", min: 0, max: 0, conc: 0, loan: "Any" };
 
-export function MapScreen({ listings, rate }: { listings: Listing[]; rate: number }) {
+export function MapScreen({ listings, rateInfo }: { listings: Listing[]; rateInfo: RateInfo }) {
   const desk = useIsDesktop();
   const phone = !desk;
   const [view, setView] = useState<"map" | "list">("map");
@@ -58,6 +59,7 @@ export function MapScreen({ listings, rate }: { listings: Listing[]; rate: numbe
     const ex = listings.find((l) => l.isExample) ?? listings[0];
     if (!ex) return null;
     const type = ex.loanTypes.includes("Conventional") ? "Conventional" : ex.loanTypes[0];
+    const rate = rateFor(rateInfo, type);
     const c = calc(ex.price, ex.concession, type, ex.defaultDownPct, 0, rate);
     if (!c.best) return null;
     return {
@@ -66,9 +68,9 @@ export function MapScreen({ listings, rate }: { listings: Listing[]; rate: numbe
       best: "−" + usd(saving(c.base, c.best.y1)),
       cutW: ((c.base - c.cut) / (c.base - c.best.y1)) * 100 + "%",
       bestName: c.best.name,
-      basis: `${ex.address}, ${usd(ex.price)}, ${ex.defaultDownPct}% down, ${pct(rate)} sample rate`,
+      basis: `${ex.address}, ${usd(ex.price)}, ${ex.defaultDownPct}% down, ${pct(rate)} ${rateNoun(rateInfo)}`,
     };
-  }, [listings, rate]);
+  }, [listings, rateInfo]);
 
   const expanded = sheet === "full" || filtersOpen;
   const pick = (id: string) => {
@@ -345,7 +347,7 @@ export function MapScreen({ listings, rate }: { listings: Listing[]; rate: numbe
                 <ListingCard
                   key={l.id}
                   listing={l}
-                  rate={rate}
+                  rateInfo={rateInfo}
                   loanFilter={f.loan}
                   selected={l.id === selId}
                   href={href(l)}

@@ -28,6 +28,13 @@ explain that setup is needed.
 
 Remove the demo data later with `delete from listings where is_sample;`.
 
+## Daily rates
+
+Admins (emails in `ADMIN_EMAILS`) enter Rate's 30-year fixed Conventional, FHA and VA rates at
+`/agent/rates`. They're used until midnight Indianapolis time. On any day without an entry the site falls
+back to the latest Freddie Mac PMMS weekly average, labeled a sample rate. In local demo mode anyone on
+localhost can enter rates and they're saved to `.data/daily-rates.json`.
+
 ## Deploy (Vercel)
 
 Import the GitHub repo in Vercel, add the env vars from `.env.example`, deploy. `vercel.json` schedules

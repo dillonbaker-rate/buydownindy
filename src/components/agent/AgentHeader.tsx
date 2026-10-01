@@ -1,11 +1,16 @@
 import Link from "next/link";
 
-export function AgentHeader({ onDash }: { onDash?: boolean }) {
+export function AgentHeader({ onDash, admin }: { onDash?: boolean; admin?: boolean }) {
   return (
     <>
       <Link href="/agent" className="btn btn-ghost text-[13px] font-semibold">
         My listings
       </Link>
+      {admin && (
+        <Link href="/agent/rates" className="btn btn-ghost text-[13px] font-semibold">
+          Today&apos;s rates
+        </Link>
+      )}
       {onDash && (
         <Link href="/agent/post" className="btn btn-ghost text-[13px] font-semibold">
           Post a listing

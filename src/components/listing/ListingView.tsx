@@ -159,7 +159,7 @@ export function ListingView({
             </div>
             <div className="flex flex-wrap items-end justify-between gap-2">
               <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.02em] lg:text-[44px]">{usd(l.price)}</h1>
-              <ShareListing title={share.title} text={share.text} post={share.post} />
+              <ShareListing id={l.id} title={share.title} text={share.text} post={share.post} />
             </div>
             <div className="text-base">
               {l.address}, {l.city}, IN{l.zip ? " " + l.zip : ""}

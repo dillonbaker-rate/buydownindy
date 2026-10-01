@@ -1,7 +1,7 @@
 "use client";
 import { ArrowRight, BadgeCheck, Bath, BedDouble, ChevronDown, Maximize } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CountUp } from "@/components/ui/CountUp";
 import { Segmented } from "@/components/ui/Segmented";
 import { useToast } from "@/components/ui/Toast";
@@ -29,6 +29,7 @@ import {
 import { CLOSING_COST_PCT } from "@/content/program-rules";
 import { useIsDesktop } from "@/lib/hooks";
 import { longDate, rateFor, type RateInfo } from "@/lib/rate-info";
+import { extrasByOption } from "@/lib/piti";
 import type { Listing } from "@/lib/types";
 import { LenderCard } from "@/components/lender/LenderCard";
 import { Gallery } from "./Gallery";
@@ -51,14 +52,47 @@ export function ListingView({
   };
   const [sc, setSc] = useState(defaults);
   const [discOpen, setDiscOpen] = useState(false);
+  // Principal & interest, or the full payment with estimated taxes, insurance, MI and HOA (remembered per viewer).
+  const [full, setFullState] = useState(false);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("bd-full-payment") === "1") setFullState(true);
+    } catch {}
+  }, []);
+  const setFull = (v: boolean) => {
+    setFullState(v);
+    try {
+      localStorage.setItem("bd-full-payment", v ? "1" : "0");
+    } catch {}
+  };
 
   const adj = CREDIT_RANGES[sc.credit].adj;
   const baseRate = rateFor(rateInfo, sc.type);
   const c = calc(l.price, l.concession, sc.type, sc.down, adj, baseRate);
   const b = c.best;
   const bestY1 = b ? b.y1 : c.base;
-  const maxSave = Math.max(...c.opts.map((o) => Math.max(...o.rows.map((r) => c.base - r.v))), 1);
-  const cutW = b ? Math.max(2, ((c.base - c.cut) / (c.base - b.y1)) * 100) + "%" : "100%";
+  const ex = extrasByOption(l, c);
+  const addBase = full ? ex.base.total : 0;
+  const addCut = full ? ex.cut.total : 0;
+  // Payments in the current view (P&I or full). Buydown options share the list-price extras.
+  const P = { base: c.base + addBase, cut: c.cut + addCut, best: bestY1 + addBase };
+  const maxSave = Math.max(
+    ...c.opts.map((o) => Math.max(...o.rows.map((r) => P.base - (r.v + (full ? ex.forKey(o.key) : 0))))),
+    1,
+  );
+  const cutW = b ? Math.max(2, ((P.base - P.cut) / (P.base - P.best)) * 100) + "%" : "100%";
+  const viewToggle = (
+    <Segmented
+      label="Show payments as"
+      value={full ? "full" : "pi"}
+      onChange={(v) => setFull(v === "full")}
+      optClassName="!text-xs"
+      options={[
+        { value: "pi", label: "Principal & interest" },
+        { value: "full", label: "Full payment (PITI)" },
+      ]}
+    />
+  );
   const bestLabel = b ? (b.key === "perm" ? "Permanent buydown" : `${b.name}, year 1`) : "No buydown unlocked";
   const bestShort = b ? (b.key === "perm" ? "Permanent buydown" : b.name) : "Buydown";
   const rateLine = RATE_LINE({
@@ -178,21 +212,21 @@ export function ListingView({
             className="my-5 flex flex-col gap-3.5 rounded-[24px] bg-accent-100 p-4 text-ink lg:p-6"
             style={{ gridArea: "headline" }}
           >
-            <div className="text-[11px] font-semibold">Same {usd(l.concession)} from the seller · monthly P&amp;I</div>
+            <div className="text-[11px] font-semibold">Same {usd(l.concession)} from the seller · {full ? "full monthly payment, est." : "monthly P&I"}</div>
             <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-2">
               <div className="py-3.5 pr-2 pl-1">
                 <div className="text-[13px] font-semibold">{kUsd(l.concession)} price cut</div>
                 <div className="mt-2.5 mb-2 text-[38px] leading-none font-bold tracking-[-0.03em] lg:text-[76px]">
-                  <CountUp value={c.cut} from={c.base} />
+                  <CountUp value={P.cut} from={P.base} />
                 </div>
-                <div className="text-[13px] text-neutral-700">/mo · saves {usd(saving(c.base, c.cut))}</div>
+                <div className="text-[13px] text-neutral-700">/mo · saves {usd(saving(P.base, P.cut))}</div>
               </div>
               <div className="rounded-[18px] bg-bg px-4 py-3.5 text-ink shadow-md">
                 <div className="text-[13px] font-semibold">{bestLabel}</div>
                 <div className="mt-2.5 mb-2 text-[38px] leading-none font-bold tracking-[-0.03em] text-accent lg:text-[76px]">
-                  <CountUp value={bestY1} from={c.base} />
+                  <CountUp value={P.best} from={P.base} />
                 </div>
-                <div className="text-[13px] font-semibold text-accent-700">/mo · saves {usd(saving(c.base, bestY1))}</div>
+                <div className="text-[13px] font-semibold text-accent-700">/mo · saves {usd(saving(P.base, P.best))}</div>
               </div>
             </div>
             <div className="flex flex-col gap-2">
@@ -205,7 +239,7 @@ export function ListingView({
                   />
                 </span>
                 <span className="text-right font-bold">
-                  <CountUp value={saving(c.base, c.cut)} from={0} prefix="−" />
+                  <CountUp value={saving(P.base, P.cut)} from={0} prefix="−" />
                 </span>
               </div>
               <div className="grid grid-cols-[minmax(0,110px)_minmax(0,1fr)_64px] items-center gap-2.5 text-[13px]">
@@ -217,12 +251,13 @@ export function ListingView({
                   />
                 </span>
                 <span className="text-right font-bold">
-                  <CountUp value={saving(c.base, bestY1)} from={0} prefix="−" />
+                  <CountUp value={saving(P.base, P.best)} from={0} prefix="−" />
                 </span>
               </div>
             </div>
             <div className="border-t border-accent-200 pt-2.5 text-[13px] text-pretty text-neutral-800">
-              {bestNote(c)} With no concession: {usd(c.base)}/mo at {pct(c.rate)}.
+              {bestNote(c, addBase)} With no concession: {usd(P.base)}/mo at {pct(c.rate)}
+              {full ? ", including estimated taxes, insurance" + (ex.base.mi ? ", mortgage insurance" : "") + (ex.base.hoa ? " and HOA" : "") : ""}.
             </div>
           </section>
 
@@ -297,6 +332,32 @@ export function ListingView({
               />
               <div className="mt-1 text-[11px] text-neutral-700">{rateInfo.source === "daily" ? "Example rate" : "Sample rate"} for this range: {pct(c.rate)}</div>
             </div>
+            <div className="field">
+              <span className="field-label">Show payments as</span>
+              {viewToggle}
+              {full && (
+                <div className="mt-2 overflow-hidden rounded-[14px] border border-divider text-xs">
+                  {[
+                    ["Principal & interest", c.base, ""],
+                    ["Property taxes", ex.base.taxes, ex.base.taxesEstimated ? "est. 1% of price" : "from listing agent"],
+                    ["Homeowners insurance", ex.base.insurance, ex.base.insuranceEstimated ? "est. $5 per $1,000" : "from listing agent"],
+                    ...(ex.base.mi ? [[c.mi!.name.replace(/^./, (x) => x.toUpperCase()), ex.base.mi, `est. ${pct(c.mi!.pct)}/yr`] as const] : []),
+                    ...(ex.base.hoa ? [["HOA", ex.base.hoa, "from listing agent"] as const] : []),
+                  ].map(([k, v, hint]) => (
+                    <div key={k as string} className="flex justify-between gap-2 border-b border-divider px-3 py-1.5">
+                      <span>
+                        {k} {hint && <span className="text-neutral-600">({hint})</span>}
+                      </span>
+                      <span className="font-semibold">{usd(v as number)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between gap-2 bg-surface px-3 py-1.5 font-bold">
+                    <span>Full payment, no concession</span>
+                    <span>{usd(P.base)}/mo</span>
+                  </div>
+                </div>
+              )}
+            </div>
             {desk && actions}
           </div>
 
@@ -308,14 +369,26 @@ export function ListingView({
 
           {/* Options */}
           <div className="py-5" style={{ gridArea: "options" }}>
-            <h2 className="mb-1 text-[22px]">What {usd(l.concession)} can do</h2>
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-[22px]">What {usd(l.concession)} can do</h2>
+              <div className="w-full sm:w-auto">{viewToggle}</div>
+            </div>
             <p className="mt-0 mb-3.5 text-[13px] text-neutral-700">
               {c.limitTxt}. Cash to close is your down payment ({usd(c.downPayment)}) plus closing costs, estimated at{" "}
               {CLOSING_COST_PCT}% of the loan ({usd(c.closingCosts)}). Seller credits can pay closing costs, never the down payment.
             </p>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
               {c.opts.map((o) => (
-                <OptionCard key={o.key} o={o} base={c.base} maxSave={maxSave} askHref={`${lenderHref}&topic=points`} />
+                <OptionCard
+                  key={o.key}
+                  o={o}
+                  base={c.base}
+                  maxSave={maxSave}
+                  askHref={`${lenderHref}&topic=points`}
+                  full={full}
+                  extra={ex.forKey(o.key)}
+                  baseExtra={ex.base.total}
+                />
               ))}
             </div>
           </div>

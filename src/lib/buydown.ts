@@ -268,10 +268,11 @@ export function typeFor(accepted: LoanType[], preferred?: LoanType | "Any"): Loa
 }
 
 /** Sentence after the headline comparison, e.g. "Then $1,836 in year 2 and $2,047 from year 3." */
-export function bestNote(c: CalcResult): string {
+export function bestNote(c: CalcResult, add = 0): string {
   const b = c.best;
   if (!b) return "No buydown is available at this concession.";
-  if (b.k === 1) return `Then ${usd(c.base)} from year 2.`;
-  if (b.k === 2) return `Then ${usd(b.pays![1])} in year 2 and ${usd(c.base)} from year 3.`;
-  return `Then ${usd(b.pays![1])} in year 2, ${usd(b.pays![2])} in year 3, and ${usd(c.base)} after.`;
+  const base = c.base + add;
+  if (b.k === 1) return `Then ${usd(base)} from year 2.`;
+  if (b.k === 2) return `Then ${usd(b.pays![1] + add)} in year 2 and ${usd(base)} from year 3.`;
+  return `Then ${usd(b.pays![1] + add)} in year 2, ${usd(b.pays![2] + add)} in year 3, and ${usd(base)} after.`;
 }

@@ -96,13 +96,24 @@ export function OptionCard({
   base,
   maxSave,
   askHref,
+  full = false,
+  extra = 0,
+  baseExtra = 0,
 }: {
   o: BuydownOption;
   base: number;
   maxSave: number;
   /** Where "Ask a lender" options send the buyer. */
   askHref: string;
+  /** Show full monthly payments (PITI + MI + HOA) instead of principal and interest. */
+  full?: boolean;
+  /** Monthly taxes, insurance, MI and HOA for this option (full view). */
+  extra?: number;
+  /** The same extras at the list price, for savings against no concession. */
+  baseExtra?: number;
 }) {
+  const add = full ? extra : 0;
+  const baseAll = base + (full ? baseExtra : 0);
   const st = STATE_STYLE[o.state];
   if (o.state === "ask")
     return (
@@ -152,10 +163,12 @@ export function OptionCard({
       )}
       <div className="flex flex-col" style={{ opacity: st.dim }}>
         {o.rows.length > 0 && (
-          <div className="text-[11px] font-semibold text-neutral-700">Monthly payment (principal &amp; interest)</div>
+          <div className="text-[11px] font-semibold text-neutral-700">
+            {full ? "Full monthly payment (est. taxes, insurance, MI & HOA included)" : "Monthly payment (principal & interest)"}
+          </div>
         )}
         {o.rows.map((r) => {
-          const sv = saving(base, r.v);
+          const sv = saving(baseAll, r.v + add);
           const color = r.hi && o.state === "unlocked" ? st.hi : "var(--color-ink)";
           const bar =
             o.state === "unlocked"
@@ -168,7 +181,7 @@ export function OptionCard({
               <div className="flex items-baseline justify-between">
                 <span className="text-[13px]">{r.label}</span>
                 <span className="text-[22px] font-bold tracking-[-0.03em]" style={{ color }}>
-                  {usd(r.v)}
+                  {usd(r.v + add)}
                   <span className="text-[13px] font-semibold tracking-normal">/mo</span>
                 </span>
               </div>
@@ -226,7 +239,7 @@ export function OptionCard({
       </div>
       <div className="flex items-start gap-1.5 text-[13px] font-semibold" style={{ color: st.note }}>
         {o.state === "over" && <TriangleAlert size={15} className="mt-0.5 flex-none" />}
-        <span>{o.note}</span>
+        <span>{o.key === "cut" && full && o.rows[0] ? `Saves ${usd(saving(baseAll, o.rows[0].v + add))}/mo` : o.note}</span>
       </div>
     </div>
   );

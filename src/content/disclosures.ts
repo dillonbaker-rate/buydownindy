@@ -58,7 +58,8 @@ export const fullDisclaimer = (example: DisclosureSection): DisclosureSection[] 
   },
   {
     title: "What the payment includes",
-    body: "Payments shown are principal and interest only. They do not include property taxes, homeowners insurance, flood insurance, private mortgage insurance (PMI), FHA mortgage insurance premiums (upfront and monthly), the VA funding fee, or HOA dues. Your actual monthly payment will be higher.",
+    // COMPLIANCE: "Full payment" view (PITI) added after the design handoff; review the wording.
+    body: "Payments shown are principal and interest only unless you choose Full payment. Full payment adds estimated property taxes, homeowners insurance, mortgage insurance (conventional PMI estimated for a 740+ credit score, or the FHA annual premium), and any HOA dues the listing agent entered. Taxes and insurance come from the listing agent when provided and are otherwise estimated from the price. Neither view includes flood insurance or costs paid at closing. FHA loan amounts include the financed upfront premium and VA loan amounts include the financed funding fee. Your actual monthly payment will differ.",
   },
   {
     title: "Tax and insurance estimates",

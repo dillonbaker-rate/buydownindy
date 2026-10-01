@@ -25,6 +25,7 @@ import {
   usd,
   type LoanType,
 } from "@/lib/buydown";
+import { CLOSING_COST_PCT } from "@/content/program-rules";
 import { useIsDesktop } from "@/lib/hooks";
 import type { Listing } from "@/lib/types";
 import { Gallery } from "./Gallery";
@@ -231,6 +232,19 @@ export function ListingView({
                 <span>Loan {usd(c.loan)}</span>
                 <span>20%</span>
               </div>
+              <div className="mt-1 flex flex-col gap-0.5 text-[11px] text-neutral-700">
+                {c.upfront && (
+                  <span>
+                    Includes {usd(c.upfront.amount)} {c.upfront.name} ({pct(c.upfront.pct)}), financed.
+                  </span>
+                )}
+                {c.mi && (
+                  <span>
+                    Plus about {usd(c.mi.monthly)}/mo {c.mi.name}, not included in P&amp;I.
+                  </span>
+                )}
+                <span>Est. closing costs: {usd(c.closingCosts)} ({CLOSING_COST_PCT}% of the loan).</span>
+              </div>
             </div>
             <div className="field">
               <span className="field-label">Credit score range</span>
@@ -249,7 +263,10 @@ export function ListingView({
           {/* Options */}
           <div className="py-5" style={{ gridArea: "options" }}>
             <h2 className="mb-1 text-[22px]">What {usd(l.concession)} can do</h2>
-            <p className="mt-0 mb-3.5 text-[13px] text-neutral-700">{c.limitTxt}.</p>
+            <p className="mt-0 mb-3.5 text-[13px] text-neutral-700">
+              {c.limitTxt}. Closing costs are estimated at {CLOSING_COST_PCT}% of the loan ({usd(c.closingCosts)}); each
+              option shows how much of that you&apos;d still bring.
+            </p>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
               {c.opts.map((o) => (
                 <OptionCard key={o.key} o={o} base={c.base} maxSave={maxSave} />

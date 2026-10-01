@@ -39,6 +39,8 @@ Import the GitHub repo in Vercel, add the env vars from `.env.example`, deploy. 
 |---|---|
 | `src/lib/buydown.ts` | Payment engine (port of the prototype's `calc()`), tested in `buydown.test.ts` |
 | `src/content/disclosures.ts` | **All compliance copy** (disclosures, TCPA consent, footer). Edit here only. |
+| `src/content/program-rules.ts` | **Loan program rules** from Rate's official Buydown & IPC Calculator: concession limits, MI/MIP, FHA UFMIP, VA funding fee, 4%-of-loan closing-cost estimate |
+| `src/lib/rate-calc-parity.test.ts` | Checks the engine against Rate's calculator formulas across 96 scenarios |
 | `src/components/map/` | Map screen: Leaflet wrapper, bottom sheet, filters, hero |
 | `src/components/listing/` | Listing page, option cards, gallery, lender modal |
 | `src/components/agent/` | Posting wizard, photo grid (dnd-kit), dashboard, login |

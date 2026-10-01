@@ -58,6 +58,12 @@ export const fullDisclaimer = (example: DisclosureSection): DisclosureSection[] 
   },
   example,
   {
+    // COMPLIANCE: new copy (not in the approved design handoff). Closing-cost estimate and the
+    // financed FHA/VA fee follow Rate's Buydown & IPC Calculator; needs compliance review.
+    title: "Closing costs and loan fees",
+    body: "Closing costs and prepaids are estimated at 4% of the loan amount and will vary by lender, title company, and property. Seller credits can be used only for actual closing costs and prepaids. FHA loan amounts include the 1.75% upfront mortgage insurance premium and VA loan amounts include the first-use VA funding fee, both financed into the loan. Mortgage insurance estimates assume a 740+ credit score.",
+  },
+  {
     title: "Listing information",
     body: "Listing details, photos, price, and concession amounts are provided by the listing agent and are not verified by BuyDown Indy, Dillon Baker, or Rate. Listings may be sold, changed, or withdrawn at any time. Verify all information with the listing agent.",
   },

@@ -1,5 +1,18 @@
-// Payment engine. A faithful port of the prototype's calc().
+// Payment engine. A port of the prototype's calc(), with program rules (concession limits, MI and
+// upfront fees) from Rate's official Buydown & IPC Calculator via src/content/program-rules.ts.
 // All payments are principal and interest only on a 30-year fixed loan (360 payments).
+
+import {
+  CLOSING_COST_PCT,
+  convIpcPct,
+  convMiPct,
+  FHA_IPC_PCT,
+  FHA_UFMIP_PCT,
+  fhaMipPct,
+  FINANCE_UPFRONT_FEE,
+  VA_CONCESSION_PCT,
+  vaFundingFeePct,
+} from "@/content/program-rules";
 
 export type LoanType = "Conventional" | "FHA" | "VA";
 export const LOAN_TYPES: LoanType[] = ["Conventional", "FHA", "VA"];
@@ -33,6 +46,8 @@ export interface BuydownOption {
   note: string;
   /** Year-1 payment, used to pick the best option. */
   y1: number;
+  /** Estimated closing costs the buyer still pays with this option. */
+  buyerClosing: number;
   /** Temporary buydown length (1, 2 or 3). */
   k?: number;
   cost?: number;
@@ -42,7 +57,15 @@ export interface BuydownOption {
 
 export interface CalcResult {
   rate: number;
+  /** Loan amount including any financed upfront fee. */
   loan: number;
+  /** Price minus down payment, before financed fees. */
+  baseLoan: number;
+  ltv: number;
+  upfront: { name: string; pct: number; amount: number } | null;
+  /** Mortgage insurance (annual % and monthly $). Shown as a note; comparisons are P&I. */
+  mi: { name: string; pct: number; monthly: number } | null;
+  closingCosts: number;
   base: number;
   cut: number;
   limit: number;
@@ -74,10 +97,10 @@ export const pct = (r: number) => {
   return t + "%";
 };
 
-/** Program concession limit as a percent of price. */
+/** Program concession limit as a percent of price, by LTV for Conventional. */
 export function concessionLimitPct(type: LoanType, down: number): number {
-  if (type === "Conventional") return down < 10 ? 3 : down < 25 ? 6 : 9;
-  return type === "FHA" ? 6 : 4;
+  if (type === "Conventional") return convIpcPct(100 - down);
+  return type === "FHA" ? FHA_IPC_PCT : VA_CONCESSION_PCT;
 }
 
 export function calc(
@@ -89,15 +112,37 @@ export function calc(
   baseRate: number,
 ): CalcResult {
   const rate = baseRate + creditAdj;
-  const loan = price * (1 - down / 100);
+  const ltv = 100 - down;
+  const baseLoan = price * (1 - down / 100);
+
+  // Upfront fee (financed) and monthly mortgage insurance, per Rate's calculator.
+  const upPct = type === "FHA" ? FHA_UFMIP_PCT : type === "VA" ? vaFundingFeePct(down) : 0;
+  const finF = FINANCE_UPFRONT_FEE ? upPct / 100 : 0;
+  const loanFor = (p: number) => p * (1 - down / 100) * (1 + finF);
+  const loan = loanFor(price);
+  const upfront = upPct
+    ? { name: type === "FHA" ? "FHA upfront MIP" : "VA funding fee", pct: upPct, amount: (baseLoan * upPct) / 100 }
+    : null;
+  const miPct = type === "Conventional" ? convMiPct(ltv) : type === "FHA" ? fhaMipPct(baseLoan, ltv) : 0;
+  const mi = miPct ? { name: type === "FHA" ? "FHA annual MIP" : "mortgage insurance", pct: miPct, monthly: (loan * miPct) / 1200 } : null;
+
   const base = pmt(loan, rate);
   const lp = concessionLimitPct(type, down);
   const limit = (price * lp) / 100;
+  const vaUncapped = type === "VA";
   const limitTxt =
-    `${type} caps seller concessions at ${lp}% of the price (${usd(limit)})` +
-    (type === "Conventional" ? ` with ${down < 10 ? "under 10%" : down < 25 ? "10–25%" : "25%+"} down` : "");
+    type === "VA"
+      ? `VA caps seller concessions such as buydowns at ${lp}% of the price (${usd(limit)}). Normal closing costs aren't capped`
+      : `${type} caps seller concessions at ${lp}% of the price (${usd(limit)})` +
+        (type === "Conventional" ? ` with ${down < 10 ? "under 10%" : down < 25 ? "10–25%" : "25%+"} down` : "");
   const overTxt = `${type} ${lp}% limit is ${usd(limit)}`;
-  const cut = pmt((price - conc) * (1 - down / 100), rate);
+
+  const closingFor = (p: number) => (loanFor(p) * CLOSING_COST_PCT) / 100;
+  const closingCosts = closingFor(price);
+  /** Closing costs left for the buyer after `credit` dollars of seller money go toward them. */
+  const buyerPays = (credit: number, cc = closingCosts) => Math.max(cc - Math.max(credit, 0), 0);
+
+  const cut = pmt(loanFor(price - conc), rate);
 
   const opts: BuydownOption[] = [
     {
@@ -109,6 +154,7 @@ export function calc(
       rows: [{ label: "Every year", v: cut, hi: false }],
       note: `Saves ${usd(saving(base, cut))}/mo`,
       y1: cut,
+      buyerClosing: buyerPays(0, closingFor(price - conc)),
     },
   ];
 
@@ -137,6 +183,7 @@ export function calc(
       costLabel: usd(cost),
       pays,
       y1: pays[0],
+      buyerClosing: state === "locked" ? closingCosts : buyerPays(left),
       rows: pays
         .map((p, i) => ({ label: `Year ${i + 1}`, v: p, hi: true }))
         .concat([{ label: `Year ${k + 1} on`, v: base, hi: false }]),
@@ -145,9 +192,11 @@ export function calc(
           ? `Needs ${usd(cost - conc)} more`
           : state === "over"
             ? `Over limit: ${overTxt}`
-            : left >= 1
-              ? `${usd(left)} left for closing costs`
-              : "Uses the full concession",
+            : left - closingCosts >= 1
+              ? `${usd(left)} left covers all closing costs; ${usd(left - closingCosts)} would go unused`
+              : left >= 1
+                ? `${usd(left)} left for closing costs`
+                : "Uses the full concession",
     });
   }
 
@@ -165,6 +214,7 @@ export function calc(
     costLabel: red > 0 ? `~${ptsL} points (${usd(pcost)})` : "—",
     y1: pp,
     newRate: rate - red,
+    buyerClosing: red > 0 ? buyerPays(conc - pcost) : closingCosts,
     rows: [{ label: "Life of loan", v: red > 0 ? pp : base, hi: red > 0 }],
     note:
       red > 0
@@ -172,20 +222,27 @@ export function calc(
         : `Needs ${usd(loan * 0.005 - conc)} more`,
   });
 
+  const ccOver = !vaUncapped && conc > limit;
+  const ccExtra = conc - closingCosts;
   opts.push({
     key: "cc",
     name: "Closing cost credit",
     sub: "Covers fees and prepaids at closing",
-    state: conc > limit ? "over" : "unlocked",
+    state: ccOver ? "over" : "unlocked",
     costLabel: usd(conc),
     y1: base,
     rows: [{ label: "Every year", v: base, hi: false }],
-    note: conc > limit ? `Over limit: ${overTxt}` : `${usd(conc)} less cash to close`,
+    buyerClosing: buyerPays(conc),
+    note: ccOver
+      ? `Over limit: ${overTxt}`
+      : ccExtra >= 1
+        ? `Covers all ~${usd(closingCosts)} of closing costs. Credits can't exceed actual costs, so ${usd(ccExtra)} would go unused.`
+        : `${usd(conc)} less cash to close`,
   });
 
   const ok = opts.filter((o) => o.state === "unlocked" && o.key !== "cc");
   const best = ok.length ? ok.reduce((a, b) => (b.y1 < a.y1 ? b : a)) : null;
-  return { rate, loan, base, cut, limit, lp, limitTxt, opts, best };
+  return { rate, loan, baseLoan, ltv, upfront, mi, closingCosts, base, cut, limit, lp, limitTxt, opts, best };
 }
 
 /** Pick the loan type a listing should be shown with, given a filter preference. */

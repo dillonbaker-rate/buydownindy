@@ -122,9 +122,15 @@ export function OptionCard({ o, base, maxSave }: { o: BuydownOption; base: numbe
           );
         })}
       </div>
-      <div className="flex justify-between gap-2 text-xs text-neutral-800">
-        <span>Cost to seller</span>
-        <span className="font-semibold">{o.costLabel}</span>
+      <div className="flex flex-col gap-1 text-xs text-neutral-800">
+        <div className="flex justify-between gap-2">
+          <span>Cost to seller</span>
+          <span className="font-semibold">{o.costLabel}</span>
+        </div>
+        <div className="flex justify-between gap-2">
+          <span>Closing costs you pay (est.)</span>
+          <span className="font-semibold">{usd(o.buyerClosing)}</span>
+        </div>
       </div>
       <div className="flex items-start gap-1.5 text-[13px] font-semibold" style={{ color: st.note }}>
         {o.state === "over" && <TriangleAlert size={15} className="mt-0.5 flex-none" />}

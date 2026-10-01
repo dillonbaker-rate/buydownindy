@@ -1,8 +1,12 @@
 "use client";
 import Link from "next/link";
+import { useEffect } from "react";
 
 // Shown if something on an agent page crashes, with the message so it can be reported.
 export default function AgentError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    console.error("Agent page error:", error.message, error.stack);
+  }, [error]);
   return (
     <div className="mx-auto flex max-w-[560px] flex-col items-start gap-3 p-4 lg:p-8">
       <h1 className="text-[26px]">Something went wrong</h1>

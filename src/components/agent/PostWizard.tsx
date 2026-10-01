@@ -117,7 +117,10 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((s) => ({ ...s, [k]: v }));
   const scroller = useRef<HTMLDivElement>(null);
 
-  useEffect(() => scroller.current?.scrollTo({ top: 0 }), [step]);
+  // Braces matter: newer browsers return a Promise from scrollTo, and React would treat it as a cleanup function.
+  useEffect(() => {
+    scroller.current?.scrollTo({ top: 0 });
+  }, [step]);
 
   // Address typeahead
   const [sugg, setSugg] = useState<Suggestion[]>([]);

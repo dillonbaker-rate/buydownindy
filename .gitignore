@@ -44,3 +44,4 @@ next-env.d.ts
 # local demo storage
 /.data
 .vercel-old-personal-account
+/.next-prod

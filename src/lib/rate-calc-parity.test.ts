@@ -89,3 +89,57 @@ it("says when leftover seller money exceeds closing costs", () => {
   expect(o.buyerClosing).toBe(0);
   expect(o.note).toMatch(/covers all closing costs; \$1,19\d would go unused/);
 });
+
+describe("cash to close: down payment + closing costs; concessions never pay the down payment", () => {
+  // $350,000 Conventional 5% down: down $17,500; loan $332,500; closing costs 4% = $13,300.
+  const c = calc(350000, 10000, "Conventional", 5, 0, 6.25);
+  const o = (k: string) => c.opts.find((x) => x.key === k)!;
+
+  it("closing cost credit: $17,500 down + $13,300 closing − $10,000 credit = $20,800", () => {
+    expect(c.downPayment).toBe(17500);
+    expect(o("cc").cash).toEqual({ down: 17500, closing: 13300, credit: 10000, total: 20800 });
+  });
+
+  it("price cut: smaller down payment and closing costs, no credit", () => {
+    expect(o("cut").cash).toEqual({ down: 17000, closing: 12920, credit: 0, total: 29920 });
+  });
+
+  it("2-1 buydown: leftover $2,527 goes to closing costs only", () => {
+    const cash = o("t2").cash!;
+    expect(cash.down).toBe(17500);
+    expect(r(cash.credit)).toBe(2527);
+    expect(r(cash.total)).toBe(28273);
+  });
+
+  it("locked options apply no credit", () => {
+    expect(o("t3").cash).toEqual({ down: 17500, closing: 13300, credit: 0, total: 30800 });
+  });
+
+  it("permanent buydown cash depends on lender pricing", () => {
+    expect(o("perm").cash).toBeNull();
+  });
+
+  it("a credit bigger than closing costs never reduces the down payment", () => {
+    // $15k credit, closing costs only $13,300: $1,700 is unused, down payment stays $17,500.
+    const big = calc(350000, 15000, "Conventional", 10, 0, 6.25);
+    const cash = big.opts.find((x) => x.key === "cc")!.cash!;
+    expect(cash.down).toBe(35000);
+    expect(cash.credit).toBe(cash.closing);
+    expect(cash.total).toBe(35000);
+    expect(big.opts.find((x) => x.key === "cc")!.note).toContain("can't pay the down payment");
+  });
+
+  it("over-limit credit only counts up to the program limit", () => {
+    const over = calc(299900, 15000, "Conventional", 5, 0, 6.25); // limit $8,997
+    const cash = over.opts.find((x) => x.key === "cc")!.cash!;
+    expect(r(cash.credit)).toBe(8997);
+  });
+
+  it("VA 0% down: nothing to protect, credit covers closing costs only", () => {
+    const va = calc(299900, 15000, "VA", 0, 0, 6.25);
+    const cash = va.opts.find((x) => x.key === "cc")!.cash!;
+    expect(cash.down).toBe(0);
+    expect(cash.total).toBeGreaterThanOrEqual(0);
+    expect(cash.total).toBe(Math.max(cash.closing - 15000, 0));
+  });
+});

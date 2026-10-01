@@ -64,7 +64,7 @@ describe("brief fixture: $350,000 / $10,000 / Conventional 5% / 6.25%", () => {
     const o = opt(c, "cc");
     expect(r(o.y1)).toBe(2047);
     expect(o.state).toBe("unlocked");
-    expect(o.note).toBe("$10,000 less cash to close");
+    expect(o.note).toBe("$10,000 less cash to close. Your monthly payment doesn't change.");
   });
 
   it("best is the 2-1", () => {

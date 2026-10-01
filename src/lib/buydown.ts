@@ -48,6 +48,11 @@ export interface BuydownOption {
   y1: number;
   /** Estimated closing costs the buyer still pays with this option (null when it depends on lender pricing). */
   buyerClosing: number | null;
+  /**
+   * Estimated cash to close: down payment + closing costs, less seller credit applied to closing costs.
+   * Seller credit can never reduce the down payment. Null when it depends on lender pricing.
+   */
+  cash: { down: number; closing: number; credit: number; total: number } | null;
   /** Temporary buydown length (1, 2 or 3). */
   k?: number;
   cost?: number;
@@ -65,6 +70,8 @@ export interface CalcResult {
   /** Mortgage insurance (annual % and monthly $). Shown as a note; comparisons are P&I. */
   mi: { name: string; pct: number; monthly: number } | null;
   closingCosts: number;
+  /** Down payment at the list price. Seller concessions can't pay any of it. */
+  downPayment: number;
   base: number;
   cut: number;
   limit: number;
@@ -140,6 +147,14 @@ export function calc(
   const closingCosts = closingFor(price);
   /** Closing costs left for the buyer after `credit` dollars of seller money go toward them. */
   const buyerPays = (credit: number, cc = closingCosts) => Math.max(cc - Math.max(credit, 0), 0);
+  const downPayment = (price * down) / 100;
+  /** Cash to close when `credit` of seller money is available for closing costs (never the down payment). */
+  const cashFor = (credit: number, p = price) => {
+    const dp = (p * down) / 100;
+    const cc = closingFor(p);
+    const applied = Math.min(Math.max(credit, 0), cc);
+    return { down: dp, closing: cc, credit: applied, total: dp + cc - applied };
+  };
 
   const cut = pmt(loanFor(price - conc), rate);
 
@@ -154,6 +169,7 @@ export function calc(
       note: `Saves ${usd(saving(base, cut))}/mo`,
       y1: cut,
       buyerClosing: buyerPays(0, closingFor(price - conc)),
+      cash: cashFor(0, price - conc),
     },
   ];
 
@@ -182,7 +198,8 @@ export function calc(
       costLabel: usd(cost),
       pays,
       y1: pays[0],
-      buyerClosing: state === "locked" ? closingCosts : buyerPays(left),
+      buyerClosing: state === "unlocked" ? buyerPays(left) : closingCosts,
+      cash: cashFor(state === "unlocked" ? left : 0),
       rows: pays
         .map((p, i) => ({ label: `Year ${i + 1}`, v: p, hi: true }))
         .concat([{ label: `Year ${k + 1} on`, v: base, hi: false }]),
@@ -192,7 +209,7 @@ export function calc(
           : state === "over"
             ? `Over limit: ${overTxt}`
             : left - closingCosts >= 1
-              ? `${usd(left)} left covers all closing costs; ${usd(left - closingCosts)} would go unused`
+              ? `${usd(left)} left covers all closing costs; ${usd(left - closingCosts)} would go unused (it can't go toward the down payment)`
               : left >= 1
                 ? `${usd(left)} left for closing costs`
                 : "Uses the full concession",
@@ -209,31 +226,37 @@ export function calc(
     costLabel: "Set by the lender",
     y1: base,
     buyerClosing: null,
+    cash: null,
     rows: [],
     note: "Point pricing changes daily and differs by lender. Ask a loan officer for today's options.",
   });
 
   const ccOver = !vaUncapped && conc > limit;
-  const ccExtra = conc - closingCosts;
+  // Credit usable for closing costs: capped by the program limit (except VA closing costs) and by the
+  // actual closing costs. Anything left over is lost; it can't pay the down payment.
+  const ccUsable = Math.min(conc, vaUncapped ? conc : limit);
+  const ccCash = cashFor(ccUsable);
+  const ccExtra = conc - ccCash.credit;
   opts.push({
     key: "cc",
     name: "Closing cost credit",
-    sub: "Covers fees and prepaids at closing",
+    sub: "Lowers the cash you bring to closing",
     state: ccOver ? "over" : "unlocked",
     costLabel: usd(conc),
     y1: base,
-    rows: [{ label: "Every year", v: base, hi: false }],
-    buyerClosing: buyerPays(conc),
+    rows: [],
+    buyerClosing: ccCash.closing - ccCash.credit,
+    cash: ccCash,
     note: ccOver
-      ? `Over limit: ${overTxt}`
+      ? `Over limit: ${overTxt}. Only ${usd(ccCash.credit)} can be used.`
       : ccExtra >= 1
-        ? `Covers all ~${usd(closingCosts)} of closing costs. Credits can't exceed actual costs, so ${usd(ccExtra)} would go unused.`
-        : `${usd(conc)} less cash to close`,
+        ? `Covers all ~${usd(ccCash.closing)} of closing costs. Credits can't pay the down payment, so ${usd(ccExtra)} would go unused.`
+        : `${usd(ccCash.credit)} less cash to close. Your monthly payment doesn't change.`,
   });
 
   const ok = opts.filter((o) => o.state === "unlocked" && o.key !== "cc");
   const best = ok.length ? ok.reduce((a, b) => (b.y1 < a.y1 ? b : a)) : null;
-  return { rate, loan, baseLoan, ltv, upfront, mi, closingCosts, base, cut, limit, lp, limitTxt, opts, best };
+  return { rate, loan, baseLoan, ltv, upfront, mi, closingCosts, downPayment, base, cut, limit, lp, limitTxt, opts, best };
 }
 
 /** Pick the loan type a listing should be shown with, given a filter preference. */

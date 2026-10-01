@@ -250,7 +250,10 @@ export function ListingView({
                     Plus about {usd(c.mi.monthly)}/mo {c.mi.name}, not included in P&amp;I.
                   </span>
                 )}
-                <span>Est. closing costs: {usd(c.closingCosts)} ({CLOSING_COST_PCT}% of the loan).</span>
+                <span>
+                  Cash to close with no concession: {usd(c.downPayment + c.closingCosts)} ({usd(c.downPayment)} down +{" "}
+                  {usd(c.closingCosts)} est. closing costs).
+                </span>
               </div>
             </div>
             <div className="field">
@@ -271,8 +274,8 @@ export function ListingView({
           <div className="py-5" style={{ gridArea: "options" }}>
             <h2 className="mb-1 text-[22px]">What {usd(l.concession)} can do</h2>
             <p className="mt-0 mb-3.5 text-[13px] text-neutral-700">
-              {c.limitTxt}. Closing costs are estimated at {CLOSING_COST_PCT}% of the loan ({usd(c.closingCosts)}); each
-              option shows how much of that you&apos;d still bring.
+              {c.limitTxt}. Cash to close is your down payment ({usd(c.downPayment)}) plus closing costs, estimated at{" "}
+              {CLOSING_COST_PCT}% of the loan ({usd(c.closingCosts)}). Seller credits can pay closing costs, never the down payment.
             </p>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
               {c.opts.map((o) => (

@@ -1,6 +1,7 @@
 import { ArrowRight, Check, Lock, MessageCircle, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
+import { CLOSING_COST_PCT } from "@/content/program-rules";
 import { saving, usd, type BuydownOption, type OptionState } from "@/lib/buydown";
 
 interface StateStyle {
@@ -165,16 +166,42 @@ export function OptionCard({
             </div>
           );
         })}
+        {o.key === "cc" && o.cash && (
+          // Closing cost credit: show what the buyer brings to closing, not a monthly payment.
+          <div className="flex flex-col">
+            {[
+              ["Down payment", usd(o.cash.down), "Seller credit can't pay this"],
+              ["Closing costs (est.)", usd(o.cash.closing), `${CLOSING_COST_PCT}% of the loan`],
+              ["Seller credit", o.cash.credit > 0.5 ? "−" + usd(o.cash.credit) : "$0", "Toward closing costs only"],
+            ].map(([label, v, hint]) => (
+              <div key={label} className="flex items-baseline justify-between gap-2 border-b border-divider py-[7px]">
+                <span className="flex flex-col">
+                  <span className="text-[13px]">{label}</span>
+                  <span className="text-[11px] text-neutral-700">{hint}</span>
+                </span>
+                <span className="text-[17px] font-bold tracking-[-0.02em]">{v}</span>
+              </div>
+            ))}
+            <div className="flex items-baseline justify-between gap-2 py-[7px]">
+              <span className="text-[13px] font-semibold">Cash to close (est.)</span>
+              <span className="text-[22px] font-bold tracking-[-0.03em]" style={{ color: o.state === "unlocked" ? st.hi : undefined }}>
+                {usd(o.cash.total)}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
       <div className="flex flex-col gap-1 text-xs text-neutral-800">
         <div className="flex justify-between gap-2">
           <span>Cost to seller</span>
           <span className="font-semibold">{o.costLabel}</span>
         </div>
-        <div className="flex justify-between gap-2">
-          <span>Closing costs you pay (est.)</span>
-          <span className="font-semibold">{o.buyerClosing == null ? "—" : usd(o.buyerClosing)}</span>
-        </div>
+        {o.key !== "cc" && (
+          <div className="flex justify-between gap-2">
+            <span>Cash to close (est.)</span>
+            <span className="font-semibold">{o.cash ? usd(o.cash.total) : "—"}</span>
+          </div>
+        )}
       </div>
       <div className="flex items-start gap-1.5 text-[13px] font-semibold" style={{ color: st.note }}>
         {o.state === "over" && <TriangleAlert size={15} className="mt-0.5 flex-none" />}

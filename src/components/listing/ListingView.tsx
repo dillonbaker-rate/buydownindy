@@ -139,6 +139,14 @@ export function ListingView({
               </span>
             </div>
             <div className="text-xs text-neutral-700">{meta}</div>
+            {Boolean(l.taxesYr || l.insuranceYr) && (
+              <div className="text-xs text-neutral-700">
+                {[l.taxesYr ? `Est. property taxes ${usd(l.taxesYr)}/yr` : null, l.insuranceYr ? `est. insurance ${usd(l.insuranceYr)}/yr` : null]
+                  .filter(Boolean)
+                  .join(" · ")}{" "}
+                (not included in the payments shown)
+              </div>
+            )}
             {!l.isSample && (
               <div className="mt-2 flex items-center gap-3 rounded-[18px] border border-divider p-3">
                 <div className="grid h-12 w-12 flex-none place-items-center overflow-hidden rounded-full bg-neutral-300 font-bold text-neutral-600">

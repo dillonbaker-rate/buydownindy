@@ -38,3 +38,17 @@ export function vaFundingFeePct(downPct: number): number {
 
 /** Finance FHA UFMIP / VA funding fee into the loan (Rate calculator default). */
 export const FINANCE_UPFRONT_FEE = true;
+
+// ── Listing estimates (the "Estimate" button on the posting form) ─────────
+// COMPLIANCE: estimates only. Disclosed as estimates on the listing and in the full disclaimer.
+/** Indiana caps homestead property taxes at 1% of assessed value; local referendums can add to it. */
+export const PROPERTY_TAX_ESTIMATE_PCT = 1;
+/** Rough annual homeowners insurance per $1,000 of price. */
+export const INSURANCE_PER_1000 = 5;
+
+export function estimateTaxesAndInsurance(price: number) {
+  return {
+    taxesYr: Math.round((price * PROPERTY_TAX_ESTIMATE_PCT) / 100 / 10) * 10,
+    insuranceYr: Math.round(((price / 1000) * INSURANCE_PER_1000) / 10) * 10,
+  };
+}

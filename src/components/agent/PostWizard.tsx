@@ -1,5 +1,5 @@
 "use client";
-import { ArrowLeft, ArrowRight, House, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calculator, House, MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -9,6 +9,7 @@ import { CountUp } from "@/components/ui/CountUp";
 import { Segmented } from "@/components/ui/Segmented";
 import { useToast } from "@/components/ui/Toast";
 import { PHOTO_RIGHTS } from "@/content/disclosures";
+import { estimateTaxesAndInsurance, INSURANCE_PER_1000, PROPERTY_TAX_ESTIMATE_PCT } from "@/content/program-rules";
 import { calc, kUsd, LOAN_TYPES, MIN_DOWN, pct, usd, type LoanType } from "@/lib/buydown";
 import { commas, digitsOnly, num } from "@/lib/format";
 import { useIsDesktop } from "@/lib/hooks";
@@ -113,6 +114,7 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
   const [step, setStep] = useState(0);
   const [f, setF] = useState<Form>(() => (editing ? fromListing(editing) : blank()));
   const [busy, setBusy] = useState(false);
+  const [estimated, setEstimated] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((s) => ({ ...s, [k]: v }));
   const scroller = useRef<HTMLDivElement>(null);
@@ -514,13 +516,37 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
                     options={[3, 3.5, 5, 10, 20].map((v) => ({ value: v, label: v + "%" }))}
                   />
                 </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-[14px] bg-accent-100 p-3">
+                  <div className="text-[13px]">
+                    <strong>Don&apos;t have the numbers?</strong> Estimate taxes and insurance from the list price.
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-primary min-h-10 text-[13px]"
+                    disabled={!num(f.price)}
+                    onClick={() => {
+                      const e = estimateTaxesAndInsurance(num(f.price));
+                      setF((s) => ({ ...s, taxes: String(e.taxesYr), ins: String(e.insuranceYr) }));
+                      setEstimated(true);
+                    }}
+                  >
+                    <Calculator size={15} />
+                    Estimate
+                  </button>
+                </div>
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
                   {money("taxes", "Property taxes / yr", "$4,200")}
                   {money("ins", "Insurance / yr", "$1,500")}
                   {money("hoa", "HOA / mo", "$0")}
                 </div>
+                {estimated && (
+                  <div className="-mt-1 text-xs text-accent-800">
+                    Estimated: taxes at {PROPERTY_TAX_ESTIMATE_PCT}% of the price (Indiana&apos;s homestead cap) and insurance at $
+                    {INSURANCE_PER_1000} per $1,000. Edit them if you know the actual amounts.
+                  </div>
+                )}
                 <div className="text-xs text-neutral-700">
-                  Buyers can change these on the listing. Taxes, insurance and HOA show as notes; payment comparisons use principal and interest.
+                  Shown to buyers as estimates. Payment comparisons use principal and interest.
                 </div>
               </>
             )}

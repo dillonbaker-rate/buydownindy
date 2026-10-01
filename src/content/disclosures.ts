@@ -62,7 +62,7 @@ export const fullDisclaimer = (example: DisclosureSection): DisclosureSection[] 
   },
   {
     title: "Tax and insurance estimates",
-    body: "Property tax, insurance, and HOA figures are provided by the listing agent and have not been verified. Indiana property taxes are often reassessed after a sale, and the seller’s homestead or other deductions do not transfer to the buyer, so your taxes may be higher than the current bill. Insurance premiums vary by carrier, coverage, and the property’s condition and location.",
+    body: "Property tax, insurance, and HOA figures are provided by the listing agent and have not been verified. Taxes and insurance may be estimated from the list price (taxes at Indiana\u2019s 1% homestead cap, insurance at about $5 per $1,000 of price) rather than taken from an actual tax bill or insurance quote. Indiana property taxes are often reassessed after a sale, and the seller’s homestead or other deductions do not transfer to the buyer, so your taxes may be higher than the current bill. Insurance premiums vary by carrier, coverage, and the property’s condition and location.",
   },
   example,
   {

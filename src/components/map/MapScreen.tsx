@@ -264,8 +264,9 @@ export function MapScreen({
 
         {heroDesk && (
           <div className="relative mx-4 mt-3 mb-1 flex flex-col gap-3.5 rounded-[20px] bg-accent-100 px-[18px] pt-5 pb-[18px] text-ink">
-            <div className="max-w-[360px] pr-7 text-[26px] leading-[1.08] font-bold tracking-[-0.03em] text-pretty">
-              {hero.k} off the price barely moves your payment. {hero.k} toward a buydown moves it a lot.
+            <div className="pr-7 text-[clamp(20px,1.6vw,28px)] leading-[1.12] font-bold tracking-[-0.03em]">
+              <span className="block">{hero.k} off the price barely moves your payment.</span>
+              <span className="block">{hero.k} toward a buydown moves it a lot.</span>
             </div>
             <div className="flex flex-col gap-2 pt-1">
               <div className="grid grid-cols-[96px_minmax(0,1fr)_64px] items-center gap-2.5 text-[13px]">

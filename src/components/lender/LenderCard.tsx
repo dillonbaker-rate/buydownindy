@@ -1,16 +1,16 @@
 /* eslint-disable @next/next/no-img-element */
-import { ArrowUpRight, Mail, Phone, Smartphone } from "lucide-react";
+import { ArrowUpRight, Mail, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { FREE_TO_USE } from "@/content/disclosures";
 import { LENDER } from "@/content/lender";
 
 const tel = (p: string) => "+1" + p.replace(/\D/g, "");
 
-/** "Talk to a lender" contact card: photo, name, NMLS, Get pre-approved + Contact buttons. */
+/** Lender contact card ("Apply for buydowns"): photo, name, NMLS, email, mobile, Get pre-approved + Talk to a lender. */
 export function LenderCard({ contactHref }: { contactHref: string }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-[20px] border border-divider bg-bg p-4 text-center">
-      <div className="self-start text-xs text-neutral-700">Talk to a lender</div>
+      <div className="self-start text-xs text-neutral-700">Apply for buydowns</div>
       <img
         src={LENDER.photo}
         alt={`${LENDER.name}, ${LENDER.title} at ${LENDER.company}`}
@@ -32,15 +32,9 @@ export function LenderCard({ contactHref }: { contactHref: string }) {
           <Mail size={18} className="flex-none" aria-hidden />
           <span className="truncate">{LENDER.email}</span>
         </a>
-        <a href={`tel:${tel(LENDER.officePhone)}`} className="flex min-h-9 items-center gap-2.5 text-ink no-underline hover:text-accent">
-          <Phone size={18} className="flex-none" aria-hidden />
-          <span>{LENDER.officePhone}</span>
-          <span className="text-xs font-normal text-neutral-700">Office</span>
-        </a>
         <a href={`tel:${tel(LENDER.mobilePhone)}`} className="flex min-h-9 items-center gap-2.5 text-ink no-underline hover:text-accent">
           <Smartphone size={18} className="flex-none" aria-hidden />
           <span>{LENDER.mobilePhone}</span>
-          <span className="text-xs font-normal text-neutral-700">Mobile</span>
         </a>
       </div>
       <div className="flex w-full flex-col gap-2">
@@ -49,7 +43,7 @@ export function LenderCard({ contactHref }: { contactHref: string }) {
           <ArrowUpRight size={16} />
         </a>
         <Link href={contactHref} className="btn btn-secondary w-full !border-accent text-accent">
-          Contact {LENDER.firstName}
+          Talk to a lender
         </Link>
       </div>
       <div className="text-[11px] text-neutral-700">{FREE_TO_USE}</div>

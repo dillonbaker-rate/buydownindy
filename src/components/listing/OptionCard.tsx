@@ -137,6 +137,9 @@ export function OptionCard({
         <StatePill state={o.state} />
       </div>
       <div className="flex flex-col" style={{ opacity: st.dim }}>
+        {o.rows.length > 0 && (
+          <div className="text-[11px] font-semibold text-neutral-700">Monthly payment (principal &amp; interest)</div>
+        )}
         {o.rows.map((r) => {
           const sv = saving(base, r.v);
           const color = r.hi && o.state === "unlocked" ? st.hi : "var(--color-ink)";
@@ -152,16 +155,17 @@ export function OptionCard({
                 <span className="text-[13px]">{r.label}</span>
                 <span className="text-[22px] font-bold tracking-[-0.03em]" style={{ color }}>
                   {usd(r.v)}
+                  <span className="text-[13px] font-semibold tracking-normal">/mo</span>
                 </span>
               </div>
-              <div className="grid grid-cols-[minmax(0,1fr)_52px] items-center gap-2">
+              <div className="grid grid-cols-[minmax(0,1fr)_68px] items-center gap-2">
                 <span className="h-1.5 overflow-hidden rounded-full bg-neutral-200">
                   <span
                     className="block h-full rounded-full transition-[width] duration-500 ease-[cubic-bezier(.2,.8,.2,1)]"
                     style={{ width: sv > 0.5 ? Math.max(3, (sv / maxSave) * 100) + "%" : "0%", background: bar }}
                   />
                 </span>
-                <span className="text-right text-[11px] font-semibold">{sv > 0.5 ? "−" + usd(sv) : "—"}</span>
+                <span className="text-right text-[11px] font-semibold whitespace-nowrap">{sv > 0.5 ? "−" + usd(sv) + "/mo" : "—"}</span>
               </div>
             </div>
           );

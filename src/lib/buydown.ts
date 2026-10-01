@@ -165,7 +165,7 @@ export function calc(
       sub: "Lowers the price and the loan",
       state: "avail",
       costLabel: usd(conc),
-      rows: [{ label: "Every year", v: cut, hi: false }],
+      rows: [{ label: "Every month", v: cut, hi: false }],
       note: `Saves ${usd(saving(base, cut))}/mo`,
       y1: cut,
       buyerClosing: buyerPays(0, closingFor(price - conc)),

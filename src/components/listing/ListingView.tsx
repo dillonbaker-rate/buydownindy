@@ -30,6 +30,8 @@ import { CLOSING_COST_PCT } from "@/content/program-rules";
 import { useIsDesktop } from "@/lib/hooks";
 import { longDate, rateFor, type RateInfo } from "@/lib/rate-info";
 import { extrasByOption } from "@/lib/piti";
+import { shareSummary } from "@/lib/share";
+import { ShareListing } from "./ShareListing";
 import type { Listing } from "@/lib/types";
 import { LenderCard } from "@/components/lender/LenderCard";
 import { Gallery } from "./Gallery";
@@ -71,6 +73,7 @@ export function ListingView({
   const c = calc(l.price, l.concession, sc.type, sc.down, adj, baseRate);
   const b = c.best;
   const bestY1 = b ? b.y1 : c.base;
+  const share = shareSummary(l, rateInfo);
   const ex = extrasByOption(l, c);
   const addBase = full ? ex.base.total : 0;
   const addCut = full ? ex.cut.total : 0;
@@ -154,7 +157,10 @@ export function ListingView({
               <span className="tag tag-accent font-semibold">{usd(l.concession)} seller concession</span>
               {l.isSample && <span className="tag tag-neutral">Sample</span>}
             </div>
-            <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.02em] lg:text-[44px]">{usd(l.price)}</h1>
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.02em] lg:text-[44px]">{usd(l.price)}</h1>
+              <ShareListing title={share.title} text={share.text} />
+            </div>
             <div className="text-base">
               {l.address}, {l.city}, IN{l.zip ? " " + l.zip : ""}
             </div>

@@ -1,4 +1,5 @@
-// Cross-check: our engine vs. Rate's official Buydown & IPC Calculator.
+// Cross-check: our engine vs. Rate's official Buydown & IPC Calculator (except conventional MI,
+// which we price by credit score instead of Rate's single 740+ estimate).
 // `ref` below is transcribed from that calculator's calc() (price = appraised value, 30-yr fixed,
 // first-use VA, upfront fee financed, no temp-rate points). Both must agree to the dollar.
 import { describe, expect, it } from "vitest";
@@ -45,7 +46,8 @@ describe("parity with Rate's Buydown & IPC Calculator", () => {
             expect(r(c.loan)).toBe(r(R.loan));
             expect(r(c.limit)).toBe(r(R.cap));
             expect(r(c.base)).toBe(r(R.base));
-            expect(r(c.mi?.monthly ?? 0)).toBe(r(R.miMo));
+            // Conventional MI intentionally differs: we price it by credit score (program-rules.ts).
+            if (program !== "conv") expect(r(c.mi?.monthly ?? 0)).toBe(r(R.miMo));
             expect(r(c.upfront?.amount ?? 0)).toBe(r(R.upAmt));
             for (const [i, k] of (["t1", "t2", "t3"] as const).entries()) {
               const o = c.opts.find((x) => x.key === k)!;

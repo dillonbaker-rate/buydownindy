@@ -17,9 +17,25 @@ export const FHA_IPC_PCT = 6;
  */
 export const VA_CONCESSION_PCT = 4;
 
-/** Conventional monthly MI, annual % of loan. Rate calculator's estimate for 740+ credit. */
-export function convMiPct(ltv: number): number {
-  return ltv <= 80 ? 0 : ltv > 95 ? 0.58 : ltv > 90 ? 0.46 : ltv > 85 ? 0.36 : 0.24;
+/**
+ * Conventional borrower-paid monthly MI, annual % of the loan, by LTV and credit tier.
+ * Source: MGIC's published 30-year fixed BPMI rate card (July 2018, standard coverage), with two
+ * credit bands averaged per tier, then reduced 25% to reflect the industry's lower premiums today
+ * (Urban Institute: average in-force premium 0.525% in 2017 vs 0.394% in 2024).
+ * Tiers match CREDIT_RANGES: 760+, 740–759, 700–739, 660–699, 620–659.
+ * COMPLIANCE / ACCURACY: estimates. Replace with real quotes (e.g., from Encompass) when available.
+ */
+export const CONV_MI_TABLE: { minLtv: number; pct: [number, number, number, number, number] }[] = [
+  { minLtv: 95, pct: [0.44, 0.53, 0.7, 1.03, 1.32] }, // 95.01–97%
+  { minLtv: 90, pct: [0.29, 0.4, 0.54, 0.84, 1.03] }, // 90.01–95%
+  { minLtv: 85, pct: [0.21, 0.29, 0.38, 0.58, 0.69] }, // 85.01–90%
+  { minLtv: 80, pct: [0.14, 0.15, 0.18, 0.25, 0.32] }, // 80.01–85%
+];
+
+export function convMiPct(ltv: number, creditTier = 0): number {
+  const row = CONV_MI_TABLE.find((r) => ltv > r.minLtv);
+  if (!row) return 0; // 80% LTV or less: no MI
+  return row.pct[Math.min(Math.max(creditTier, 0), row.pct.length - 1)];
 }
 
 /** FHA upfront MIP, financed into the loan by default. */

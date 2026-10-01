@@ -19,8 +19,10 @@ export const LOAN_TYPES: LoanType[] = ["Conventional", "FHA", "VA"];
 export const MIN_DOWN: Record<LoanType, number> = { Conventional: 3, FHA: 3.5, VA: 0 };
 export const SHORT_TYPE: Record<LoanType, string> = { Conventional: "Conv.", FHA: "FHA", VA: "VA" };
 
+/** Credit tiers: rate adjustment, and the index into the conventional MI table (program-rules.ts). */
 export const CREDIT_RANGES = [
-  { label: "740+", adj: 0 },
+  { label: "760+", adj: 0 },
+  { label: "740–759", adj: 0 },
   { label: "700–739", adj: 0.25 },
   { label: "660–699", adj: 0.5 },
   { label: "620–659", adj: 0.875 },
@@ -118,12 +120,15 @@ export function calc(
   down: number,
   creditAdj: number,
   baseRate: number,
+  /** Index into CREDIT_RANGES, used for conventional MI pricing. Defaults to the top tier. */
+  creditTier = 0,
 ): CalcResult {
   const rate = baseRate + creditAdj;
   const ltv = 100 - down;
   const baseLoan = price * (1 - down / 100);
 
-  // Upfront fee (financed) and monthly mortgage insurance, per Rate's calculator.
+  // Upfront fee (financed) and monthly mortgage insurance: FHA/VA per Rate's calculator; conventional
+  // MI by credit tier (program-rules.ts).
   const upPct = type === "FHA" ? FHA_UFMIP_PCT : type === "VA" ? vaFundingFeePct(down) : 0;
   const finF = FINANCE_UPFRONT_FEE ? upPct / 100 : 0;
   const loanFor = (p: number) => p * (1 - down / 100) * (1 + finF);
@@ -131,7 +136,7 @@ export function calc(
   const upfront = upPct
     ? { name: type === "FHA" ? "FHA upfront MIP" : "VA funding fee", pct: upPct, amount: (baseLoan * upPct) / 100 }
     : null;
-  const miPct = type === "Conventional" ? convMiPct(ltv) : type === "FHA" ? fhaMipPct(baseLoan, ltv) : 0;
+  const miPct = type === "Conventional" ? convMiPct(ltv, creditTier) : type === "FHA" ? fhaMipPct(baseLoan, ltv) : 0;
   const mi = miPct ? { name: type === "FHA" ? "FHA annual MIP" : "mortgage insurance", pct: miPct, monthly: (loan * miPct) / 1200 } : null;
 
   const base = pmt(loan, rate);

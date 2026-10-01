@@ -59,7 +59,7 @@ export const fullDisclaimer = (example: DisclosureSection): DisclosureSection[] 
   {
     title: "What the payment includes",
     // COMPLIANCE: "Full payment" view (PITI) added after the design handoff; review the wording.
-    body: "Payments shown are principal and interest only unless you choose Full payment. Full payment adds estimated property taxes, homeowners insurance, mortgage insurance (conventional PMI estimated for a 740+ credit score, or the FHA annual premium), and any HOA dues the listing agent entered. Taxes and insurance come from the listing agent when provided and are otherwise estimated from the price. Neither view includes flood insurance or costs paid at closing. FHA loan amounts include the financed upfront premium and VA loan amounts include the financed funding fee. Your actual monthly payment will differ.",
+    body: "Payments shown are principal and interest only unless you choose Full payment. Full payment adds estimated property taxes, homeowners insurance, mortgage insurance (conventional PMI estimated from your selected credit score range and down payment, or the FHA annual premium), and any HOA dues the listing agent entered. Taxes and insurance come from the listing agent when provided and are otherwise estimated from the price. Neither view includes flood insurance or costs paid at closing. FHA loan amounts include the financed upfront premium and VA loan amounts include the financed funding fee. Your actual monthly payment will differ.",
   },
   {
     title: "Tax and insurance estimates",
@@ -70,7 +70,7 @@ export const fullDisclaimer = (example: DisclosureSection): DisclosureSection[] 
     // COMPLIANCE: new copy (not in the approved design handoff). Closing-cost estimate and the
     // financed FHA/VA fee follow Rate's Buydown & IPC Calculator; needs compliance review.
     title: "Cash to close, closing costs, and loan fees",
-    body: "Cash to close is an estimate: your down payment plus closing costs and prepaids, estimated at 4% of the loan amount. Prepaids include property taxes, homeowners insurance, and escrow deposits; these tax and insurance amounts are estimates and your actual figures will be set by your tax bill, insurance policy, and lender. Closing costs also vary by lender, title company, and property. Seller credits can be used only for actual closing costs and prepaids, never for the down payment. FHA loan amounts include the 1.75% upfront mortgage insurance premium and VA loan amounts include the first-use VA funding fee, both financed into the loan. Mortgage insurance estimates assume a 740+ credit score.",
+    body: "Cash to close is an estimate: your down payment plus closing costs and prepaids, estimated at 4% of the loan amount. Prepaids include property taxes, homeowners insurance, and escrow deposits; these tax and insurance amounts are estimates and your actual figures will be set by your tax bill, insurance policy, and lender. Closing costs also vary by lender, title company, and property. Seller credits can be used only for actual closing costs and prepaids, never for the down payment. FHA loan amounts include the 1.75% upfront mortgage insurance premium and VA loan amounts include the first-use VA funding fee, both financed into the loan. Conventional mortgage insurance is estimated by credit score range and down payment from published mortgage insurer rate cards, adjusted to current market levels; actual premiums are set by the insurer and vary.",
   },
   {
     title: "Listing information",

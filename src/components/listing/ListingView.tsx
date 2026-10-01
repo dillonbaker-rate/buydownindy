@@ -70,7 +70,7 @@ export function ListingView({
 
   const adj = CREDIT_RANGES[sc.credit].adj;
   const baseRate = rateFor(rateInfo, sc.type);
-  const c = calc(l.price, l.concession, sc.type, sc.down, adj, baseRate);
+  const c = calc(l.price, l.concession, sc.type, sc.down, adj, baseRate, sc.credit);
   const b = c.best;
   const bestY1 = b ? b.y1 : c.base;
   const share = shareSummary(l, rateInfo);
@@ -347,7 +347,7 @@ export function ListingView({
                     ["Principal & interest", c.base, ""],
                     ["Property taxes", ex.base.taxes, ex.base.taxesEstimated ? "est. 1% of price" : "from listing agent"],
                     ["Homeowners insurance", ex.base.insurance, ex.base.insuranceEstimated ? "est. $5 per $1,000" : "from listing agent"],
-                    ...(ex.base.mi ? [[c.mi!.name.replace(/^./, (x) => x.toUpperCase()), ex.base.mi, `est. ${pct(c.mi!.pct)}/yr`] as const] : []),
+                    ...(ex.base.mi ? [[c.mi!.name.replace(/^./, (x) => x.toUpperCase()), ex.base.mi, sc.type === "Conventional" ? `est. ${pct(c.mi!.pct)}/yr, ${CREDIT_RANGES[sc.credit].label} credit` : `${pct(c.mi!.pct)}/yr`] as const] : []),
                     ...(ex.base.hoa ? [["HOA", ex.base.hoa, "from listing agent"] as const] : []),
                   ].map(([k, v, hint]) => (
                     <div key={k as string} className="flex justify-between gap-2 border-b border-divider px-3 py-1.5">

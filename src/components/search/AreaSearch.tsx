@@ -79,7 +79,7 @@ export function AreaSearch({ listingZips, count }: { listingZips: string[]; coun
                   setActive((i) => Math.max(i - 1, 0));
                 }
               }}
-              className="min-h-12 min-w-0 flex-1 appearance-none border-0 bg-transparent text-lg text-ink caret-accent outline-none placeholder:text-neutral-500 focus:outline-none focus-visible:outline-none"
+              className="no-focus-ring min-h-12 min-w-0 flex-1 appearance-none border-0 bg-transparent text-lg text-ink caret-accent placeholder:text-neutral-500"
             />
             <button className="btn btn-primary min-h-12 flex-none rounded-full px-5 text-[15px]">Search</button>
           </div>
@@ -129,7 +129,7 @@ export function AreaSearch({ listingZips, count }: { listingZips: string[]; coun
           </div>
           <Link href="/homes" className="btn btn-ghost text-[15px] !text-white hover:!bg-white/15">
             <MapIcon size={16} />
-            Browse all {count > 0 ? `${count} ` : ""}homes on the map
+            {count === 1 ? "See the 1 home on the map" : count > 1 ? `Browse all ${count} homes on the map` : "Browse the map"}
             <ArrowRight size={16} />
           </Link>
         </div>

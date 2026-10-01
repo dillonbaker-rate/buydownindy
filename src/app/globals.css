@@ -381,3 +381,10 @@ select.input {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Inputs that draw their own focus state (e.g. the search pill's glow) opt out of the global outline.
+   Unlayered, so it beats the global :focus-visible rule above (Tailwind utilities are layered and can't). */
+.no-focus-ring:focus,
+.no-focus-ring:focus-visible {
+  outline: none;
+}

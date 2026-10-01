@@ -75,6 +75,9 @@ export function AccountMenu({ me }: { me: AccountSummary }) {
               <Link href="/agent/profile" role="menuitem" className={item} onClick={() => setOpen(false)}>
                 My profile
               </Link>
+              <Link href="/agent/website-tools" role="menuitem" className={item} onClick={() => setOpen(false)}>
+                Website &amp; newsletter tools
+              </Link>
             </>
           )}
           {me.isAdmin && (

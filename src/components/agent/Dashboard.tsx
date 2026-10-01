@@ -7,7 +7,9 @@ import { PhotoOrPlaceholder } from "@/components/listing/ListingCard";
 import { useToast } from "@/components/ui/Toast";
 import { usd } from "@/lib/buydown";
 import { daysLeft } from "@/lib/format";
+import type { Invite } from "@/lib/invites";
 import type { Agent, Listing } from "@/lib/types";
+import { InviteClients } from "./InviteClients";
 
 type Action = "renew" | "pending" | "sold" | "live";
 
@@ -20,7 +22,7 @@ function statusOf(l: Listing) {
   return { label: `Live · ${d} days left`, bg: "var(--color-accent-100)", fg: "var(--color-accent-800)" };
 }
 
-export function Dashboard({ agent, listings }: { agent: Agent; listings: Listing[] }) {
+export function Dashboard({ agent, listings, invites }: { agent: Agent; listings: Listing[]; invites: Invite[] }) {
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
@@ -56,6 +58,7 @@ export function Dashboard({ agent, listings }: { agent: Agent; listings: Listing
             Post a listing
           </Link>
         </div>
+        <InviteClients invites={invites} agentName={agent.name} />
         <div className="mb-3 grid grid-cols-2 gap-3">
           {["Listing views", "Buyer leads"].map((t) => (
             <div key={t} className="rounded-[18px] bg-surface p-4">

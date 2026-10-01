@@ -10,6 +10,7 @@ import { calc, kUsd, pct, saving, usd, type LoanType } from "@/lib/buydown";
 import { useIsDesktop } from "@/lib/hooks";
 import { CENTER_DESK, CENTER_PHONE } from "@/lib/map-config";
 import { COUNTIES, type Listing } from "@/lib/types";
+import type { InviteGreeting } from "@/lib/invites";
 import { rateFor, rateNoun, type RateInfo } from "@/lib/rate-info";
 import type { LeafletMapHandle } from "./LeafletMap";
 import { MapErrorBoundary } from "./MapErrorBoundary";
@@ -25,7 +26,17 @@ interface Filters {
 }
 const NO_FILTERS: Filters = { county: "All counties", min: 0, max: 0, conc: 0, loan: "Any" };
 
-export function MapScreen({ listings, rateInfo }: { listings: Listing[]; rateInfo: RateInfo }) {
+export function MapScreen({
+  listings,
+  rateInfo,
+  invite,
+}: {
+  listings: Listing[];
+  rateInfo: RateInfo;
+  /** Set when the visitor arrived through their agent's invite link. */
+  invite?: InviteGreeting | null;
+}) {
+  const [inviteOn, setInviteOn] = useState(true);
   const desk = useIsDesktop();
   const phone = !desk;
   const [view, setView] = useState<"map" | "list">("map");
@@ -208,6 +219,29 @@ export function MapScreen({ listings, rateInfo }: { listings: Listing[]; rateInf
               {expanded ? "Show map" : `Show all ${shown.length} listings`}
             </span>
           </button>
+        )}
+
+        {invite && inviteOn && (
+          <div className="relative mx-4 mt-3 flex flex-col gap-1 rounded-[18px] border border-accent-300 bg-bg p-3.5 pr-11 text-[13px]">
+            <div className="text-[15px] font-bold">Hi {invite.clientFirst}!</div>
+            <div>
+              {invite.agentName}
+              {invite.brokerage ? ` at ${invite.brokerage}` : ""} shared these homes with you. In each one the seller will pay
+              concessions. Tap a home to see what that money does to your monthly payment.
+            </div>
+            {invite.agentPhone && (
+              <a href={`tel:${invite.agentPhone.replace(/[^0-9+]/g, "")}`} className="mt-1 self-start text-[13px] font-semibold">
+                Call {invite.agentName.split(" ")[0]} · {invite.agentPhone}
+              </a>
+            )}
+            <button
+              onClick={() => setInviteOn(false)}
+              aria-label="Dismiss"
+              className="absolute top-1.5 right-1.5 grid h-9 w-9 cursor-pointer place-items-center text-neutral-600"
+            >
+              <X size={16} />
+            </button>
+          </div>
         )}
 
         {heroDesk && (

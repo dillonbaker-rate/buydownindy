@@ -4,6 +4,7 @@ import { Dashboard } from "@/components/agent/Dashboard";
 import { ProfileForm } from "@/components/agent/ProfileForm";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent, getMyListings } from "@/lib/data";
+import { listInvites } from "@/lib/invites";
 import { isRateAdmin } from "@/lib/rates";
 import { agentsEnabled } from "@/lib/supabase/env";
 
@@ -29,10 +30,10 @@ export default async function AgentPage() {
         </div>
       </AppShell>
     );
-  const listings = await getMyListings(me.userId);
+  const [listings, invites] = await Promise.all([getMyListings(me.userId), listInvites(me.userId)]);
   return (
     <AppShell header={<AgentHeader onDash admin={isRateAdmin(me.email)} />}>
-      <Dashboard agent={me.agent} listings={listings} />
+      <Dashboard agent={me.agent} listings={listings} invites={invites} />
     </AppShell>
   );
 }

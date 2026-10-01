@@ -15,6 +15,8 @@ export interface LeadForEmail {
   answers: { question: string; answer: string }[];
   consentAt: string;
   consentText: string;
+  /** Agent whose invite link the buyer used, e.g. "Jordan Smith, Sample Realty". */
+  invitedBy?: string | null;
 }
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -47,6 +49,7 @@ export function leadEmail(lead: LeadForEmail, siteUrl: string) {
     row("Phone", `<a href="tel:${esc(tel)}" style="color:#123f78">${esc(lead.phone)}</a>`) +
       row("Email", `<a href="mailto:${esc(lead.email)}" style="color:#123f78">${esc(lead.email)}</a>`) +
       (listingUrl ? row("Listing", `<a href="${esc(listingUrl)}" style="color:#123f78">${esc(about)}</a>`) : "") +
+      (lead.invitedBy ? row("Invited by agent", esc(lead.invitedBy)) : "") +
       (lead.message ? row("Message", esc(lead.message).replace(/\n/g, "<br>")) : ""),
   )}
   ${lead.answers.length ? h("Quiz answers") + table(lead.answers.map((a) => row(esc(a.question), esc(a.answer))).join("")) : ""}
@@ -61,6 +64,7 @@ export function leadEmail(lead: LeadForEmail, siteUrl: string) {
     `Phone: ${lead.phone}`,
     `Email: ${lead.email}`,
     `About: ${about}${listingUrl ? ` (${listingUrl})` : ""}`,
+    ...(lead.invitedBy ? [`Invited by agent: ${lead.invitedBy}`] : []),
     ...(lead.message ? ["", `Message: ${lead.message}`] : []),
     ...(lead.answers.length ? ["", "Quiz answers:", ...lead.answers.map((a) => `- ${a.question} ${a.answer}`)] : []),
     "",

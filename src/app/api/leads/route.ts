@@ -1,6 +1,8 @@
 import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { LENDER_CONSENT } from "@/content/disclosures";
+import { cookies } from "next/headers";
+import { INVITE_COOKIE, openInvite } from "@/lib/invites";
 import { sendLeadEmail } from "@/lib/lead-email";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -32,6 +34,10 @@ export async function POST(req: Request) {
   // COMPLIANCE: store the exact consent wording shown, plus a server timestamp.
   if (d.consentText !== LENDER_CONSENT) return NextResponse.json({ error: "Consent text is out of date. Refresh the page." }, { status: 400 });
 
+  // If the buyer came through an agent's invite link, tag the lead with it.
+  const inviteCode = (await cookies()).get(INVITE_COOKIE)?.value ?? null;
+  const invite = inviteCode ? await openInvite(inviteCode, false) : null;
+
   const row = {
     listing_id: d.listingId && UUID.test(d.listingId) ? d.listingId : null,
     listing_label: d.listingLabel ?? null,
@@ -44,6 +50,7 @@ export async function POST(req: Request) {
     consent_at: new Date().toISOString(),
     consent_text: LENDER_CONSENT,
     user_agent: req.headers.get("user-agent")?.slice(0, 300) ?? null,
+    invite_code: invite ? inviteCode : null,
   };
 
   // Email Dillon after the response is sent, so the buyer never waits on it.
@@ -60,11 +67,12 @@ export async function POST(req: Request) {
         answers: d.answers,
         consentAt: row.consent_at,
         consentText: row.consent_text,
+        invitedBy: invite ? `${invite.agentName}, ${invite.brokerage}` : null,
       }),
     );
 
   if (!supabaseConfigured) {
-    console.info("[demo] lead received (Supabase not configured):", row.listing_label, row.email, row.topic, row.answers);
+    console.info("[demo] lead received (Supabase not configured):", row.listing_label, row.email, row.topic, "invite:", row.invite_code, row.answers);
     notify();
     return NextResponse.json({ ok: true, demo: true });
   }

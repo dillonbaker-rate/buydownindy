@@ -5,6 +5,7 @@ import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/rates";
 import { COUNTIES } from "@/lib/types";
+import { AGENT_TERMS_VERSION } from "@/content/agent-terms";
 
 const phone = z
   .string()
@@ -46,6 +47,8 @@ const Profile = z.object({
     .max(500)
     .optional()
     .refine((u) => !u || /^https:\/\//.test(u) || u.startsWith("/api/demo/photos/"), "Invalid photo"),
+  /** Set by the onboarding form's Agent Terms checkbox. */
+  acceptTerms: z.boolean().optional(),
 });
 
 const blank = (v: string | undefined | null) => (v && v.trim() ? v.trim() : null);
@@ -56,7 +59,7 @@ export async function PUT(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Check your profile." }, { status: 400 });
   }
-  const d = parsed.data;
+  const { acceptTerms, ...d } = parsed.data;
 
   if (demoMode) {
     await saveDemoAgent({
@@ -71,6 +74,7 @@ export async function PUT(req: Request) {
       linkedin: blank(d.linkedin),
       bio: blank(d.bio),
       photoUrl: blank(d.photoUrl),
+      ...(acceptTerms ? { termsVersion: AGENT_TERMS_VERSION, termsAcceptedAt: new Date().toISOString() } : {}),
     });
     return NextResponse.json({ ok: true });
   }
@@ -80,10 +84,17 @@ export async function PUT(req: Request) {
     data: { user },
   } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+  // Agreed at sign-up (stored on the auth user) or on the profile form.
+  const signupAt = user.user_metadata?.agent_terms_version === AGENT_TERMS_VERSION ? (user.user_metadata.agent_terms_accepted_at as string) : null;
+  const agreedAt = acceptTerms ? new Date().toISOString() : signupAt;
+  const terms = agreedAt ? { terms_version: AGENT_TERMS_VERSION, terms_accepted_at: agreedAt } : {};
   // Agents need a license number; admins (the lender) don't hold a real estate license.
   if (!d.licenseNumber && !isAdmin(user.email))
     return NextResponse.json({ error: "Enter your Indiana real estate license number, e.g. RB14012345." }, { status: 400 });
-  const { error } = await sb.from("agents").upsert({
+  const { data: existing } = await sb.from("agents").select("id").eq("id", user.id).maybeSingle();
+  // New profiles must accept the Agent Terms.
+  if (!existing && !agreedAt) return NextResponse.json({ error: "Please agree to the Agent Terms." }, { status: 400 });
+  const row = {
     id: user.id,
     email: user.email,
     name: d.name,
@@ -102,7 +113,10 @@ export async function PUT(req: Request) {
     linkedin: blank(d.linkedin),
     bio: blank(d.bio),
     photo_url: blank(d.photoUrl),
-  });
+  };
+  let { error } = await sb.from("agents").upsert({ ...row, ...terms });
+  // Before migration 0007 the terms columns don't exist yet: save the profile without them.
+  if (error && /terms_/.test(error.message)) ({ error } = await sb.from("agents").upsert(row));
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true });
 }

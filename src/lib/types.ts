@@ -72,6 +72,11 @@ export interface Agent {
   verificationStatus?: VerificationStatus;
   verifiedAt?: string | null;
   createdAt?: string;
+  /** Agent Terms version accepted (see content/agent-terms.ts). */
+  termsVersion?: string | null;
+  termsAcceptedAt?: string | null;
+  /** False until the terms columns exist (migration 0007), so nobody is gated before then. */
+  termsTracked?: boolean;
 }
 
 /** Map an `agents` table row to Agent. */
@@ -99,6 +104,9 @@ export function agentFromRow(r: Record<string, unknown>): Agent {
     verificationStatus: ((r.verification_status as VerificationStatus) ?? "pending"),
     verifiedAt: s("verified_at"),
     createdAt: s("created_at") ?? undefined,
+    termsVersion: s("terms_version"),
+    termsAcceptedAt: s("terms_accepted_at"),
+    termsTracked: "terms_version" in r,
   };
 }
 

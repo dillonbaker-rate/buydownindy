@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
 import { createClient } from "@/lib/supabase/client";
+import { AGENT_TERMS_VERSION } from "@/content/agent-terms";
+import { AgreeToTerms } from "./AgentTerms";
 
 type Mode = "signin" | "signup" | "forgot";
 
@@ -26,6 +28,7 @@ export function LoginForm({ next, linkError }: { next?: string; linkError?: bool
     linkError ? "That link didn't work. It may have expired or been opened in a different browser." : null,
   );
   const [busy, setBusy] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const dest = next?.startsWith("/agent") ? next : "/agent";
 
@@ -39,6 +42,7 @@ export function LoginForm({ next, linkError }: { next?: string; linkError?: bool
     setErr(null);
     if (!/^\S+@\S+\.\S+$/.test(email)) return setErr("Enter a valid email.");
     if (mode !== "forgot" && password.length < 8) return setErr("Passwords are at least 8 characters.");
+    if (mode === "signup" && !agreed) return setErr("Please agree to the Agent Terms.");
     setBusy(true);
     const sb = createClient();
     const origin = window.location.origin;
@@ -51,7 +55,11 @@ export function LoginForm({ next, linkError }: { next?: string; linkError?: bool
         const { data, error } = await sb.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${origin}/auth/callback` },
+          options: {
+            emailRedirectTo: `${origin}/auth/callback`,
+            // Copied onto the agent profile when it's created (api/agent).
+            data: { agent_terms_version: AGENT_TERMS_VERSION, agent_terms_accepted_at: new Date().toISOString() },
+          },
         });
         if (error) return setErr(friendly(error.message));
         // Supabase returns a session right away when "Confirm email" is off.
@@ -145,6 +153,8 @@ export function LoginForm({ next, linkError }: { next?: string; linkError?: bool
           </div>
         </div>
       )}
+
+      {mode === "signup" && <AgreeToTerms checked={agreed} onChange={setAgreed} />}
 
       {err && <div className="-mt-2 text-xs text-warn-text">{err}</div>}
 

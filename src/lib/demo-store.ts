@@ -22,9 +22,9 @@ const AGENT_FILE = path.join(DIR, "agent.json");
 /** The demo agent, with any profile edits saved locally. */
 export async function demoAgent(): Promise<Agent> {
   try {
-    return { ...DEMO_AGENT, ...JSON.parse(await fs.readFile(AGENT_FILE, "utf8")), id: DEMO_AGENT.id };
+    return { ...DEMO_AGENT, ...JSON.parse(await fs.readFile(AGENT_FILE, "utf8")), id: DEMO_AGENT.id, termsTracked: true };
   } catch {
-    return { ...DEMO_AGENT, verificationStatus: "pending" };
+    return { ...DEMO_AGENT, verificationStatus: "pending", termsTracked: true };
   }
 }
 export async function saveDemoAgent(patch: Partial<Agent>) {

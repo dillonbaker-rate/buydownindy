@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/Toast";
 import { createClient } from "@/lib/supabase/client";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { COUNTIES, type Agent } from "@/lib/types";
+import { AgreeToTerms } from "./AgentTerms";
 
 type F = {
   name: string;
@@ -84,12 +85,15 @@ export function AgentProfileForm({
   userId,
   onboarding,
   isAdmin = false,
+  termsAccepted = false,
 }: {
   agent: Agent | null;
   email: string;
   userId: string;
   onboarding?: boolean;
   isAdmin?: boolean;
+  /** Already agreed to the current Agent Terms when creating the account. */
+  termsAccepted?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -97,6 +101,7 @@ export function AgentProfileForm({
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [agreed, setAgreed] = useState(termsAccepted);
   const fileRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof F) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
 
@@ -130,12 +135,16 @@ export function AgentProfileForm({
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (onboarding && !agreed) {
+      setErr("Please agree to the Agent Terms.");
+      return;
+    }
     setBusy(true);
     setErr(null);
     const res = await fetch("/api/agent", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...f, licensedSince: f.licensedSince ? Number(f.licensedSince) : null }),
+      body: JSON.stringify({ ...f, licensedSince: f.licensedSince ? Number(f.licensedSince) : null, ...(onboarding ? { acceptTerms: agreed } : {}) }),
     });
     setBusy(false);
     if (!res.ok) {
@@ -252,8 +261,9 @@ export function AgentProfileForm({
         </div>
       </section>
 
+      {onboarding && !termsAccepted && <AgreeToTerms checked={agreed} onChange={setAgreed} />}
       {err && <div className="text-sm text-warn-text">{err}</div>}
-      <button className="btn btn-primary btn-flush min-h-12 px-4 text-[15px]" disabled={busy || uploading}>
+      <button className="btn btn-primary btn-flush min-h-12 px-4 text-[15px]" disabled={busy || uploading || (onboarding && !agreed)}>
         {busy ? "Saving…" : onboarding ? "Save and continue" : "Save profile"}
         <ArrowRight size={16} className="ml-auto" />
       </button>

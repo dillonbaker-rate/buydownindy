@@ -139,7 +139,7 @@ export async function getMyListings(agentId: string): Promise<Listing[]> {
 /** The signed-in agent. Wrapped in React cache() so the header and the page share one lookup per request. */
 export const getCurrentAgent = cache(getCurrentAgentUncached);
 
-async function getCurrentAgentUncached(): Promise<{ userId: string; email: string; agent: Agent | null } | null> {
+async function getCurrentAgentUncached(): Promise<{ userId: string; email: string; agent: Agent | null; signupTermsVersion?: string | null } | null> {
   if (demoMode) return { userId: DEMO_AGENT.id, email: DEMO_AGENT.email, agent: await demoAgent() };
   if (!supabaseConfigured) return null;
   const sb = await createClient();
@@ -148,7 +148,12 @@ async function getCurrentAgentUncached(): Promise<{ userId: string; email: strin
   } = await sb.auth.getUser();
   if (!user) return null;
   const { data } = await sb.from("agents").select("*").eq("id", user.id).maybeSingle();
-  return { userId: user.id, email: user.email ?? "", agent: data ? agentFromRow(data) : null };
+  return {
+    userId: user.id,
+    email: user.email ?? "",
+    agent: data ? agentFromRow(data) : null,
+    signupTermsVersion: (user.user_metadata?.agent_terms_version as string | undefined) ?? null,
+  };
 }
 
 /** All agent profiles, newest first (admin screen / CRM export). Agent profiles are public records. */

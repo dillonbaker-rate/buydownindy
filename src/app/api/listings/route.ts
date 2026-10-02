@@ -3,7 +3,8 @@ import { ListingInput, toRow } from "@/lib/listing-schema";
 import { demoCreate } from "@/lib/demo-store";
 import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
-import { LISTING_DAYS } from "@/lib/types";
+import { agentFromRow, LISTING_DAYS } from "@/lib/types";
+import { mustAcceptTerms } from "@/lib/agent-terms-gate";
 
 const expiry = () => new Date(Date.now() + LISTING_DAYS * 86_400_000).toISOString();
 
@@ -19,6 +20,9 @@ export async function POST(req: Request) {
     data: { user },
   } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to post a listing." }, { status: 401 });
+  const { data: me } = await sb.from("agents").select("*").eq("id", user.id).maybeSingle();
+  if (me && mustAcceptTerms(agentFromRow(me), user.email))
+    return NextResponse.json({ error: "Please accept the Agent Terms on My listings first." }, { status: 403 });
 
   const parsed = ListingInput.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Check the listing details.", issues: parsed.error.issues }, { status: 400 });

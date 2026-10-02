@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { mustAcceptTerms } from "@/lib/agent-terms-gate";
 import { AgentHeader } from "@/components/agent/AgentHeader";
 import { OfferCalculator } from "@/components/agent/OfferCalculator";
 import { AppShell } from "@/components/ui/Header";
@@ -18,6 +19,7 @@ export default async function OfferCalculatorPage({ searchParams }: { searchPara
     const me = await getCurrentAgent();
     if (!me) redirect(`/agent/login?next=${encodeURIComponent(next)}`);
     if (!me.agent) redirect("/agent");
+    if (mustAcceptTerms(me.agent, me.email)) redirect("/agent");
   }
   const [info, l] = await Promise.all([getRateInfo(), listing ? getListing(listing) : Promise.resolve(null)]);
   const rateNote = info.source === "daily" ? `(rate as of ${longDate(info.date)})` : `(sample rate, Freddie Mac PMMS week of ${longDate(info.date)})`;

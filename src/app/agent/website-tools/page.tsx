@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { mustAcceptTerms } from "@/lib/agent-terms-gate";
 import { AgentHeader } from "@/components/agent/AgentHeader";
 import { WebsiteTools } from "@/components/agent/WebsiteTools";
 import { AppShell } from "@/components/ui/Header";
@@ -18,6 +19,7 @@ export default async function WebsiteToolsPage() {
   const me = await getCurrentAgent();
   if (!me) redirect("/agent/login?next=/agent/website-tools");
   if (!me.agent) redirect("/agent");
+  if (mustAcceptTerms(me.agent, me.email)) redirect("/agent");
   const admin = isAdmin(me.email) || isSuperAdmin(me.email);
   const [can, enabled, info] = await Promise.all([canUseMarketing(me.email, me.agent), marketingEnabled(), getRateInfo()]);
   const h = await headers();

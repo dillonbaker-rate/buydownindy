@@ -1,5 +1,5 @@
 "use client";
-import { Plus } from "lucide-react";
+import { Download, Image as ImageIcon, PartyPopper, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -28,12 +28,15 @@ export function Dashboard({
   listings,
   invites,
   isAdmin = false,
+  posted,
 }: {
   agent: Agent;
   listings: Listing[];
   invites: Invite[];
   /** Admins (the lender) don't hold a real estate license, so skip the license prompt. */
   isAdmin?: boolean;
+  /** Id of a listing that was just posted: show its flyer. */
+  posted?: string;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -95,6 +98,10 @@ export function Dashboard({
             <span className="font-semibold text-accent-700">Update profile →</span>
           </Link>
         )}
+        {(() => {
+          const l = listings.find((x) => x.id === posted && x.status === "live");
+          return l ? <FlyerReady listing={l} onClose={() => router.replace("/agent")} /> : null;
+        })()}
         <InviteClients invites={invites} agentName={agent.name} />
         <div className="mb-3 grid grid-cols-2 gap-3">
           {["Listing views", "Buyer leads"].map((t) => (
@@ -149,6 +156,12 @@ export function Dashboard({
                   <Link href={`/agent/edit/${l.id}`} className="btn btn-secondary min-h-10 text-[13px]">
                     Edit
                   </Link>
+                  {l.status === "live" && (
+                    <Link href={`/listing/${l.id}?share=1`} className="btn btn-secondary min-h-10 text-[13px]">
+                      <ImageIcon size={14} />
+                      Flyer
+                    </Link>
+                  )}
                   {l.status === "live" && btn("Mark pending", "pending")}
                   {l.status === "pending" && [btn("Mark sold", "sold"), btn("Back to live", "live")]}
                 </div>
@@ -169,5 +182,43 @@ export function Dashboard({
         )}
       </div>
     </div>
+  );
+}
+
+/** Shown right after posting: the listing's ready-made flyer and social graphics. */
+function FlyerReady({ listing: l, onClose }: { listing: Listing; onClose: () => void }) {
+  const src = (size: string) => `/api/share/${encodeURIComponent(l.id)}?size=${size}&design=0`;
+  const dl = (size: string, label: string) => (
+    <a href={`${src(size)}&download=1`} download className="btn btn-secondary min-h-10 text-[13px]">
+      <Download size={14} />
+      {label}
+    </a>
+  );
+  return (
+    <section className="relative mb-4 grid gap-4 rounded-[20px] border border-accent-300 bg-accent-100 p-4 sm:grid-cols-[160px_minmax(0,1fr)] lg:p-5">
+      <button type="button" onClick={onClose} aria-label="Dismiss" className="absolute top-2 right-2 grid h-9 w-9 cursor-pointer place-items-center rounded-full hover:bg-bg">
+        <X size={16} />
+      </button>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src("post")} alt={`Social graphic for ${l.address}`} className="w-[160px] rounded-[12px] bg-neutral-200 shadow-md" style={{ aspectRatio: "4 / 5" }} />
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center gap-2 text-[19px] font-bold">
+          <PartyPopper size={20} className="text-accent" />
+          Your flyer is ready
+        </div>
+        <p className="m-0 max-w-[560px] text-sm text-neutral-800">
+          {l.address} is live. We made a printable flyer and social graphics with today&apos;s buydown numbers, your headshot, and the
+          required disclosures. They update with each day&apos;s rate, so download a fresh one before you post.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {dl("flyer", "Printable flyer")}
+          {dl("post", "Instagram post")}
+          {dl("story", "Story")}
+          <Link href={`/listing/${l.id}?share=1`} className="btn btn-primary min-h-10 text-[13px]">
+            More designs &amp; sharing
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }

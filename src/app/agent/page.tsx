@@ -11,7 +11,8 @@ import { agentsEnabled } from "@/lib/supabase/env";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My listings · BuyDown Indy" };
 
-export default async function AgentPage() {
+export default async function AgentPage({ searchParams }: { searchParams: Promise<{ posted?: string }> }) {
+  const { posted } = await searchParams;
   if (!agentsEnabled)
     return (
       <AppShell>
@@ -33,7 +34,7 @@ export default async function AgentPage() {
   const [listings, invites] = await Promise.all([getMyListings(me.userId), listInvites(me.userId)]);
   return (
     <AppShell header={<AgentHeader onDash admin={isRateAdmin(me.email)} />}>
-      <Dashboard agent={me.agent} listings={listings} invites={invites} isAdmin={isRateAdmin(me.email)} />
+      <Dashboard agent={me.agent} listings={listings} invites={invites} isAdmin={isRateAdmin(me.email)} posted={posted} />
     </AppShell>
   );
 }

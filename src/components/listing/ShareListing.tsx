@@ -65,6 +65,8 @@ export function ShareListing({ id, title, text, post }: { id: string; title: str
 
   useEffect(() => {
     setUrl(window.location.origin + window.location.pathname);
+    // "?share=1" (from the agent dashboard's Flyer button) opens the share window straight away.
+    if (new URLSearchParams(window.location.search).get("share") === "1") setOpen(true);
     setCanNative(typeof navigator.share === "function");
     try {
       const probe = new File([new Blob()], "x.png", { type: "image/png" });

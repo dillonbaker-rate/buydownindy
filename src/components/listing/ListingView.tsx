@@ -125,6 +125,12 @@ export function ListingView({
         .filter(Boolean)
         .join(" · ");
 
+  const offerLink = (
+    <Link href={`/agent/offer-calculator?listing=${encodeURIComponent(l.id)}`} className="text-[13px] font-semibold">
+      Buyer&apos;s agent? Work out the concession for your offer →
+    </Link>
+  );
+
   const actions = (
     <div className="flex flex-col gap-2 border-t border-divider pt-4">
       <button className="btn btn-primary btn-flush px-4 py-3.5 text-[15px]" onClick={contact}>
@@ -134,6 +140,7 @@ export function ListingView({
       <div className="mt-2">
         <LenderCard contactHref={lenderHref} />
       </div>
+      <div className="mt-1">{offerLink}</div>
     </div>
   );
 
@@ -368,8 +375,9 @@ export function ListingView({
           </div>
 
           {!desk && (
-            <div className="pb-5" style={{ gridArea: "lender" }}>
+            <div className="flex flex-col gap-3 pb-5" style={{ gridArea: "lender" }}>
               <LenderCard contactHref={lenderHref} />
+              {offerLink}
             </div>
           )}
 

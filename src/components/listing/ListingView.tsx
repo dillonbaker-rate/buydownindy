@@ -70,9 +70,8 @@ export function ListingView({
     } catch {}
   };
 
-  const adj = CREDIT_RANGES[sc.credit].adj;
   const baseRate = rateFor(rateInfo, sc.type);
-  const c = calc(l.price, l.concession, sc.type, sc.down, adj, baseRate, sc.credit);
+  const c = calc(l.price, l.concession, sc.type, sc.down, 0, baseRate, sc.credit);
   const apr = aprLabel(estimateApr(sc.type, sc.down, c.rate, l.price, sc.credit));
   const b = c.best;
   const bestY1 = b ? b.y1 : c.base;
@@ -337,17 +336,19 @@ export function ListingView({
                 </span>
               </div>
             </div>
-            <div className="field">
-              <span className="field-label">Credit score range</span>
-              <Segmented
-                label="Credit score range"
-                optClassName="!px-1.5 !text-xs"
-                value={sc.credit}
-                onChange={(v) => setSc((s) => ({ ...s, credit: v }))}
-                options={CREDIT_RANGES.map((r, i) => ({ value: i, label: r.label }))}
-              />
-              <div className="mt-1 text-[11px] text-neutral-700">{rateInfo.source === "daily" ? "Example rate" : "Sample rate"} for this range: {pct(c.rate)} ({apr} APR)</div>
-            </div>
+            {sc.type === "Conventional" && sc.down < 20 && (
+              <div className="field">
+                <span className="field-label">Credit score (for the mortgage insurance estimate)</span>
+                <Segmented
+                  label="Credit score range"
+                  optClassName="!px-1.5 !text-xs"
+                  value={sc.credit}
+                  onChange={(v) => setSc((s) => ({ ...s, credit: v }))}
+                  options={CREDIT_RANGES.map((r, i) => ({ value: i, label: r.label }))}
+                />
+                <div className="mt-1 text-[11px] text-neutral-700">Changes the mortgage insurance estimate only. The rate stays the same.</div>
+              </div>
+            )}
             <div className="field">
               <span className="field-label">Show payments as</span>
               {viewToggle}

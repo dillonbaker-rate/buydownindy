@@ -134,16 +134,18 @@ export function OfferCalculator({
                 <label htmlFor="oc-down">Down payment %</label>
                 <input id="oc-down" className="input" inputMode="decimal" value={down} onChange={(e) => setDown(e.target.value.replace(/[^0-9.]/g, ""))} />
               </div>
-              <div className="field w-[180px]">
-                <label htmlFor="oc-credit">Credit score</label>
-                <select id="oc-credit" className="input" value={tier} onChange={(e) => setTier(Number(e.target.value))}>
-                  {CREDIT_RANGES.map((c, i) => (
-                    <option key={c.label} value={i}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {type === "Conventional" && d < 20 && (
+                <div className="field w-[220px]">
+                  <label htmlFor="oc-credit">Credit score (for mortgage insurance)</label>
+                  <select id="oc-credit" className="input" value={tier} onChange={(e) => setTier(Number(e.target.value))}>
+                    {CREDIT_RANGES.map((c, i) => (
+                      <option key={c.label} value={i}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             {num(down) < MIN_DOWN[type] && <div className="text-[13px] text-warn-text">{`${type} needs at least ${MIN_DOWN[type]}% down; using ${MIN_DOWN[type]}%.`}</div>}
           </Q>
@@ -280,7 +282,7 @@ export function OfferCalculator({
                 )}
 
                 <p className="m-0 text-[11px] leading-snug text-neutral-700">
-                  {`Estimates using a ${pct(r.rate)} 30-year fixed ${rateNote}, adjusted for credit (${aprLabel(estimateApr(type, d, r.rate, r.price, tier))} APR; ${APR_ASSUMPTION.replace(/^APR is an estimate that assumes/, "assumes")}) Principal & interest only; taxes, insurance and mortgage insurance are extra. Closing costs estimated at 4% of the loan. Temporary buydowns require a signed contract, and the buyer qualifies at the full rate. Not a commitment to lend.`}
+                  {`Estimates using a ${pct(r.rate)} 30-year fixed ${rateNote} (${aprLabel(estimateApr(type, d, r.rate, r.price, tier))} APR; ${APR_ASSUMPTION.replace(/^APR is an estimate that assumes/, "assumes")}) Principal & interest only; taxes, insurance and mortgage insurance are extra. The rate is the same for every credit score. Closing costs estimated at 4% of the loan. Temporary buydowns require a signed contract, and the buyer qualifies at the full rate. Not a commitment to lend.`}
                 </p>
               </>
             )}

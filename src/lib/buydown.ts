@@ -19,14 +19,11 @@ export const LOAN_TYPES: LoanType[] = ["Conventional", "FHA", "VA"];
 export const MIN_DOWN: Record<LoanType, number> = { Conventional: 3, FHA: 3.5, VA: 0 };
 export const SHORT_TYPE: Record<LoanType, string> = { Conventional: "Conv.", FHA: "FHA", VA: "VA" };
 
-/** Credit tiers: rate adjustment, and the index into the conventional MI table (program-rules.ts). */
-export const CREDIT_RANGES = [
-  { label: "760+", adj: 0 },
-  { label: "740–759", adj: 0 },
-  { label: "700–739", adj: 0.25 },
-  { label: "660–699", adj: 0.5 },
-  { label: "620–659", adj: 0.875 },
-] as const;
+/**
+ * Credit tiers: only the index into the conventional MI table (program-rules.ts). The rate shown never
+ * changes with credit; it stays the neutral market rate so nothing reads as an individualized quote.
+ */
+export const CREDIT_RANGES = [{ label: "760+" }, { label: "740–759" }, { label: "700–739" }, { label: "660–699" }, { label: "620–659" }] as const;
 
 export type OptionState = "unlocked" | "locked" | "over" | "avail" | "ask";
 export type OptionKey = "cut" | "t1" | "t2" | "t3" | "perm" | "cc";

@@ -1,7 +1,7 @@
 // Reverse calculator: from what the buyer wants (a temporary buydown, closing costs, or a target
 // payment), work out the seller concession to write into the offer. Uses the same engine as listings.
 
-import { calc, CREDIT_RANGES, type LoanType } from "./buydown";
+import { calc, type LoanType } from "./buydown";
 
 export type BuydownGoal = 0 | 1 | 2 | 3 | "payment";
 export type ClosingGoal = "all" | "none" | "custom";
@@ -11,7 +11,7 @@ export interface OfferInput {
   type: LoanType;
   down: number;
   creditTier: number;
-  /** Today's base rate for the loan type (before the credit adjustment). */
+  /** Today's rate for the loan type. Credit never changes it. */
   baseRate: number;
   buydown: BuydownGoal;
   /** Year-1 principal & interest the buyer wants to hit, when buydown === "payment". */
@@ -50,8 +50,8 @@ const NAMES = { 1: "1-0", 2: "2-1", 3: "3-2-1" } as const;
 export const buydownName = (k: 0 | 1 | 2 | 3) => (k ? `${NAMES[k]} temporary buydown` : "");
 
 function solve(i: OfferInput, price: number): OfferResult {
-  const adj = CREDIT_RANGES[i.creditTier]?.adj ?? 0;
-  const c = calc(price, 0, i.type, i.down, adj, i.baseRate, i.creditTier);
+  // Credit only affects the conventional MI estimate, never the rate.
+  const c = calc(price, 0, i.type, i.down, 0, i.baseRate, i.creditTier);
   const temp = (k: number) => c.opts.find((o) => o.key === `t${k}`)!;
 
   let k: 0 | 1 | 2 | 3 = 0;

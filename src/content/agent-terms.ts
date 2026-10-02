@@ -3,7 +3,7 @@
 // Indiana license law, Rate's co-marketing policy) before relying on it. When the text changes, bump
 // AGENT_TERMS_VERSION: every agent is asked to accept the new version the next time they sign in.
 
-export const AGENT_TERMS_VERSION = "2026-10-02.2";
+export const AGENT_TERMS_VERSION = "2026-10-02.3";
 /** Remove once counsel has approved the text. While true, the terms page shows a "draft" note and agent sign-up is closed. */
 export const AGENT_TERMS_DRAFT = true;
 /** New agent accounts open only after counsel signs off on the terms. */
@@ -39,11 +39,15 @@ export const AGENT_TERMS: { heading: string; body: string }[] = [
     body: "Post only listings you are authorized to market, with accurate details, a seller concession the seller has agreed to offer, and photos you have the right to use. Follow Indiana license law, MLS rules, and fair housing law. Do not remove or change the disclosures shown with the numbers. You give BuyDown Indy a free, non-exclusive license to display, resize, and share the photos and listing details you post, only to show the listing on BuyDown Indy, until you delete it. You can delete a listing at any time from My listings. To report a listing or photo that is inaccurate or used without permission, email dillon.baker@rate.com and we will review it and remove it if warranted.",
   },
   {
-    heading: "7. Estimates, not loan offers",
+    heading: "7. Listing graphics and flyers",
+    body: "Every live listing has the same standard share graphics, available to anyone on the public listing page, including homebuyers. They show the home, the payment examples with the required disclosures, Dillon Baker's contact information, and a plain \u201cListing courtesy of\u201d credit. They are not made for any agent and do not include your photo, logo, or contact details. If you want a custom flyer with your name, photo, logo, or contact details, contact Dillon Baker. Custom flyers are shared marketing, and the cost of designing, printing, and promoting them is split 50/50 between you and Dillon Baker. You pay your share directly, and it is never reduced or waived because of referrals.",
+  },
+  {
+    heading: "8. Estimates, not loan offers",
     body: "Rates, payments, and closing costs on BuyDown Indy are estimates for education. They are not a loan offer, a rate lock, or a commitment to lend. Homebuyers qualify with the lender they choose.",
   },
   {
-    heading: "8. Changes and your account",
+    heading: "9. Changes and your account",
     body: "We may update these terms; if we do, we will ask you to accept the new version. We may suspend an account for false information, misuse, or breaking these terms. You can stop using BuyDown Indy at any time and ask us to delete your account.",
   },
 ];

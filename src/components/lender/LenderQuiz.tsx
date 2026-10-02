@@ -67,6 +67,9 @@ export function LenderQuiz({ listing, topic }: { listing: QuizListing | null; to
 
   const seq = useMemo(() => sequence(answers), [answers]);
   const total = seq.length + 1; // + contact step
+  // Number by main question so the count never changes; a follow-up keeps its main question's number.
+  const mainIds = useMemo(() => new Set(QUIZ.map((m) => m.q.id)), []);
+  const mainNum = seq.slice(0, i + 1).filter((x) => x && mainIds.has(x.id)).length;
   const onContact = i >= seq.length;
   const q = onContact ? null : seq[i];
   const backHref = listing ? `/listing/${listing.id}` : "/homes";
@@ -127,7 +130,7 @@ export function LenderQuiz({ listing, topic }: { listing: QuizListing | null; to
         </span>
         <h1 className="text-[26px]">Request sent</h1>
         <p className="m-0 text-sm">
-          Thanks, {contact.name.split(" ")[0]}. A loan officer will reach out within one business day
+          Thanks, {contact.name.split(" ")[0]}. Dillon Baker will get back to you by phone, text, or email
           {topic === "points" ? " with today's options for buying down your rate" : ""}. {FREE_TO_CHOOSE}
         </p>
         <Link href={backHref} className="btn btn-primary">
@@ -159,7 +162,7 @@ export function LenderQuiz({ listing, topic }: { listing: QuizListing | null; to
           <div className="h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${((i + 1) / total) * 100}%` }} />
         </div>
         <div className="text-[11px] text-neutral-700">
-          {onContact ? "Last step" : `Question ${i + 1} of ${seq.length}`} · About 2 minutes · Nothing here checks your credit
+          {onContact ? "Last step" : `Question ${mainNum} of ${QUIZ.length}`} · About 2 minutes · Nothing here checks your credit
         </div>
       </div>
 
@@ -299,6 +302,15 @@ export function LenderQuiz({ listing, topic }: { listing: QuizListing | null; to
             {/* COMPLIANCE: TCPA consent wording — confirm with compliance. */}
             <span>{LENDER_CONSENT}</span>
           </label>
+          <div className="-mt-2 pl-[28px] text-xs">
+            <Link href="/privacy" target="_blank" className="font-semibold">
+              Privacy policy
+            </Link>
+            {" · "}
+            <Link href="/terms" target="_blank" className="font-semibold">
+              Terms of use
+            </Link>
+          </div>
           <Err k="consent" />
           <div className="text-[13px] font-semibold">{FREE_TO_CHOOSE}</div>
           <Err k="form" />

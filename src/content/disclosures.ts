@@ -28,11 +28,10 @@ export interface DisclosureSection {
   link?: { href: string; label: string; after: string };
 }
 
-export const representativeExample = (loan: string, rate: string, payment: string): DisclosureSection => ({
+export const representativeExample = (loan: string, rate: string, payment: string, apr: string, aprNote: string): DisclosureSection => ({
   title: "Representative example",
-  // COMPLIANCE: Reg Z trigger terms. Stating a payment/rate likely requires a real APR here. Do not
-  // launch until compliance supplies an APR (or approves this wording).
-  body: `A ${loan} 30-year fixed loan at ${rate} has 360 monthly principal and interest payments of ${payment}. This example does not include taxes, insurance, or mortgage insurance, so the actual payment obligation will be greater. The annual percentage rate (APR) will be higher than the interest rate once lender fees and points are included. Your Loan Estimate will show your actual APR.`,
+  // COMPLIANCE: Reg Z trigger terms. The APR is an estimate (see APR_PREPAID_FINANCE_PCT); confirm with Rate.
+  body: `A ${loan} 30-year fixed loan at ${rate} (${apr} APR) has 360 monthly principal and interest payments of ${payment}. This example does not include taxes, insurance, or mortgage insurance, so the actual payment obligation will be greater. ${aprNote} Your Loan Estimate will show your actual APR.`,
 });
 
 export const fullDisclaimer = (example: DisclosureSection): DisclosureSection[] => [

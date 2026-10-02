@@ -32,6 +32,8 @@ import { longDate, rateFor, type RateInfo } from "@/lib/rate-info";
 import { extrasByOption } from "@/lib/piti";
 import { shareSummary } from "@/lib/share";
 import { ShareListing } from "./ShareListing";
+import { APR_ASSUMPTION } from "@/lib/ad-terms";
+import { aprLabel, estimateApr } from "@/lib/apr";
 import type { Listing } from "@/lib/types";
 import { LenderCard } from "@/components/lender/LenderCard";
 import { Gallery } from "./Gallery";
@@ -71,6 +73,7 @@ export function ListingView({
   const adj = CREDIT_RANGES[sc.credit].adj;
   const baseRate = rateFor(rateInfo, sc.type);
   const c = calc(l.price, l.concession, sc.type, sc.down, adj, baseRate, sc.credit);
+  const apr = aprLabel(estimateApr(sc.type, sc.down, c.rate, l.price, sc.credit));
   const b = c.best;
   const bestY1 = b ? b.y1 : c.base;
   const share = shareSummary(l, rateInfo);
@@ -269,7 +272,7 @@ export function ListingView({
               </div>
             </div>
             <div className="border-t border-accent-200 pt-2.5 text-[13px] text-pretty text-neutral-800">
-              {bestNote(c, addBase)} With no concession: {usd(P.base)}/mo at {pct(c.rate)}
+              {bestNote(c, addBase)} With no concession: {usd(P.base)}/mo at {pct(c.rate)} ({apr} APR)
               {full ? ", including estimated taxes, insurance" + (ex.base.mi ? ", mortgage insurance" : "") + (ex.base.hoa ? " and HOA" : "") : ""}.
             </div>
           </section>
@@ -343,7 +346,7 @@ export function ListingView({
                 onChange={(v) => setSc((s) => ({ ...s, credit: v }))}
                 options={CREDIT_RANGES.map((r, i) => ({ value: i, label: r.label }))}
               />
-              <div className="mt-1 text-[11px] text-neutral-700">{rateInfo.source === "daily" ? "Example rate" : "Sample rate"} for this range: {pct(c.rate)}</div>
+              <div className="mt-1 text-[11px] text-neutral-700">{rateInfo.source === "daily" ? "Example rate" : "Sample rate"} for this range: {pct(c.rate)} ({apr} APR)</div>
             </div>
             <div className="field">
               <span className="field-label">Show payments as</span>
@@ -428,7 +431,7 @@ export function ListingView({
             </button>
             {discOpen && (
               <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-2">
-                {fullDisclaimer(representativeExample(usd(c.loan), pct(c.rate), usd(c.base))).map((s) => (
+                {fullDisclaimer(representativeExample(usd(c.loan), pct(c.rate), usd(c.base), apr, APR_ASSUMPTION)).map((s) => (
                   <div key={s.title} className="flex flex-col gap-1 rounded-[14px] bg-bg p-3.5">
                     <div className="text-[13px] font-bold text-ink">{s.title}</div>
                     <p className="m-0">

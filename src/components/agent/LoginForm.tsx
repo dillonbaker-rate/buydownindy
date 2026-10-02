@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Segmented } from "@/components/ui/Segmented";
 import { createClient } from "@/lib/supabase/client";
-import { AGENT_TERMS_VERSION } from "@/content/agent-terms";
+import { AGENT_SIGNUP_OPEN, AGENT_TERMS_VERSION } from "@/content/agent-terms";
 import { AgreeToTerms } from "./AgentTerms";
 
 type Mode = "signin" | "signup" | "forgot";
@@ -110,7 +110,10 @@ export function LoginForm({ next, linkError }: { next?: string; linkError?: bool
         </p>
       </div>
 
-      {mode !== "forgot" && (
+      {mode !== "forgot" && !AGENT_SIGNUP_OPEN && (
+        <p className="m-0 rounded-[12px] bg-surface p-3 text-[13px]">New agent accounts aren&apos;t open yet. Existing accounts can sign in below.</p>
+      )}
+      {mode !== "forgot" && AGENT_SIGNUP_OPEN && (
         <Segmented
           label="Sign in or create account"
           value={mode}

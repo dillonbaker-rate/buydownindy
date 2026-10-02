@@ -11,6 +11,7 @@ import { useIsDesktop } from "@/lib/hooks";
 import { CENTER_DESK, CENTER_PHONE } from "@/lib/map-config";
 import { COUNTIES, type Listing } from "@/lib/types";
 import { inArea, type Area } from "@/lib/areas";
+import { aprLabel, estimateApr } from "@/lib/apr";
 import { rateFor, rateNoun, type RateInfo } from "@/lib/rate-info";
 import type { LeafletMapHandle } from "./LeafletMap";
 import { MapErrorBoundary } from "./MapErrorBoundary";
@@ -92,7 +93,7 @@ export function MapScreen({
       best: "−" + usd(saving(c.base, c.best.y1)),
       cutW: ((c.base - c.cut) / (c.base - c.best.y1)) * 100 + "%",
       bestName: c.best.name,
-      basis: `${ex.address}, ${usd(ex.price)}, ${ex.defaultDownPct}% down, ${pct(rate)} ${rateNoun(rateInfo)}`,
+      basis: `${ex.address}, ${usd(ex.price)}, ${ex.defaultDownPct}% down, ${pct(rate)} ${rateNoun(rateInfo)} (${aprLabel(estimateApr(type, ex.defaultDownPct, rate, ex.price))} APR). ${c.best.k === 1 ? "Payment rises in year 2." : `Payment rises in years 2–${c.best.k! + 1}.`}`,
     };
   }, [listings, rateInfo]);
 

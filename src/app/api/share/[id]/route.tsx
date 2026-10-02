@@ -106,6 +106,7 @@ const Wordmark = ({ s = 1, light = false }: { s?: number; light?: boolean }) => 
 function Compare({ m, s, dark = false }: { m: ListingMarketing; s: number; dark?: boolean }) {
   const best = m.payments.best;
   return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 * s }}>
     <div style={{ display: "flex", gap: 18 * s }}>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, borderRadius: 24 * s, padding: `${20 * s}px ${22 * s}px`, background: dark ? "rgba(255,255,255,0.12)" : TINT, color: dark ? "#fff" : INK }}>
         <div style={{ fontSize: 24 * s, fontWeight: 700 }}>{`${m.concessionShort} price cut`}</div>
@@ -115,13 +116,21 @@ function Compare({ m, s, dark = false }: { m: ListingMarketing; s: number; dark?
       <div style={{ display: "flex", flexDirection: "column", flex: 1.15, borderRadius: 24 * s, padding: `${20 * s}px ${22 * s}px`, background: "#fff", color: INK, boxShadow: "0 6px 20px rgba(0,0,0,0.12)" }}>
         <div style={{ fontSize: 24 * s, fontWeight: 700 }}>{best ? `${best.option}, year 1` : "Closing cost credit"}</div>
         <div style={{ fontSize: 54 * s, fontWeight: 800, letterSpacing: -1.5, color: ACCENT }}>{best ? `${money(best.year1)}/mo` : money(m.concession)}</div>
-        <div style={{ fontSize: 22 * s, fontWeight: 700, color: "#123f78" }}>{best ? `saves ${money(best.savings)}/mo` : "toward closing costs"}</div>
+        <div style={{ fontSize: 22 * s, fontWeight: 700, color: "#123f78" }}>{best ? `saves ${money(best.savings)}/mo in year 1` : "toward closing costs"}</div>
+        {best && <div style={{ fontSize: 21 * s, lineHeight: 1.3, marginTop: 6 * s, color: INK }}>{best.stepUp}</div>}
       </div>
+    </div>
+    <Terms m={m} s={s} light={dark} />
     </div>
   );
 }
 
-function Person({ s, photo, role, name, lines, light }: { s: number; photo: string | null; role: string; name: string; lines: string[]; light: boolean }) {
+/** Example loan terms and APR, sized to read with the payments. */
+function Terms({ m, s, light = false }: { m: ListingMarketing; s: number; light?: boolean }) {
+  return <div style={{ fontSize: 21 * s, lineHeight: 1.3, color: light ? "rgba(255,255,255,0.9)" : "#3f4750" }}>{`${m.example} Principal & interest only.`}</div>;
+}
+
+function Person({ s, photo, role, name, lines, light }: { s: number; photo: string | null; role?: string; name: string; lines: string[]; light: boolean }) {
   const d = 92 * s;
   const initials = name
     .split(/\s+/)
@@ -139,7 +148,7 @@ function Person({ s, photo, role, name, lines, light }: { s: number; photo: stri
         </div>
       )}
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, color: light ? "#fff" : INK }}>
-        <div style={{ fontSize: 15 * s, fontWeight: 800, letterSpacing: 1.5, color: light ? "#bfd2ef" : ACCENT }}>{role}</div>
+        {role && <div style={{ fontSize: 15 * s, fontWeight: 800, letterSpacing: 1.5, color: light ? "#bfd2ef" : ACCENT }}>{role}</div>}
         <div style={{ fontSize: 25 * s, fontWeight: 800, lineHeight: 1.15 }}>{name}</div>
         {lines.map((t, i) => (
           <div key={i} style={{ fontSize: 18 * s, lineHeight: 1.3, opacity: 0.85 }}>
@@ -160,14 +169,17 @@ function Footer({ m, s, qr, heads, light = false }: { m: ListingMarketing; s: nu
           s={s}
           light={light}
           photo={heads.lender}
-          role="YOUR LENDER"
           name={m.lender.name}
           lines={[`${m.lender.title}, ${m.lender.company}`, m.lender.phone, `NMLS #${m.lender.nmls}`]}
         />
-        <Person s={s} light={light} photo={heads.agent} role="LISTING AGENT" name={a.name} lines={[a.brokerage, ...(a.phone ? [a.phone] : []), ...(a.email ? [a.email] : [])]} />
+        {/* Consumer-only: the listing broker is credited in plain text; no agent photo or contact details. */}
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, color: light ? "#fff" : INK }}>
+          <div style={{ fontSize: 15 * s, fontWeight: 800, letterSpacing: 1.5, color: light ? "#bfd2ef" : MUTED }}>LISTING COURTESY OF</div>
+          <div style={{ fontSize: 20 * s, lineHeight: 1.3, opacity: 0.85 }}>{a.brokerage ? `${a.name}, ${a.brokerage}` : a.name}</div>
+        </div>
         {qr && <img src={qr} alt="" width={120 * s} height={120 * s} style={{ borderRadius: 8 }} />}
       </div>
-      <div style={{ fontSize: 15 * s, lineHeight: 1.35, color: light ? "rgba(255,255,255,0.78)" : MUTED }}>{`${m.disclaimer} ${m.lender.email}`}</div>
+      <div style={{ fontSize: 18 * s, lineHeight: 1.35, color: light ? "rgba(255,255,255,0.85)" : "#4a525c" }}>{`${m.disclaimer} ${m.lender.email}`}</div>
     </div>
   );
 }
@@ -176,7 +188,7 @@ const facts = (m: ListingMarketing) => `${m.beds} bd · ${m.baths} ba · ${m.sqf
 
 function Classic({ m, w, h, photo, qr, size, heads }: P) {
   const s = w / 1080;
-  const ph = Math.round(h * (size === "post" ? 0.5 : size === "story" ? 0.6 : 0.44));
+  const ph = Math.round(h * (size === "post" ? 0.4 : size === "story" ? 0.54 : 0.38));
   return (
     <div style={{ width: w, height: h, display: "flex", flexDirection: "column", background: "#fff", fontFamily: "Figtree" }}>
       <div style={{ display: "flex", position: "relative" }}>
@@ -208,7 +220,7 @@ function Classic({ m, w, h, photo, qr, size, heads }: P) {
 
 function Bold({ m, w, h, photo, qr, size, heads }: P) {
   const s = w / 1080;
-  const ph = Math.round(h * (size === "story" ? 0.4 : size === "post" ? 0.29 : 0.34));
+  const ph = Math.round(h * (size === "story" ? 0.34 : size === "post" ? 0.19 : 0.27));
   const best = m.payments.best;
   return (
     <div style={{ width: w, height: h, display: "flex", flexDirection: "column", background: NAVY, color: "#fff", fontFamily: "Figtree", padding: `${48 * s}px ${48 * s}px ${34 * s}px`, gap: 24 * s }}>
@@ -220,6 +232,7 @@ function Bold({ m, w, h, photo, qr, size, heads }: P) {
         <div style={{ fontSize: 34 * s, fontWeight: 700, color: "#bfd2ef" }}>THE SELLER IS PAYING</div>
         <div style={{ fontSize: 150 * s, fontWeight: 800, lineHeight: 0.95, letterSpacing: -5 }}>{money(m.concession)}</div>
         <div style={{ fontSize: 40 * s, fontWeight: 800 }}>{best ? `toward your rate: ${money(best.year1)}/mo in year 1` : "toward your closing costs"}</div>
+        {best && <div style={{ fontSize: 26 * s, color: "#dbe6f5" }}>{best.stepUp}</div>}
       </div>
       <div style={{ display: "flex", borderRadius: 28 * s, overflow: "hidden" }}>
         <Photo src={photo} w={w - 96 * s} h={ph} label={m.address} />
@@ -261,16 +274,18 @@ function Numbers({ m, w, h, photo, qr, size, heads }: P) {
         <div style={{ fontSize: 128 * s, fontWeight: 800, letterSpacing: -4, color: ACCENT, lineHeight: 1 }}>{`${money(save)}/mo`}</div>
         <div style={{ fontSize: 44 * s, fontWeight: 800, letterSpacing: -1 }}>{best ? `less in year 1 with a ${best.option}` : "less with a price cut"}</div>
         <div style={{ fontSize: 30 * s, color: MUTED, marginTop: 6 * s }}>{`vs. ${money(m.payments.priceCutSavings)}/mo with a ${m.concessionShort} price cut`}</div>
+        {best && <div style={{ fontSize: 26 * s, color: INK, marginTop: 4 * s }}>{best.stepUp}</div>}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 18 * s, background: "#fff", borderRadius: 28 * s, padding: `${26 * s}px ${28 * s}px` }}>
         {bar(m.payments.priceCutSavings, "#76808c", `${m.concessionShort} price cut`, `−${money(m.payments.priceCutSavings)}/mo`)}
         {best && bar(best.savings, ACCENT, `${best.option}, year 1`, `−${money(best.savings)}/mo`)}
+        <Terms m={m} s={s} />
       </div>
       <div style={{ display: "flex", flexDirection: size === "story" ? "column" : "row", gap: 24 * s, alignItems: size === "story" ? "flex-start" : "center" }}>
         <Photo
           src={photo}
           w={Math.round((size === "story" ? 984 : 470) * s)}
-          h={Math.round((size === "post" ? 330 : size === "story" ? 640 : 470) * s)}
+          h={Math.round((size === "post" ? 290 : size === "story" ? 560 : 400) * s)}
           radius={22 * s}
           label=""
         />
@@ -299,14 +314,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   const m = listingMarketing(l, info, url.origin);
   const { w, h } = SIZES[size];
-  const [photo, fontData, qr, lenderHead, agentHead] = await Promise.all([
+  const [photo, fontData, qr, lenderHead] = await Promise.all([
     photoData(m.photo),
     loadFonts().catch(() => undefined),
     size === "post" ? Promise.resolve(null) : QRCode.toDataURL(m.links.listing, { margin: 1, width: 240 }),
     headshotData(m.lender.photo),
-    headshotData(m.listingAgent.photo),
   ]);
-  const heads = { lender: lenderHead, agent: agentHead };
+  const heads = { lender: lenderHead, agent: null };
   const Design = RENDER[design];
   const img = new ImageResponse(<Design m={m} w={w} h={h} photo={photo} qr={qr} size={size} heads={heads} />, { width: w, height: h, fonts: fontData });
   if (url.searchParams.get("download"))

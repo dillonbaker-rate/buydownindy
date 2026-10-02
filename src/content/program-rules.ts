@@ -68,3 +68,10 @@ export function estimateTaxesAndInsurance(price: number) {
     insuranceYr: Math.round(((price / 1000) * INSURANCE_PER_1000) / 10) * 10,
   };
 }
+
+// ── APR (Reg Z) ───────────────────────────────────────────────────────────
+// Any advertised rate needs its APR. When Dillon hasn't entered today's APR from Rate's pricing, we
+// estimate it from this assumption: prepaid finance charges (origination, discount, and similar
+// lender fees) as a % of the loan. FHA upfront MIP / VA funding fee are counted on top (financed).
+// COMPLIANCE: confirm this assumption with Rate before relying on estimated APRs in advertising.
+export const APR_PREPAID_FINANCE_PCT = 1;

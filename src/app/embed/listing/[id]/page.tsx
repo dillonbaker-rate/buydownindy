@@ -43,11 +43,13 @@ export default async function EmbedListing({ params }: { params: Promise<{ id: s
           <div className="rounded-[12px] bg-bg p-2 shadow-sm">
             <div className="text-[12px] font-semibold">{best ? `${best.option}, year 1` : "Closing cost credit"}</div>
             <div className="text-[22px] leading-tight font-bold text-accent">{best ? `${money(best.year1)}/mo` : money(m.concession)}</div>
-            <div className="text-[11px] font-semibold text-accent-700">{best ? `saves ${money(best.savings)}/mo` : "toward closing costs"}</div>
+            <div className="text-[11px] font-semibold text-accent-700">{best ? `saves ${money(best.savings)}/mo in year 1` : "toward closing costs"}</div>
+            {best && <div className="mt-0.5 text-[12px] leading-snug">{best.stepUp}</div>}
           </div>
         </div>
         <div className="px-3 pt-2 pb-1 text-[13px] font-semibold text-accent-700">See all the options →</div>
-        <p className="m-0 px-3 pb-3 text-[10px] leading-snug text-neutral-700">{m.disclaimer}</p>
+        <p className="m-0 px-3 pt-1 text-[12px] leading-snug">{m.example} Principal &amp; interest only.</p>
+        <p className="m-0 px-3 pt-1 pb-3 text-[11px] leading-snug text-neutral-800">{m.disclaimer}</p>
       </a>
     </div>
   );

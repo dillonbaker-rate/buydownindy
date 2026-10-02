@@ -212,8 +212,7 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
       return;
     }
     toast(editing ? "Changes saved. Your listing is updated." : "Listing published. It is live on the map for 30 days.");
-    const created = editing ? null : ((await res.json().catch(() => ({}))) as { id?: string }).id;
-    router.push(created ? `/agent?posted=${encodeURIComponent(created)}` : "/agent");
+    router.push("/agent");
     router.refresh();
   };
 

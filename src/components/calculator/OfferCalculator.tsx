@@ -3,6 +3,8 @@ import { Check, Copy } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { CREDIT_RANGES, LOAN_TYPES, MIN_DOWN, pct, usd, type LoanType } from "@/lib/buydown";
 import { buydownName, offerMath, type BuydownGoal, type ClosingGoal } from "@/lib/offer";
+import { APR_ASSUMPTION } from "@/lib/ad-terms";
+import { aprLabel, estimateApr } from "@/lib/apr";
 
 const num = (s: string) => Number(s.replace(/[^0-9.]/g, "")) || 0;
 const money = (s: string) => {
@@ -278,7 +280,7 @@ export function OfferCalculator({
                 )}
 
                 <p className="m-0 text-[11px] leading-snug text-neutral-700">
-                  {`Estimates using a ${pct(r.rate)} 30-year fixed ${rateNote}, adjusted for credit. Principal & interest only; taxes, insurance and mortgage insurance are extra. Closing costs estimated at 4% of the loan. Temporary buydowns require a signed contract, and the buyer qualifies at the full rate. Not a commitment to lend.`}
+                  {`Estimates using a ${pct(r.rate)} 30-year fixed ${rateNote}, adjusted for credit (${aprLabel(estimateApr(type, d, r.rate, r.price, tier))} APR; ${APR_ASSUMPTION.replace(/^APR is an estimate that assumes/, "assumes")}) Principal & interest only; taxes, insurance and mortgage insurance are extra. Closing costs estimated at 4% of the loan. Temporary buydowns require a signed contract, and the buyer qualifies at the full rate. Not a commitment to lend.`}
                 </p>
               </>
             )}

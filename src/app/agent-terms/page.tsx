@@ -1,8 +1,8 @@
 import { AgentTermsText } from "@/components/agent/AgentTerms";
 import { AppShell } from "@/components/ui/Header";
-import { AGENT_TERMS_TITLE } from "@/content/agent-terms";
+import { AGENT_TERMS_DRAFT, AGENT_TERMS_TITLE } from "@/content/agent-terms";
 
-export const metadata = { title: `${AGENT_TERMS_TITLE} · BuyDown Indy` };
+export const metadata = { title: `${AGENT_TERMS_TITLE} · BuyDown Indy`, ...(AGENT_TERMS_DRAFT ? { robots: { index: false, follow: false } } : {}) };
 
 export default function AgentTermsPage() {
   return (

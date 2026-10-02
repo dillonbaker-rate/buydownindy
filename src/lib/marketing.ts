@@ -4,6 +4,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { FOOTER_LINE } from "@/content/disclosures";
 import { LENDER } from "@/content/lender";
+import { APR_ASSUMPTION, exampleApr, exampleLine, stepUpLine } from "./ad-terms";
 import { calc, kUsd, MIN_DOWN, pct, saving, typeFor, usd } from "./buydown";
 import { DEMO_AGENT } from "./demo-store";
 import { isSuperAdmin } from "./leads";
@@ -135,9 +136,9 @@ export async function authorizeApiKey(header: string | null): Promise<{ ok: true
 }
 
 // ── The numbers every marketing output uses ─────────────────────────────
-// COMPLIANCE: wording for ads that state payments/rates. Needs Rate compliance review; APR not shown.
+// COMPLIANCE: wording for ads that state payments/rates. Needs Rate compliance review.
 export const MARKETING_DISCLAIMER = (rateLabel: string) =>
-  `Estimated principal & interest only; taxes, insurance and mortgage insurance are extra. Based on a ${rateLabel} 30-year fixed rate and the listing's default down payment; the APR will be higher and your rate depends on credit and other factors. Temporary buydowns are paid by the seller, require a signed contract, and you qualify at the full rate. Not a commitment to lend. ${FOOTER_LINE}.`;
+  `Estimated principal & interest only; taxes, insurance and mortgage insurance are extra. Rate: ${rateLabel}; yours depends on credit and other factors. ${APR_ASSUMPTION} Temporary buydowns are paid by the seller, require a signed contract, and you qualify at the full rate. Not a commitment to lend. ${FOOTER_LINE}.`;
 
 export function listingMarketing(l: Listing, info: RateInfo, origin: string) {
   const type = typeFor(l.loanTypes);
@@ -168,10 +169,15 @@ export function listingMarketing(l: Listing, info: RateInfo, origin: string) {
       noConcession: Math.round(c.base),
       priceCut: Math.round(c.cut),
       priceCutSavings: saving(c.base, c.cut),
-      best: b ? { option: b.name, year1: Math.round(b.y1), savings: saving(c.base, b.y1) } : null,
+      best: b
+        ? { option: b.name, year1: Math.round(b.y1), savings: saving(c.base, b.y1), byYear: b.pays!.map(Math.round), stepUp: stepUpLine(b, c.base) }
+        : null,
     },
+    apr: Number(exampleApr({ price: l.price, type, down, rate }).toFixed(3)),
+    /** Terms of the example loan, with the APR. Show next to any payment. */
+    example: exampleLine({ price: l.price, type, down, rate }),
     headline: b
-      ? `${kUsd(l.concession)} off the price saves ${usd(saving(c.base, c.cut))}/mo. ${kUsd(l.concession)} toward a ${b.name} saves ${usd(saving(c.base, b.y1))}/mo in year 1.`
+      ? `${kUsd(l.concession)} off the price saves ${usd(saving(c.base, c.cut))}/mo. ${kUsd(l.concession)} toward a ${b.name} saves ${usd(saving(c.base, b.y1))}/mo in year 1. ${stepUpLine(b, c.base)}`
       : `Seller is offering ${usd(l.concession)} toward closing costs.`,
     disclaimer: MARKETING_DISCLAIMER(rateLabel),
     lender: { name: LENDER.name, title: LENDER.title, company: LENDER.company, nmls: LENDER.nmls, companyNmls: LENDER.companyNmls, phone: LENDER.mobilePhone, email: LENDER.email, photo: new URL(LENDER.photo, origin).toString() },
@@ -203,9 +209,10 @@ export function newsletterHtml(m: ListingMarketing): string {
 <div style="display:inline-block;margin-top:8px;background:#1c5aa6;color:#ffffff;font-size:13px;font-weight:bold;padding:4px 10px;border-radius:999px">${m.concessionShort} from the seller</div></td></tr>
 <tr><td style="padding:10px 18px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3fb;border-radius:10px"><tr>
 <td width="50%" style="padding:12px;vertical-align:top"><div style="font-size:12px;font-weight:bold">${m.concessionShort} price cut</div><div style="font-size:22px;font-weight:bold">${money(m.payments.priceCut)}/mo</div><div style="font-size:12px;color:#5a636e">saves ${money(m.payments.priceCutSavings)}/mo</div></td>
-<td width="50%" style="padding:12px;vertical-align:top"><div style="font-size:12px;font-weight:bold">${best ? esc(best.option) + ", year 1" : "Closing cost credit"}</div><div style="font-size:22px;font-weight:bold;color:#1c5aa6">${best ? money(best.year1) + "/mo" : money(m.concession)}</div><div style="font-size:12px;color:#123f78;font-weight:bold">${best ? "saves " + money(best.savings) + "/mo" : "toward closing costs"}</div></td>
+<td width="50%" style="padding:12px;vertical-align:top"><div style="font-size:12px;font-weight:bold">${best ? esc(best.option) + ", year 1" : "Closing cost credit"}</div><div style="font-size:22px;font-weight:bold;color:#1c5aa6">${best ? money(best.year1) + "/mo" : money(m.concession)}</div><div style="font-size:12px;color:#123f78;font-weight:bold">${best ? "saves " + money(best.savings) + "/mo in year 1" : "toward closing costs"}</div>${best ? `<div style="font-size:13px;line-height:1.35;margin-top:4px">${esc(best.stepUp)}</div>` : ""}</td>
 </tr></table></td></tr>
 <tr><td style="padding:4px 18px 10px"><a href="${esc(m.links.listing)}" style="font-size:14px;font-weight:bold;color:#123f78">See all the options →</a></td></tr>
-<tr><td style="padding:0 18px 14px;font-size:10px;line-height:1.4;color:#5a636e">${esc(m.disclaimer)} Listing: ${esc(`${m.listingAgent.name}, ${m.listingAgent.brokerage}`)}.</td></tr>
+<tr><td style="padding:0 18px 6px;font-size:13px;line-height:1.4;color:#1c2530">${esc(m.example)} Principal &amp; interest only.</td></tr>
+<tr><td style="padding:0 18px 14px;font-size:12px;line-height:1.4;color:#3f4750">${esc(m.disclaimer)} Listing: ${esc(`${m.listingAgent.name}, ${m.listingAgent.brokerage}`)}.</td></tr>
 </table>`;
 }

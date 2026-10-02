@@ -5,7 +5,8 @@ import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/rates";
 import { COUNTIES } from "@/lib/types";
-import { AGENT_TERMS_VERSION } from "@/content/agent-terms";
+import { AGENT_SIGNUP_OPEN, AGENT_TERMS_VERSION } from "@/content/agent-terms";
+import { logTermsAcceptance } from "@/lib/agent-terms-gate";
 
 const phone = z
   .string()
@@ -93,6 +94,8 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Enter your Indiana real estate license number, e.g. RB14012345." }, { status: 400 });
   const { data: existing } = await sb.from("agents").select("id").eq("id", user.id).maybeSingle();
   // New profiles must accept the Agent Terms.
+  if (!existing && !AGENT_SIGNUP_OPEN && !isAdmin(user.email))
+    return NextResponse.json({ error: "New agent accounts aren't open yet." }, { status: 403 });
   if (!existing && !agreedAt) return NextResponse.json({ error: "Please agree to the Agent Terms." }, { status: 400 });
   const row = {
     id: user.id,
@@ -118,5 +121,6 @@ export async function PUT(req: Request) {
   // Before migration 0007 the terms columns don't exist yet: save the profile without them.
   if (error && /terms_/.test(error.message)) ({ error } = await sb.from("agents").upsert(row));
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (agreedAt && !existing) await logTermsAcceptance(sb, user.id, user.email ?? null, agreedAt, req);
   return NextResponse.json({ ok: true });
 }

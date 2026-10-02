@@ -65,6 +65,25 @@ interface P {
   photo: string | null;
   qr: string | null;
   size: Size;
+  heads: Heads;
+}
+type Heads = { lender: string | null; agent: string | null };
+
+/** Square-cropped headshot as a small JPEG data URL. */
+async function headshotData(url: string | null): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    const jpg = await sharp(Buffer.from(await r.arrayBuffer()))
+      .rotate()
+      .resize(240, 240, { fit: "cover", position: "attention" })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+    return `data:image/jpeg;base64,${jpg.toString("base64")}`;
+  } catch {
+    return null;
+  }
 }
 
 const Photo = ({ src, w, h, radius = 0, label }: { src: string | null; w: number; h: number; radius?: number; label: string }) =>
@@ -102,33 +121,60 @@ function Compare({ m, s, dark = false }: { m: ListingMarketing; s: number; dark?
   );
 }
 
-function Footer({ m, s, qr, light = false }: { m: ListingMarketing; s: number; qr: string | null; light?: boolean }) {
-  const c = light ? "#fff" : INK;
+function Person({ s, photo, role, name, lines, light }: { s: number; photo: string | null; role: string; name: string; lines: string[]; light: boolean }) {
+  const d = 92 * s;
+  const initials = name
+    .split(/\s+/)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 * s }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20 * s }}>
-        <div style={{ display: "flex", flexDirection: "column", color: c }}>
-          <div style={{ fontSize: 26 * s, fontWeight: 800 }}>{`${m.lender.name} · ${m.lender.title}`}</div>
-          <div style={{ fontSize: 21 * s, opacity: 0.85 }}>{`${m.lender.phone} · ${m.lender.email} · NMLS #${m.lender.nmls}`}</div>
-          <div style={{ fontSize: 19 * s, opacity: 0.75 }}>{`Listing: ${m.listingAgent.name}, ${m.listingAgent.brokerage}`}</div>
+    <div style={{ display: "flex", alignItems: "center", gap: 16 * s, flex: 1, minWidth: 0 }}>
+      {photo ? (
+        <img src={photo} alt="" width={d} height={d} style={{ width: d, height: d, borderRadius: 999, objectFit: "cover", border: `${3 * s}px solid ${light ? "#fff" : "#fff"}` }} />
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: d, height: d, borderRadius: 999, background: light ? "rgba(255,255,255,0.18)" : "#dce7f7", color: light ? "#fff" : ACCENT, fontSize: 34 * s, fontWeight: 800 }}>
+          {initials}
         </div>
-        {qr ? (
-          <img src={qr} alt="" width={120 * s} height={120 * s} style={{ borderRadius: 8 }} />
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", color: c }}>
-            <div style={{ fontSize: 19 * s, opacity: 0.75 }}>See every option</div>
-            <div style={{ fontSize: 24 * s, fontWeight: 800 }}>{new URL(m.links.listing).host}</div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, color: light ? "#fff" : INK }}>
+        <div style={{ fontSize: 15 * s, fontWeight: 800, letterSpacing: 1.5, color: light ? "#bfd2ef" : ACCENT }}>{role}</div>
+        <div style={{ fontSize: 25 * s, fontWeight: 800, lineHeight: 1.15 }}>{name}</div>
+        {lines.map((t, i) => (
+          <div key={i} style={{ fontSize: 18 * s, lineHeight: 1.3, opacity: 0.85 }}>
+            {t}
           </div>
-        )}
+        ))}
       </div>
-      <div style={{ fontSize: 15 * s, lineHeight: 1.35, color: light ? "rgba(255,255,255,0.78)" : MUTED }}>{m.disclaimer}</div>
+    </div>
+  );
+}
+
+function Footer({ m, s, qr, heads, light = false }: { m: ListingMarketing; s: number; qr: string | null; heads: Heads; light?: boolean }) {
+  const a = m.listingAgent;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 * s }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 22 * s }}>
+        <Person
+          s={s}
+          light={light}
+          photo={heads.lender}
+          role="YOUR LENDER"
+          name={m.lender.name}
+          lines={[`${m.lender.title}, ${m.lender.company}`, m.lender.phone, `NMLS #${m.lender.nmls}`]}
+        />
+        <Person s={s} light={light} photo={heads.agent} role="LISTING AGENT" name={a.name} lines={[a.brokerage, ...(a.phone ? [a.phone] : []), ...(a.email ? [a.email] : [])]} />
+        {qr && <img src={qr} alt="" width={120 * s} height={120 * s} style={{ borderRadius: 8 }} />}
+      </div>
+      <div style={{ fontSize: 15 * s, lineHeight: 1.35, color: light ? "rgba(255,255,255,0.78)" : MUTED }}>{`${m.disclaimer} ${m.lender.email}`}</div>
     </div>
   );
 }
 
 const facts = (m: ListingMarketing) => `${m.beds} bd · ${m.baths} ba · ${m.sqft.toLocaleString("en-US")} sq ft`;
 
-function Classic({ m, w, h, photo, qr, size }: P) {
+function Classic({ m, w, h, photo, qr, size, heads }: P) {
   const s = w / 1080;
   const ph = Math.round(h * (size === "post" ? 0.5 : size === "story" ? 0.6 : 0.44));
   return (
@@ -154,15 +200,15 @@ function Classic({ m, w, h, photo, qr, size }: P) {
         <div style={{ fontSize: 30 * s, fontWeight: 700, color: INK }}>{`Same ${m.concessionShort} from the seller. Very different payment.`}</div>
         <Compare m={m} s={s} />
         <div style={{ display: "flex", flex: 1 }} />
-        <Footer m={m} s={s} qr={qr} />
+        <Footer m={m} s={s} qr={qr} heads={heads} />
       </div>
     </div>
   );
 }
 
-function Bold({ m, w, h, photo, qr, size }: P) {
+function Bold({ m, w, h, photo, qr, size, heads }: P) {
   const s = w / 1080;
-  const ph = Math.round(h * (size === "story" ? 0.4 : 0.34));
+  const ph = Math.round(h * (size === "story" ? 0.4 : size === "post" ? 0.29 : 0.34));
   const best = m.payments.best;
   return (
     <div style={{ width: w, height: h, display: "flex", flexDirection: "column", background: NAVY, color: "#fff", fontFamily: "Figtree", padding: `${48 * s}px ${48 * s}px ${34 * s}px`, gap: 24 * s }}>
@@ -184,12 +230,12 @@ function Bold({ m, w, h, photo, qr, size }: P) {
       </div>
       <Compare m={m} s={s} dark />
       <div style={{ display: "flex", flex: 1 }} />
-      <Footer m={m} s={s} qr={qr} light />
+      <Footer m={m} s={s} qr={qr} heads={heads} light />
     </div>
   );
 }
 
-function Numbers({ m, w, h, photo, qr, size }: P) {
+function Numbers({ m, w, h, photo, qr, size, heads }: P) {
   const s = w / 1080;
   const best = m.payments.best;
   const save = best ? best.savings : m.payments.priceCutSavings;
@@ -220,8 +266,14 @@ function Numbers({ m, w, h, photo, qr, size }: P) {
         {bar(m.payments.priceCutSavings, "#76808c", `${m.concessionShort} price cut`, `−${money(m.payments.priceCutSavings)}/mo`)}
         {best && bar(best.savings, ACCENT, `${best.option}, year 1`, `−${money(best.savings)}/mo`)}
       </div>
-      <div style={{ display: "flex", gap: 24 * s, alignItems: "center" }}>
-        <Photo src={photo} w={Math.round(470 * s)} h={Math.round((size === "post" ? 330 : 470) * s)} radius={22 * s} label="" />
+      <div style={{ display: "flex", flexDirection: size === "story" ? "column" : "row", gap: 24 * s, alignItems: size === "story" ? "flex-start" : "center" }}>
+        <Photo
+          src={photo}
+          w={Math.round((size === "story" ? 984 : 470) * s)}
+          h={Math.round((size === "post" ? 330 : size === "story" ? 640 : 470) * s)}
+          radius={22 * s}
+          label=""
+        />
         <div style={{ display: "flex", flexDirection: "column", color: INK }}>
           <div style={{ fontSize: 52 * s, fontWeight: 800 }}>{money(m.price)}</div>
           <div style={{ fontSize: 28 * s }}>{`${m.address}, ${m.city}`}</div>
@@ -229,7 +281,7 @@ function Numbers({ m, w, h, photo, qr, size }: P) {
         </div>
       </div>
       <div style={{ display: "flex", flex: 1 }} />
-      <Footer m={m} s={s} qr={qr} />
+      <Footer m={m} s={s} qr={qr} heads={heads} />
     </div>
   );
 }
@@ -247,13 +299,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   const m = listingMarketing(l, info, url.origin);
   const { w, h } = SIZES[size];
-  const [photo, fontData, qr] = await Promise.all([
+  const [photo, fontData, qr, lenderHead, agentHead] = await Promise.all([
     photoData(m.photo),
     loadFonts().catch(() => undefined),
     size === "post" ? Promise.resolve(null) : QRCode.toDataURL(m.links.listing, { margin: 1, width: 240 }),
+    headshotData(m.lender.photo),
+    headshotData(m.listingAgent.photo),
   ]);
+  const heads = { lender: lenderHead, agent: agentHead };
   const Design = RENDER[design];
-  const img = new ImageResponse(<Design m={m} w={w} h={h} photo={photo} qr={qr} size={size} />, { width: w, height: h, fonts: fontData });
+  const img = new ImageResponse(<Design m={m} w={w} h={h} photo={photo} qr={qr} size={size} heads={heads} />, { width: w, height: h, fonts: fontData });
   if (url.searchParams.get("download"))
     img.headers.set("content-disposition", `attachment; filename="${l.address.replace(/[^A-Za-z0-9]+/g, "-")}-${size}-${GRAPHIC_DESIGNS[design].toLowerCase()}.png"`);
   img.headers.set("cache-control", "public, max-age=300, s-maxage=600");

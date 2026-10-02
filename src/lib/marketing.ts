@@ -174,8 +174,14 @@ export function listingMarketing(l: Listing, info: RateInfo, origin: string) {
       ? `${kUsd(l.concession)} off the price saves ${usd(saving(c.base, c.cut))}/mo. ${kUsd(l.concession)} toward a ${b.name} saves ${usd(saving(c.base, b.y1))}/mo in year 1.`
       : `Seller is offering ${usd(l.concession)} toward closing costs.`,
     disclaimer: MARKETING_DISCLAIMER(rateLabel),
-    lender: { name: LENDER.name, title: LENDER.title, company: LENDER.company, nmls: LENDER.nmls, companyNmls: LENDER.companyNmls, phone: LENDER.mobilePhone, email: LENDER.email },
-    listingAgent: { name: l.agentName, brokerage: l.brokerage },
+    lender: { name: LENDER.name, title: LENDER.title, company: LENDER.company, nmls: LENDER.nmls, companyNmls: LENDER.companyNmls, phone: LENDER.mobilePhone, email: LENDER.email, photo: new URL(LENDER.photo, origin).toString() },
+    listingAgent: {
+      name: l.agentName,
+      brokerage: l.brokerage,
+      phone: l.agentPhone ?? null,
+      email: l.agentEmail ?? null,
+      photo: l.agentPhotoUrl ? new URL(l.agentPhotoUrl, origin).toString() : null,
+    },
     links: {
       listing: url,
       embed: `${origin}/embed/listing/${l.id}`,

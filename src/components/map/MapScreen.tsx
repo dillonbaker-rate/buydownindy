@@ -6,7 +6,7 @@ import { useMemo, useRef, useState } from "react";
 import { ListingCard } from "@/components/listing/ListingCard";
 import { PriceRange } from "@/components/ui/DualRange";
 import { Segmented } from "@/components/ui/Segmented";
-import { calc, kUsd, pct, saving, usd, type LoanType } from "@/lib/buydown";
+import { calc, kUsd, pct, saving, usd } from "@/lib/buydown";
 import { useIsDesktop } from "@/lib/hooks";
 import { CENTER_DESK, CENTER_PHONE } from "@/lib/map-config";
 import { COUNTIES, type Listing } from "@/lib/types";
@@ -15,17 +15,10 @@ import { aprLabel, estimateApr } from "@/lib/apr";
 import { rateFor, rateNoun, type RateInfo } from "@/lib/rate-info";
 import type { LeafletMapHandle } from "./LeafletMap";
 import { MapErrorBoundary } from "./MapErrorBoundary";
+import { FilterBar, NO_FILTERS, type Filters } from "./FilterBar";
 
 const LeafletMap = dynamic(() => import("./LeafletMap").then((m) => m.LeafletMap), { ssr: false });
 
-interface Filters {
-  county: string;
-  min: number;
-  max: number;
-  conc: number;
-  loan: LoanType | "Any";
-}
-const NO_FILTERS: Filters = { county: "All counties", min: 0, max: 0, conc: 0, loan: "Any" };
 
 export function MapScreen({
   listings,
@@ -127,14 +120,16 @@ export function MapScreen({
 
   // Split: list 40%, map 60% (desktop width; phone sheet starts at 40% of the height).
   const LIST_SHARE = "40%";
-  const paneTop = desk ? "0px" : view === "list" ? "0px" : expanded ? "64px" : "60%";
+  // Desktop: filter bar across the top; the list and map sit under it.
+  const BAR = desk ? 61 : 0;
+  const paneTop = desk ? `${BAR}px` : view === "list" ? "0px" : expanded ? "64px" : "60%";
   const paneW = desk ? (view === "list" ? "100%" : LIST_SHARE) : "100%";
 
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden">
       {view === "map" && (
         <>
-          <div className="absolute inset-y-0 right-0" style={{ left: desk ? LIST_SHARE : 0 }}>
+          <div className="absolute right-0 bottom-0" style={{ left: desk ? LIST_SHARE : 0, top: BAR }}>
           <MapErrorBoundary className="absolute inset-0">
           <LeafletMap
             ref={mapRef}
@@ -158,12 +153,18 @@ export function MapScreen({
           {anySample && (
             <span
               className="tag tag-ink absolute z-[500] font-semibold"
-              style={{ top: heroPhone ? 92 : 12, left: desk ? `calc(${LIST_SHARE} + 16px)` : 12 }}
+              style={{ top: heroPhone ? 92 : BAR + 12, left: desk ? `calc(${LIST_SHARE} + 16px)` : 12 }}
             >
               Sample listings
             </span>
           )}
         </>
+      )}
+
+      {desk && (
+        <div className="absolute inset-x-0 top-0 z-[700]">
+          <FilterBar f={f} setF={setF} />
+        </div>
       )}
 
       {heroPhone && (
@@ -334,7 +335,7 @@ export function MapScreen({
             }
           }}
         >
-          {(desk || filtersOpen) && (
+          {phone && filtersOpen && (
             <div className="mb-4 grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-x-4 gap-y-3 border-y border-divider pt-3 pb-4">
               <div className="field">
                 <label htmlFor="f-county">County</label>

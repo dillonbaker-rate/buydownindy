@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ListingInput, StatusAction, toRow } from "@/lib/listing-schema";
-import { demoUpdate } from "@/lib/demo-store";
+import { demoDelete, demoUpdate } from "@/lib/demo-store";
 import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { LISTING_DAYS } from "@/lib/types";
@@ -55,5 +55,20 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const { data, error } = await sb.from("listings").update(patch).eq("id", id).eq("agent_id", user.id).select("id");
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   if (!data?.length) return NextResponse.json({ error: "Listing not found." }, { status: 404 });
+  return NextResponse.json({ ok: true });
+}
+
+// Delete the signed-in agent's own listing and its uploaded photos.
+export async function DELETE(_req: Request, { params }: Ctx) {
+  const { id } = await params;
+  if (demoMode) return (await demoDelete(id)) ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "Listing not found." }, { status: 404 });
+  const { sb, user } = await authed();
+  if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
+  const { data, error } = await sb.from("listings").delete().eq("id", id).eq("agent_id", user.id).select("id, photos");
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  // RLS hides rows it won't let you delete, so nothing deleted = not yours, or migration 0008 not run yet.
+  if (!data?.length) return NextResponse.json({ error: "Couldn't delete that listing." }, { status: 404 });
+  const paths = ((data[0].photos ?? []) as { path?: string }[]).map((p) => p.path).filter((p): p is string => !!p);
+  if (paths.length) await sb.storage.from("listing-photos").remove(paths);
   return NextResponse.json({ ok: true });
 }

@@ -72,9 +72,6 @@ export function AccountMenu({ me }: { me: AccountSummary }) {
               <Link href="/agent/post" role="menuitem" className={item} onClick={() => setOpen(false)}>
                 Post a listing
               </Link>
-              <Link href="/agent/offer-calculator" role="menuitem" className={item} onClick={() => setOpen(false)}>
-                Offer calculator
-              </Link>
               <Link href="/agent/profile" role="menuitem" className={item} onClick={() => setOpen(false)}>
                 My profile
               </Link>

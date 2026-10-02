@@ -89,6 +89,14 @@ export async function demoCreate(d: ListingInput): Promise<string> {
   return id;
 }
 
+export async function demoDelete(id: string) {
+  const all = await readAll();
+  const rest = all.filter((x) => x.id !== id);
+  if (rest.length === all.length) return false;
+  await writeAll(rest);
+  return true;
+}
+
 export async function demoUpdate(id: string, patch: { input?: ListingInput; action?: "renew" | "pending" | "sold" | "live" }) {
   const all = await readAll();
   const l = all.find((x) => x.id === id);

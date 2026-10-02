@@ -22,8 +22,6 @@ export interface Lead {
   answers: { id?: string; question: string; answer: string }[];
   consentAt: string;
   consentText: string;
-  inviteCode: string | null;
-  invitedBy: string | null;
   status: LeadStatus;
   notes: string | null;
 }

@@ -33,9 +33,9 @@ async function writeDemo(all: Lead[]) {
   await fs.mkdir(path.dirname(FILE), { recursive: true });
   await fs.writeFile(FILE, JSON.stringify(all, null, 2));
 }
-export async function saveDemoLead(l: Omit<Lead, "id" | "status" | "notes" | "invitedBy"> & { invitedBy?: string | null }) {
+export async function saveDemoLead(l: Omit<Lead, "id" | "status" | "notes">) {
   const all = await readDemo();
-  all.unshift({ ...l, id: crypto.randomUUID(), status: "new", notes: null, invitedBy: l.invitedBy ?? null });
+  all.unshift({ ...l, id: crypto.randomUUID(), status: "new", notes: null });
   await writeDemo(all);
 }
 
@@ -52,7 +52,6 @@ type Row = {
   answers: Lead["answers"] | null;
   consent_at: string;
   consent_text: string;
-  invite_code: string | null;
   status: string | null;
   notes: string | null;
 };
@@ -66,17 +65,6 @@ export async function listLeads(): Promise<Lead[]> {
     return [];
   }
   const rows = data as Row[];
-  // Which agent invited each buyer (if they came through an invite link).
-  const codes = [...new Set(rows.map((r) => r.invite_code).filter((c): c is string => !!c))];
-  const byCode = new Map<string, string>();
-  if (codes.length) {
-    const { data: inv } = await sb
-      .from("client_invites")
-      .select("code, agent:agents(name, brokerage)")
-      .in("code", codes);
-    for (const i of (inv ?? []) as unknown as { code: string; agent: { name: string; brokerage: string } | null }[])
-      if (i.agent) byCode.set(i.code, `${i.agent.name}, ${i.agent.brokerage}`);
-  }
   return rows.map((r) => ({
     id: r.id,
     createdAt: r.created_at,
@@ -90,8 +78,6 @@ export async function listLeads(): Promise<Lead[]> {
     answers: r.answers ?? [],
     consentAt: r.consent_at,
     consentText: r.consent_text,
-    inviteCode: r.invite_code,
-    invitedBy: r.invite_code ? (byCode.get(r.invite_code) ?? null) : null,
     status: (LEAD_STATUSES_LIST.some((s) => s.value === r.status) ? r.status : "new") as LeadStatus,
     notes: r.notes,
   }));

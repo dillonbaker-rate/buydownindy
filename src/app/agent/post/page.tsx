@@ -23,7 +23,7 @@ export default async function PostPage() {
   if (mustAcceptTerms(me.agent, me.email)) redirect("/agent");
   const rateInfo = await getRateInfo();
   return (
-    <AppShell header={<AgentHeader />}>
+    <AppShell header={<AgentHeader />} mobileNav={false}>
       <PostWizard rateInfo={rateInfo} userId={me.userId} />
     </AppShell>
   );

@@ -1,5 +1,5 @@
 "use client";
-import { Download, Image as ImageIcon, PartyPopper, Plus, X } from "lucide-react";
+import { Download, Image as ImageIcon, PartyPopper, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -7,10 +7,8 @@ import { PhotoOrPlaceholder } from "@/components/listing/ListingCard";
 import { useToast } from "@/components/ui/Toast";
 import { usd } from "@/lib/buydown";
 import { daysLeft } from "@/lib/format";
-import type { Invite } from "@/lib/invites";
 import type { Agent, Listing } from "@/lib/types";
 import { VerificationBadge } from "./AgentProfileForm";
-import { InviteClients } from "./InviteClients";
 
 type Action = "renew" | "pending" | "sold" | "live";
 
@@ -26,13 +24,11 @@ function statusOf(l: Listing) {
 export function Dashboard({
   agent,
   listings,
-  invites,
   isAdmin = false,
   posted,
 }: {
   agent: Agent;
   listings: Listing[];
-  invites: Invite[];
   /** Admins (the lender) don't hold a real estate license, so skip the license prompt. */
   isAdmin?: boolean;
   /** Id of a listing that was just posted: show its flyer. */
@@ -55,6 +51,19 @@ export function Dashboard({
       return;
     }
     if (action === "renew") toast(`${l.address} renewed for 30 days.`);
+    router.refresh();
+  };
+
+  const remove = async (l: Listing) => {
+    if (!confirm(`Delete ${l.address}? It comes off the map right away and can't be undone.`)) return;
+    setBusy(l.id + "delete");
+    const res = await fetch(`/api/listings/${l.id}`, { method: "DELETE" });
+    setBusy(null);
+    if (!res.ok) {
+      toast((await res.json().catch(() => ({}))).error ?? "Couldn't delete that listing. Try again.");
+      return;
+    }
+    toast(`${l.address} deleted.`);
     router.refresh();
   };
 
@@ -102,16 +111,6 @@ export function Dashboard({
           const l = listings.find((x) => x.id === posted && x.status === "live");
           return l ? <FlyerReady listing={l} onClose={() => router.replace("/agent")} /> : null;
         })()}
-        <InviteClients invites={invites} agentName={agent.name} />
-        <div className="mb-3 grid grid-cols-2 gap-3">
-          {["Listing views", "Buyer leads"].map((t) => (
-            <div key={t} className="rounded-[18px] bg-surface p-4">
-              <div className="text-xs text-neutral-700">{t}</div>
-              <div className="text-[28px] font-bold text-neutral-500">—</div>
-              <div className="text-[11px] text-neutral-700">Coming in Phase 2</div>
-            </div>
-          ))}
-        </div>
 
         {listings.length ? (
           listings.map((l) => {
@@ -164,6 +163,10 @@ export function Dashboard({
                   )}
                   {l.status === "live" && btn("Mark pending", "pending")}
                   {l.status === "pending" && [btn("Mark sold", "sold"), btn("Back to live", "live")]}
+                  <button className="btn btn-ghost min-h-10 text-[13px] text-warn-text" disabled={busy != null} onClick={() => remove(l)}>
+                    <Trash2 size={14} />
+                    {busy === l.id + "delete" ? "…" : "Delete"}
+                  </button>
                 </div>
               </div>
             );

@@ -14,7 +14,7 @@ export async function GET() {
   const leads = await listLeads();
   const questions = [...new Set(leads.flatMap((l) => l.answers.map((a) => a.question)))];
   const label = (s: string) => LEAD_STATUSES.find((x) => x.value === s)?.label ?? s;
-  const head = ["Received", "Name", "Email", "Phone", "Status", "Listing", "Topic", "Invited by agent", "Message", "Notes", ...questions, "Consent at"];
+  const head = ["Received", "Name", "Email", "Phone", "Status", "Listing", "Topic", "Message", "Notes", ...questions, "Consent at"];
   const rows = leads.map((l) => [
     l.createdAt,
     l.name,
@@ -23,7 +23,6 @@ export async function GET() {
     label(l.status),
     l.listingLabel,
     l.topic === "points" ? "Permanent buydown (points)" : "General",
-    l.invitedBy,
     l.message,
     l.notes,
     ...questions.map((q) => l.answers.find((a) => a.question === q)?.answer ?? ""),

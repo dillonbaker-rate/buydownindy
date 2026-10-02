@@ -7,6 +7,7 @@ import { isAdmin } from "@/lib/rates";
 import { agentsEnabled, supabaseConfigured } from "@/lib/supabase/env";
 import { AccountMenu } from "./AccountMenu";
 import { Footer } from "./Footer";
+import { SideNav } from "./SideNav";
 
 export function Wordmark() {
   return (
@@ -60,11 +61,25 @@ export async function Header({ children, hideSignIn }: { children?: ReactNode; h
 }
 
 /** Full-height app frame: header, a flexible content area, and the compliance footer pinned at the bottom. */
-export function AppShell({ header, hideSignIn, children }: { header?: ReactNode; hideSignIn?: boolean; children: ReactNode }) {
+export function AppShell({
+  header,
+  hideSignIn,
+  mobileNav = true,
+  children,
+}: {
+  header?: ReactNode;
+  hideSignIn?: boolean;
+  /** Bottom tab bar on phones. Off for pages with their own sticky bottom actions. */
+  mobileNav?: boolean;
+  children: ReactNode;
+}) {
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <Header hideSignIn={hideSignIn}>{header}</Header>
-      <div className="relative flex min-h-0 flex-1 flex-col">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        <SideNav mobile={mobileNav} />
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
+      </div>
       <Footer />
     </div>
   );

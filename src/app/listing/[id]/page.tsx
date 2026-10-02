@@ -35,7 +35,7 @@ export default async function ListingPage({ params, searchParams }: Params) {
   if (!l) notFound();
   const preferred = LOAN_TYPES.includes(type as LoanType) ? (type as LoanType) : undefined;
   return (
-    <AppShell
+    <AppShell mobileNav={false}
       header={
         <Link href="/homes" className="btn btn-ghost text-[13px] font-semibold">
           <ArrowLeft size={16} />

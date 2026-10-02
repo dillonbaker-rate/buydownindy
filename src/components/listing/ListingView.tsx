@@ -126,8 +126,8 @@ export function ListingView({
         .join(" · ");
 
   const offerLink = (
-    <Link href={`/agent/offer-calculator?listing=${encodeURIComponent(l.id)}`} className="text-[13px] font-semibold">
-      Buyer&apos;s agent? Work out the concession for your offer →
+    <Link href={`/calculator?listing=${encodeURIComponent(l.id)}`} className="text-[13px] font-semibold">
+      Making an offer? Work out the concession to ask for →
     </Link>
   );
 

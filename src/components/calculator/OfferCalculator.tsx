@@ -99,9 +99,9 @@ export function OfferCalculator({
       <div className="mx-auto grid max-w-[1080px] gap-8 p-4 lg:grid-cols-[minmax(0,1fr)_400px] lg:p-8">
         <div className="flex flex-col gap-6">
           <div>
-            <h1 className="text-[26px] lg:text-[32px]">Offer calculator</h1>
+            <h1 className="text-[26px] lg:text-[32px]">Concession calculator</h1>
             <p className="m-0 mt-1 text-sm text-neutral-700">
-              Answer a few questions and get the seller concession to write into your offer{initial?.address ? ` on ${initial.address}` : ""}.
+              Buying a home or writing an offer? Answer a few questions to see how much to ask the seller for{initial?.address ? ` on ${initial.address}` : ""}, and what it does to the payment.
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export function OfferCalculator({
             </div>
           </Q>
 
-          <Q n={2} title="How is your buyer financing?">
+          <Q n={2} title="How is the buyer financing?">
             <div className="flex flex-wrap gap-2">
               {LOAN_TYPES.map((t) => (
                 <Chip
@@ -146,7 +146,7 @@ export function OfferCalculator({
             {num(down) < MIN_DOWN[type] && <div className="text-[13px] text-warn-text">{`${type} needs at least ${MIN_DOWN[type]}% down; using ${MIN_DOWN[type]}%.`}</div>}
           </Q>
 
-          <Q n={3} title="Does your buyer want a lower rate?" hint="A temporary buydown lowers the rate for the first years. The seller pays for it at closing.">
+          <Q n={3} title="Want a lower rate?" hint="A temporary buydown lowers the rate for the first years. The seller pays for it at closing.">
             <div className="flex flex-wrap gap-2">
               <Chip on={buydown === 0} onClick={() => setBuydown(0)}>
                 No buydown
@@ -273,7 +273,7 @@ export function OfferCalculator({
                       {copied ? <Check size={14} /> : <Copy size={14} />}
                       {copied ? "Copied" : "Copy"}
                     </button>
-                    <p className="m-0 mt-2 text-[11px] text-neutral-700">Starting point only. Use your purchase agreement&apos;s wording and check it with your managing broker.</p>
+                    <p className="m-0 mt-2 text-[11px] text-neutral-700">Starting point only. Your real estate agent writes the final offer using your purchase agreement&apos;s wording.</p>
                   </div>
                 )}
 

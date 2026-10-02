@@ -1,5 +1,5 @@
 "use client";
-import { ChevronDown, Download, Mail, MessageCircle, Phone, UserCheck } from "lucide-react";
+import { ChevronDown, Download, Mail, MessageCircle, Phone } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -85,12 +85,6 @@ function LeadCard({ lead }: { lead: Lead }) {
             )}
           </div>
 
-          {lead.invitedBy && (
-            <div className="flex items-center gap-1.5 text-[13px]">
-              <UserCheck size={15} className="text-accent" />
-              Invited by agent <strong>{lead.invitedBy}</strong>
-            </div>
-          )}
           {lead.message && (
             <div className="rounded-[14px] bg-surface p-3 text-sm">
               <div className="mb-0.5 text-[11px] font-semibold text-neutral-700">Message</div>

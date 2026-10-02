@@ -17,7 +17,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
   const [l, rateInfo] = await Promise.all([getListing(id), getRateInfo()]);
   if (!l || l.agentId !== me.userId) notFound();
   return (
-    <AppShell header={<AgentHeader />}>
+    <AppShell header={<AgentHeader />} mobileNav={false}>
       <PostWizard rateInfo={rateInfo} userId={me.userId} editing={l} />
     </AppShell>
   );

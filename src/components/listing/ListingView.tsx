@@ -129,7 +129,7 @@ export function ListingView({
 
   const offerLink = (
     <Link href={`/calculator?listing=${encodeURIComponent(l.id)}`} className="text-[13px] font-semibold">
-      Making an offer? Work out the concession to ask for →
+      Calculate buydown and closing cost amounts for this home →
     </Link>
   );
 

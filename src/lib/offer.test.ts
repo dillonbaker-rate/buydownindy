@@ -11,14 +11,6 @@ describe("offerMath", () => {
     expect(r.k).toBe(2);
     expect(r.buydownCost).toBeCloseTo(t2.cost!, 6);
     expect(r.total).toBeCloseTo(t2.cost!, 6);
-    expect(r.ask).toBeGreaterThanOrEqual(r.total);
-  });
-
-  it("never rounds the ask past the program limit", () => {
-    const limit = 400_000 * 0.03;
-    const r = offerMath({ ...base, buydown: 0, closing: "custom", customClosing: limit - 50 });
-    expect(r.over).toBe(0);
-    expect(r.ask).toBe(limit);
   });
 
   it("adds all closing costs (4% of the loan)", () => {
@@ -55,9 +47,4 @@ describe("offerMath", () => {
     expect(miss.goalMissed).toBe(true);
   });
 
-  it("raises the price so the seller nets the same", () => {
-    const r = offerMath({ ...base, closing: "all", keepNet: true });
-    expect(r.price).toBeGreaterThan(400_000);
-    expect(Math.abs(r.netToSeller - 400_000)).toBeLessThan(5);
-  });
 });

@@ -8,7 +8,7 @@ import { getRateInfo } from "@/lib/rates";
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Concession calculator · BuyDown Indy",
-  description: "Work out the seller concession to ask for: a lower rate with a temporary buydown, closing costs, or a target payment.",
+  description: "Add up what a temporary buydown and closing costs cost, and see what they do to the monthly payment.",
 };
 
 // Public: anyone can use it, no account needed.

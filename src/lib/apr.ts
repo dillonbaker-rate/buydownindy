@@ -1,11 +1,11 @@
-// Annual percentage rate for a 30-year fixed loan (360 monthly payments), Reg Z actuarial method.
+// Annual percentage rate for a fixed-rate loan, Reg Z actuarial method.
 
 import { APR_PREPAID_FINANCE_PCT } from "@/content/program-rules";
 import { calc, type LoanType } from "./buydown";
 
-/** APR (percent) for monthly `payment` × 360 against `amountFinanced`. */
-export function aprFromPayment(amountFinanced: number, payment: number): number {
-  const pv = (r: number) => (r <= 0 ? payment * 360 : (payment * (1 - Math.pow(1 + r / 1200, -360))) / (r / 1200));
+/** APR (percent) for `n` monthly payments of `payment` against `amountFinanced`. */
+export function aprFromPayment(amountFinanced: number, payment: number, n = 360): number {
+  const pv = (r: number) => (r <= 0 ? payment * n : (payment * (1 - Math.pow(1 + r / 1200, -n))) / (r / 1200));
   let lo = 0;
   let hi = 30;
   for (let i = 0; i < 100; i++) {

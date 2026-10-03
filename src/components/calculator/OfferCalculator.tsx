@@ -92,7 +92,7 @@ export function OfferCalculator({
       <div className="mx-auto grid max-w-[1080px] gap-8 p-4 lg:grid-cols-[minmax(0,1fr)_400px] lg:p-8">
         <div className="flex flex-col gap-6">
           <div>
-            <h1 className="text-[26px] lg:text-[32px]">Concession calculator</h1>
+            <h1 className="text-[26px] lg:text-[32px]">Buydown &amp; concession calculator</h1>
             <p className="m-0 mt-1 text-sm text-neutral-700">
               See how large a seller concession a buydown and closing costs add up to{initial?.address ? ` for ${initial.address}` : ""}, and what it does to the payment.
             </p>

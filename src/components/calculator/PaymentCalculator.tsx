@@ -11,6 +11,13 @@ const money = (s: string) => {
   return n ? Math.round(n).toLocaleString("en-US") : "";
 };
 const TERMS = [30, 20, 15];
+/** Indiana property taxes run about 0.8–1% of the price for a home you live in (1% homestead cap);
+ *  rentals and second homes can reach 2% (non-homestead cap). */
+const TAX_RATES = [
+  { pct: 0.8, label: "0.8%" },
+  { pct: 1, label: "1%" },
+  { pct: 2, label: "2% investment" },
+];
 
 const COLORS = { pi: "var(--color-accent)", taxes: "#76808c", insurance: "#a9b4c2", hoa: "#d0d7e1", mi: "#5b8fd6" };
 
@@ -21,6 +28,8 @@ export function PaymentCalculator({ rate: marketRate, rateNote }: { rate: number
   const [rate, setRate] = useState(String(marketRate));
   const [years, setYears] = useState(30);
   const [taxes, setTaxes] = useState("");
+  /** Tax as a % of the price; null when a custom yearly amount is typed in. */
+  const [taxPct, setTaxPct] = useState<number | null>(1);
   const [ins, setIns] = useState("");
   const [hoa, setHoa] = useState("");
 
@@ -29,15 +38,15 @@ export function PaymentCalculator({ rate: marketRate, rateNote }: { rate: number
   const r = useMemo(
     () =>
       p > 0 && num(rate) > 0
-        ? paymentBreakdown({ price: p, downPct: d, rate: num(rate), years, taxesYr: taxes ? num(taxes) : null, insuranceYr: ins ? num(ins) : null, hoaMo: num(hoa) })
+        ? paymentBreakdown({ price: p, downPct: d, rate: num(rate), years, taxesYr: taxPct != null ? (p * taxPct) / 100 : taxes ? num(taxes) : null, insuranceYr: ins ? num(ins) : null, hoaMo: num(hoa) })
         : null,
-    [p, d, rate, years, taxes, ins, hoa],
+    [p, d, rate, years, taxes, taxPct, ins, hoa],
   );
 
   const rows = r
     ? ([
         ["pi", "Principal & interest", r.parts.pi],
-        ["taxes", `Property taxes${r.taxesEstimated ? " (est.)" : ""}`, r.parts.taxes],
+        ["taxes", `Property taxes${taxPct != null ? ` (est. ${taxPct}%)` : r.taxesEstimated ? " (est.)" : ""}`, r.parts.taxes],
         ["insurance", `Homeowners insurance${r.insuranceEstimated ? " (est.)" : ""}`, r.parts.insurance],
         ["mi", "Mortgage insurance (est.)", r.parts.mi],
         ["hoa", "HOA dues", r.parts.hoa],
@@ -105,12 +114,37 @@ export function PaymentCalculator({ rate: marketRate, rateNote }: { rate: number
 
           <div>
             <h2 className="text-[17px]">Optional</h2>
-            <p className="m-0 mt-0.5 text-[13px] text-neutral-700">Leave taxes and insurance blank to use a rough estimate from the price.</p>
+            <p className="m-0 mt-0.5 text-[13px] text-neutral-700">Pick a property tax rate or type your own amount. Leave insurance blank for a rough estimate.</p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)]">
             <div className="field">
               <label htmlFor="pc-tax">Property taxes / year</label>
-              <input id="pc-tax" className="input" inputMode="numeric" placeholder={r ? `≈ ${usd(r.parts.taxes * 12)}` : ""} value={taxes ? `$${taxes}` : ""} onChange={(e) => setTaxes(money(e.target.value))} />
+              <input
+                id="pc-tax"
+                className="input"
+                inputMode="numeric"
+                placeholder={r ? `≈ ${usd(r.parts.taxes * 12)}` : ""}
+                value={taxPct != null ? (p ? `$${Math.round((p * taxPct) / 100).toLocaleString("en-US")}` : "") : taxes ? `$${taxes}` : ""}
+                onChange={(e) => {
+                  setTaxPct(null);
+                  setTaxes(money(e.target.value));
+                }}
+              />
+              <div className="mt-1.5 flex flex-wrap gap-1.5" role="group" aria-label="Property tax rate">
+                {TAX_RATES.map((t) => (
+                  <button
+                    key={t.pct}
+                    type="button"
+                    aria-pressed={taxPct === t.pct}
+                    onClick={() => setTaxPct(t.pct)}
+                    className="min-h-8 cursor-pointer rounded-full px-2.5 text-[12px] font-semibold"
+                    style={{ border: `1px solid ${taxPct === t.pct ? "var(--color-accent)" : "var(--color-divider)"}`, background: taxPct === t.pct ? "var(--color-accent-100)" : "transparent" }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <span className="mt-1 text-[11px] leading-snug text-neutral-700">Usually 0.8–1% of the price for a home you live in; up to 2% for rentals and second homes.</span>
             </div>
             <div className="field">
               <label htmlFor="pc-ins">Insurance / year</label>
@@ -163,7 +197,7 @@ export function PaymentCalculator({ rate: marketRate, rateNote }: { rate: number
                   ))}
                 </div>
                 <p className="m-0 rounded-[12px] bg-surface p-3 text-[12px] leading-snug text-neutral-800">
-                  {`Estimates only, not a loan offer or a promise of any rate or payment. Example: ${usd(p)} price, ${d}% down (${usd(r.down)}), ${years}-year fixed, ${r.n} monthly payments at ${pct(num(rate))} (${aprLabel(r.apr)} APR). ${APR_ASSUMPTION} Taxes and insurance are rough estimates unless you enter your own${r.parts.mi ? "; mortgage insurance is a rough conventional-loan estimate and usually ends once you reach enough equity" : ""}. FHA and VA loans have different fees. Your actual rate and payment depend on your credit, the property, and the lender you choose.`}
+                  {`Estimates only, not a loan offer or a promise of any rate or payment. Example: ${usd(p)} price, ${d}% down (${usd(r.down)}), ${years}-year fixed, ${r.n} monthly payments at ${pct(num(rate))} (${aprLabel(r.apr)} APR). ${APR_ASSUMPTION} ${taxPct != null ? `Property taxes are estimated at ${taxPct}% of the price` : "Property taxes use the amount you entered"}; insurance is a rough estimate unless you enter your own${r.parts.mi ? "; mortgage insurance is a rough conventional-loan estimate and usually ends once you reach enough equity" : ""}. FHA and VA loans have different fees. Your actual rate and payment depend on your credit, the property, and the lender you choose.`}
                 </p>
               </>
             )}

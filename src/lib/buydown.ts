@@ -3,7 +3,8 @@
 // All payments are principal and interest only on a 30-year fixed loan (360 payments).
 
 import {
-  CLOSING_COST_PCT,
+  estimateClosingCosts,
+  type ClosingCostItem,
   convIpcPct,
   convMiPct,
   FHA_IPC_PCT,
@@ -71,6 +72,8 @@ export interface CalcResult {
   /** Mortgage insurance (annual % and monthly $). Shown as a note; comparisons are P&I. */
   mi: { name: string; pct: number; monthly: number } | null;
   closingCosts: number;
+  /** What the closing cost estimate is made of. */
+  closingItems: ClosingCostItem[];
   /** Down payment at the list price. Seller concessions can't pay any of it. */
   downPayment: number;
   base: number;
@@ -119,6 +122,8 @@ export function calc(
   baseRate: number,
   /** Index into CREDIT_RANGES, used for conventional MI pricing. Defaults to the top tier. */
   creditTier = 0,
+  /** The listing's own taxes/insurance, when entered; otherwise closing costs estimate them. */
+  extras: { taxesYr?: number | null; insuranceYr?: number | null } = {},
 ): CalcResult {
   const rate = baseRate + creditAdj;
   const ltv = 100 - down;
@@ -147,8 +152,9 @@ export function calc(
         (type === "Conventional" ? ` with ${down < 10 ? "under 10%" : down < 25 ? "10–25%" : "25%+"} down` : "");
   const overTxt = `${type} ${lp}% limit is ${usd(limit)}`;
 
-  const closingFor = (p: number) => (loanFor(p) * CLOSING_COST_PCT) / 100;
+  const closingFor = (p: number) => estimateClosingCosts({ price: p, loan: loanFor(p), rate, creditTier, ...extras }).total;
   const closingCosts = closingFor(price);
+  const closingItems = estimateClosingCosts({ price, loan, rate, creditTier, ...extras }).items;
   /** Closing costs left for the buyer after `credit` dollars of seller money go toward them. */
   const buyerPays = (credit: number, cc = closingCosts) => Math.max(cc - Math.max(credit, 0), 0);
   const downPayment = (price * down) / 100;
@@ -261,7 +267,7 @@ export function calc(
 
   const ok = opts.filter((o) => o.state === "unlocked" && o.key !== "cc");
   const best = ok.length ? ok.reduce((a, b) => (b.y1 < a.y1 ? b : a)) : null;
-  return { rate, loan, baseLoan, ltv, upfront, mi, closingCosts, downPayment, base, cut, limit, lp, limitTxt, opts, best };
+  return { rate, loan, baseLoan, ltv, upfront, mi, closingCosts, closingItems, downPayment, base, cut, limit, lp, limitTxt, opts, best };
 }
 
 /** Pick the loan type a listing should be shown with, given a filter preference. */

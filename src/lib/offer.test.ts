@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { estimateClosingCosts } from "@/content/program-rules";
 import { calc } from "./buydown";
 import { offerMath, type OfferInput } from "./offer";
 
@@ -13,9 +14,9 @@ describe("offerMath", () => {
     expect(r.total).toBeCloseTo(t2.cost!, 6);
   });
 
-  it("adds all closing costs (4% of the loan)", () => {
+  it("adds all estimated closing costs", () => {
     const r = offerMath({ ...base, buydown: 0, closing: "all" });
-    expect(r.closingCredit).toBeCloseTo(400_000 * 0.95 * 0.04, 6);
+    expect(r.closingCredit).toBeCloseTo(estimateClosingCosts({ price: 400_000, loan: 380_000, rate: 6.5 }).total, 6);
     expect(r.cash.total).toBeCloseTo(r.cash.down, 6);
   });
 

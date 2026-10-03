@@ -1,7 +1,6 @@
 import { ArrowRight, Check, Lock, MessageCircle, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
-import { CLOSING_COST_PCT } from "@/content/program-rules";
 import { saving, usd, type BuydownOption, type OptionState } from "@/lib/buydown";
 
 interface StateStyle {
@@ -202,7 +201,7 @@ export function OptionCard({
           <div className="flex flex-col">
             {[
               ["Down payment", usd(o.cash.down), "Seller credit can't pay this"],
-              ["Closing costs (est.)", usd(o.cash.closing), `${CLOSING_COST_PCT}% of the loan, incl. estimated taxes & insurance`],
+              ["Closing costs (est.)", usd(o.cash.closing), "Fees, title, prepaid interest, insurance & tax escrow"],
               ["Seller credit", o.cash.credit > 0.5 ? "−" + usd(o.cash.credit) : "$0", "Toward closing costs only"],
             ].map(([label, v, hint]) => (
               <div key={label} className="flex items-baseline justify-between gap-2 border-b border-divider py-[7px]">

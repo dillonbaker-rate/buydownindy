@@ -26,7 +26,6 @@ import {
   usd,
   type LoanType,
 } from "@/lib/buydown";
-import { CLOSING_COST_PCT } from "@/content/program-rules";
 import { useIsDesktop } from "@/lib/hooks";
 import { longDate, rateFor, type RateInfo } from "@/lib/rate-info";
 import { extrasByOption } from "@/lib/piti";
@@ -71,7 +70,7 @@ export function ListingView({
   };
 
   const baseRate = rateFor(rateInfo, sc.type);
-  const c = calc(l.price, l.concession, sc.type, sc.down, 0, baseRate, sc.credit);
+  const c = calc(l.price, l.concession, sc.type, sc.down, 0, baseRate, sc.credit, { taxesYr: l.taxesYr, insuranceYr: l.insuranceYr });
   const apr = aprLabel(estimateApr(sc.type, sc.down, c.rate, l.price, sc.credit));
   const b = c.best;
   const bestY1 = b ? b.y1 : c.base;
@@ -392,9 +391,23 @@ export function ListingView({
               <div className="w-full sm:w-auto">{viewToggle}</div>
             </div>
             <p className="mt-0 mb-3.5 text-[13px] text-neutral-700">
-              {c.limitTxt}. Cash to close is your down payment ({usd(c.downPayment)}) plus closing costs, estimated at{" "}
-              {CLOSING_COST_PCT}% of the loan ({usd(c.closingCosts)}). Seller credits can pay closing costs, never the down payment.
+              {c.limitTxt}. Cash to close is your down payment ({usd(c.downPayment)}) plus estimated closing costs and prepaids
+              of about {usd(c.closingCosts)}. Seller credits can pay closing costs, never the down payment.
             </p>
+            <details className="-mt-1.5 mb-3.5 text-[13px]">
+              <summary className="cursor-pointer font-semibold text-accent-700">What&apos;s in the {usd(c.closingCosts)} estimate</summary>
+              <div className="mt-2 max-w-[460px]">
+                {c.closingItems.map((it) => (
+                  <div key={it.label} className="flex justify-between gap-3 border-b border-divider py-1">
+                    <span className="text-neutral-800">{it.label}</span>
+                    <span>{usd(it.amount)}</span>
+                  </div>
+                ))}
+                <p className="m-0 mt-1.5 text-[11px] text-neutral-700">
+                  Typical Indiana fees, without discount points or an owner&apos;s title policy. Taxes and insurance use this listing&apos;s figures when the agent entered them. Your Loan Estimate will show actual costs.
+                </p>
+              </div>
+            </details>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
               {c.opts.map((o) => (
                 <OptionCard

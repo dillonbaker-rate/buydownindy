@@ -163,7 +163,7 @@ export function OfferCalculator({
             )}
           </Q>
 
-          <Q n={4} title="Include closing costs?" hint="Estimated at 4% of the loan. Concessions can never pay the down payment.">
+          <Q n={4} title="Include closing costs?" hint="Estimated from typical Indiana fees, title, prepaid interest, insurance, and tax escrow. Concessions can never pay the down payment.">
             <div className="flex flex-wrap gap-2">
               <Chip on={closing === "all"} onClick={() => setClosing("all")}>
                 {r ? `All (~${usd(r.closingCosts)})` : "All"}
@@ -229,7 +229,7 @@ export function OfferCalculator({
 
 
                 <p className="m-0 text-[11px] leading-snug text-neutral-700">
-                  {`Estimates using a ${pct(r.rate)} 30-year fixed ${rateNote} (${aprLabel(estimateApr(type, d, r.rate, r.price, tier))} APR; ${APR_ASSUMPTION.replace(/^APR is an estimate that assumes/, "assumes")}) Principal & interest only; taxes, insurance and mortgage insurance are extra. The rate is the same for every credit score. Closing costs estimated at 4% of the loan. Temporary buydowns require a signed contract, and the buyer qualifies at the full rate. Not a commitment to lend.`}
+                  {`Estimates using a ${pct(r.rate)} 30-year fixed ${rateNote} (${aprLabel(estimateApr(type, d, r.rate, r.price, tier))} APR; ${APR_ASSUMPTION.replace(/^APR is an estimate that assumes/, "assumes")}) Principal & interest only; taxes, insurance and mortgage insurance are extra. The rate is the same for every credit score. Closing costs are estimated from typical Indiana fees (no discount points), with property taxes at 1% of the price. Temporary buydowns require a signed contract, and the buyer qualifies at the full rate. Not a commitment to lend.`}
                 </p>
               </>
             )}

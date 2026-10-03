@@ -2,8 +2,60 @@
 // Edit numbers here; the payment engine (src/lib/buydown.ts) reads them.
 // COMPLIANCE: any change here should match the current Rate calculator and investor guidelines.
 
-/** Buyer closing costs and prepaids, estimated as a % of the loan amount (incl. any financed fee). */
-export const CLOSING_COST_PCT = 4;
+// ── Buyer closing costs (itemized) ────────────────────────────────────────
+// Modeled on a real Indiana Loan Estimate Dillon provided (Oct 2026), without discount points and
+// without the optional owner's title policy (customarily seller-paid in Indiana). Edit amounts here.
+export const CLOSING_COSTS = {
+  /** A. Application, processing, underwriting (no points). */
+  lenderFees: 1640,
+  /** B. Appraisal, credit report, credit verification, MERS, tax service. */
+  servicesFees: 1262,
+  /** C. Lender's title policy, settlement, title search, and related title charges. */
+  titleFees: 1534,
+  /** E. Recording fees. Indiana has no transfer tax. */
+  recording: 140,
+  /** Homeowners insurance per year by credit tier (CREDIT_RANGES order), when the listing has none. */
+  insuranceByTier: [1500, 1600, 1700, 1850, 2000] as const,
+  /** Property taxes per year as a % of the price, when the listing has none. */
+  taxPct: 1,
+  /** Months of property taxes collected at closing: 6 prepaid + 3 escrow (Indiana taxes are paid in arrears). */
+  taxMonths: 9,
+  /** Months of insurance in the escrow deposit (on top of the first year's premium). */
+  insuranceEscrowMonths: 3,
+  /** Days of prepaid interest (closing to month end; about half a month on average). */
+  prepaidInterestDays: 15,
+};
+
+export interface ClosingCostItem {
+  label: string;
+  amount: number;
+}
+
+/** Itemized buyer closing costs and prepaids for one purchase. */
+export function estimateClosingCosts(o: {
+  price: number;
+  loan: number;
+  rate: number;
+  creditTier?: number;
+  taxesYr?: number | null;
+  insuranceYr?: number | null;
+}): { total: number; items: ClosingCostItem[] } {
+  const C = CLOSING_COSTS;
+  const tier = Math.min(Math.max(o.creditTier ?? 0, 0), C.insuranceByTier.length - 1);
+  const insYr = o.insuranceYr || C.insuranceByTier[tier];
+  const taxYr = o.taxesYr || (o.price * C.taxPct) / 100;
+  const items: ClosingCostItem[] = [
+    { label: "Lender fees (no points)", amount: C.lenderFees },
+    { label: "Appraisal, credit & other services", amount: C.servicesFees },
+    { label: "Title & settlement", amount: C.titleFees },
+    { label: "Recording", amount: C.recording },
+    { label: `Prepaid interest (${C.prepaidInterestDays} days)`, amount: (o.loan * o.rate) / 100 / 365 * C.prepaidInterestDays },
+    { label: "Homeowners insurance (first year)", amount: insYr },
+    { label: `Insurance escrow (${C.insuranceEscrowMonths} months)`, amount: (insYr / 12) * C.insuranceEscrowMonths },
+    { label: `Property taxes (${C.taxMonths} months: prepaid + escrow)`, amount: (taxYr / 12) * C.taxMonths },
+  ];
+  return { total: items.reduce((s, i) => s + i.amount, 0), items };
+}
 
 /** Conventional IPC limit by LTV (Fannie Mae B3-4.1-02 / Freddie Mac 5501.6). */
 export function convIpcPct(ltv: number): number {

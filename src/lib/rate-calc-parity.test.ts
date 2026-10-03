@@ -3,6 +3,7 @@
 // `ref` below is transcribed from that calculator's calc() (price = appraised value, 30-yr fixed,
 // first-use VA, upfront fee financed, no temp-rate points). Both must agree to the dollar.
 import { describe, expect, it } from "vitest";
+import { estimateClosingCosts } from "@/content/program-rules";
 import { calc, type LoanType } from "./buydown";
 
 const pmt = (L: number, r: number, n = 360) => {
@@ -71,17 +72,26 @@ describe("Rate rules applied", () => {
     expect(c.opts.find((o) => o.key === "cc")!.state).toBe("unlocked");
   });
 
-  it("estimates closing costs at 4% of the loan amount and shows what the buyer still pays", () => {
+  it("estimates itemized closing costs and shows what the buyer still pays", () => {
     const c = calc(350000, 10000, "Conventional", 5, 0, 6.25);
-    expect(c.closingCosts).toBe(13300); // 4% of $332,500
-    expect(r(c.opts.find((o) => o.key === "t2")!.buyerClosing!)).toBe(10773); // $13,300 − $2,527 left over
-    expect(c.opts.find((o) => o.key === "cc")!.buyerClosing).toBe(3300);
-    expect(r(c.opts.find((o) => o.key === "cut")!.buyerClosing!)).toBe(12920); // 4% of the smaller $323,000 loan
+    const cc = estimateClosingCosts({ price: 350000, loan: 332500, rate: 6.25 }).total;
+    expect(c.closingCosts).toBeCloseTo(cc, 6);
+    const t2 = c.opts.find((o) => o.key === "t2")!;
+    expect(t2.buyerClosing!).toBeCloseTo(Math.max(cc - (10000 - t2.cost!), 0), 6);
+    expect(c.opts.find((o) => o.key === "cc")!.buyerClosing).toBeCloseTo(Math.max(cc - 10000, 0), 6);
+    // The price cut lowers the loan, the interest, and the taxes, so closing costs drop too.
+    expect(c.opts.find((o) => o.key === "cut")!.buyerClosing!).toBeLessThan(cc);
   });
 
   it("FHA closing costs use the loan with financed UFMIP", () => {
     const c = calc(299900, 15000, "FHA", 5, 0, 6.25);
-    expect(r(c.closingCosts)).toBe(r(289890.84 * 0.04));
+    expect(c.closingCosts).toBeCloseTo(estimateClosingCosts({ price: 299900, loan: 289890.84, rate: 6.25 }).total, 0);
+  });
+
+  it("uses the listing's own taxes and insurance when given", () => {
+    const c = calc(350000, 10000, "Conventional", 5, 0, 6.25, 0, { taxesYr: 6000, insuranceYr: 3000 });
+    const d = calc(350000, 10000, "Conventional", 5, 0, 6.25, 0);
+    expect(c.closingCosts).toBeGreaterThan(d.closingCosts);
   });
 });
 
@@ -89,32 +99,43 @@ it("says when leftover seller money exceeds closing costs", () => {
   const c = calc(299900, 15000, "FHA", 5, 0, 6.25);
   const o = c.opts.find((x) => x.key === "t1")!;
   expect(o.buyerClosing).toBe(0);
-  expect(o.note).toMatch(/covers all closing costs; \$1,19\d would go unused/);
+  expect(o.note).toMatch(/covers all closing costs; \$[\d,]+ would go unused/);
 });
 
 describe("cash to close: down payment + closing costs; concessions never pay the down payment", () => {
-  // $350,000 Conventional 5% down: down $17,500; loan $332,500; closing costs 4% = $13,300.
+  // $350,000 Conventional 5% down: down $17,500; loan $332,500; itemized closing costs (about $9,900).
   const c = calc(350000, 10000, "Conventional", 5, 0, 6.25);
   const o = (k: string) => c.opts.find((x) => x.key === k)!;
+  const CC = estimateClosingCosts({ price: 350000, loan: 332500, rate: 6.25 }).total;
 
-  it("closing cost credit: $17,500 down + $13,300 closing − $10,000 credit = $20,800", () => {
+  it("closing cost credit: covers closing costs, never the down payment", () => {
     expect(c.downPayment).toBe(17500);
-    expect(o("cc").cash).toEqual({ down: 17500, closing: 13300, credit: 10000, total: 20800 });
+    const cash = o("cc").cash!;
+    expect(cash.down).toBe(17500);
+    expect(cash.closing).toBeCloseTo(CC, 6);
+    expect(cash.credit).toBeCloseTo(Math.min(10000, CC), 6);
+    expect(cash.total).toBeCloseTo(17500 + CC - Math.min(10000, CC), 6);
   });
 
   it("price cut: smaller down payment and closing costs, no credit", () => {
-    expect(o("cut").cash).toEqual({ down: 17000, closing: 12920, credit: 0, total: 29920 });
+    const cash = o("cut").cash!;
+    expect(cash.down).toBe(17000);
+    expect(cash.credit).toBe(0);
+    expect(cash.closing).toBeLessThan(CC);
+    expect(cash.total).toBeCloseTo(17000 + cash.closing, 6);
   });
 
   it("2-1 buydown: leftover $2,527 goes to closing costs only", () => {
     const cash = o("t2").cash!;
     expect(cash.down).toBe(17500);
     expect(r(cash.credit)).toBe(2527);
-    expect(r(cash.total)).toBe(28273);
+    expect(cash.total).toBeCloseTo(17500 + CC - cash.credit, 6);
   });
 
   it("locked options apply no credit", () => {
-    expect(o("t3").cash).toEqual({ down: 17500, closing: 13300, credit: 0, total: 30800 });
+    const cash = o("t3").cash!;
+    expect(cash.credit).toBe(0);
+    expect(cash.total).toBeCloseTo(17500 + CC, 6);
   });
 
   it("permanent buydown cash depends on lender pricing", () => {
@@ -122,7 +143,7 @@ describe("cash to close: down payment + closing costs; concessions never pay the
   });
 
   it("a credit bigger than closing costs never reduces the down payment", () => {
-    // $15k credit, closing costs only $13,300: $1,700 is unused, down payment stays $17,500.
+    // $15k credit is more than the closing costs: the extra is unused, the down payment stays.
     const big = calc(350000, 15000, "Conventional", 10, 0, 6.25);
     const cash = big.opts.find((x) => x.key === "cc")!.cash!;
     expect(cash.down).toBe(35000);
@@ -144,4 +165,12 @@ describe("cash to close: down payment + closing costs; concessions never pay the
     expect(cash.total).toBeGreaterThanOrEqual(0);
     expect(cash.total).toBe(Math.max(cash.closing - 15000, 0));
   });
+});
+
+it("matches Dillon's Indiana Loan Estimate (no points, no owner's title)", () => {
+  // $308,000 loan at 7.375%, taxes $3,072/yr, insurance $1,028/yr. The LE had 18 days of interest
+  // ($1,120); the model uses 15, so add 3 days back to compare with the LE's $9,285.
+  const e = estimateClosingCosts({ price: 375000, loan: 308000, rate: 7.375, taxesYr: 3072, insuranceYr: 1028 });
+  const threeDays = ((308000 * 7.375) / 100 / 365) * 3;
+  expect(e.total + threeDays).toBeCloseTo(9285, -1);
 });

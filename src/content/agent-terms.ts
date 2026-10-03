@@ -4,10 +4,13 @@
 // AGENT_TERMS_VERSION: every agent is asked to accept the new version the next time they sign in.
 
 export const AGENT_TERMS_VERSION = "2026-10-02.3";
-/** Remove once counsel has approved the text. While true, the terms page shows a "draft" note and agent sign-up is closed. */
+/** Set to false once counsel has approved the text. While true, the terms page shows a "draft" note. */
 export const AGENT_TERMS_DRAFT = true;
-/** New agent accounts open only after counsel signs off on the terms. */
-export const AGENT_SIGNUP_OPEN = !AGENT_TERMS_DRAFT;
+/**
+ * Whether new agents can create accounts. Opened by Dillon on 2026-10-03 while the terms are still a
+ * draft (the terms page keeps its "Draft pending legal review" label until AGENT_TERMS_DRAFT is false).
+ */
+export const AGENT_SIGNUP_OPEN = true;
 
 export const AGENT_TERMS_TITLE = "BuyDown Indy Agent Terms";
 

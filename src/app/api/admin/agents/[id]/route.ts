@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
+import { sendAgentVerifiedEmail } from "@/lib/agent-email";
 import { getCurrentAgent } from "@/lib/data";
 import { saveDemoAgent } from "@/lib/demo-store";
 import { isAdmin } from "@/lib/rates";
@@ -23,8 +24,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params;
   // RLS (public.is_admin) allows this with the admin's own session; the service key also works if set.
   const sb = createAdminClient() ?? (await createClient());
-  const { data, error } = await sb.from("agents").update(patch).eq("id", id).select("id");
+  const { data: before } = await sb.from("agents").select("verification_status").eq("id", id).maybeSingle();
+  const { data, error } = await sb.from("agents").update(patch).eq("id", id).select("id, name, email");
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   if (!data?.length) return NextResponse.json({ error: "Not allowed. Run migration 0003 in Supabase." }, { status: 403 });
+  // Tell the agent once, when they first become verified (no email for rejected or back to pending).
+  const agent = data[0];
+  if (status === "verified" && before?.verification_status !== "verified" && agent.email)
+    after(() => sendAgentVerifiedEmail({ name: agent.name ?? "", email: agent.email }));
   return NextResponse.json({ ok: true });
 }

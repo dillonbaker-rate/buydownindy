@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
+import { sendNewAgentEmail } from "@/lib/agent-email";
 import { saveDemoAgent } from "@/lib/demo-store";
 import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -122,5 +123,16 @@ export async function PUT(req: Request) {
   if (error && /terms_/.test(error.message)) ({ error } = await sb.from("agents").upsert(row));
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   if (agreedAt && !existing) await logTermsAcceptance(sb, user.id, user.email ?? null, agreedAt, req);
+  // First profile save = a new agent sign-up. Email Dillon after the response is sent (admins excluded).
+  if (!existing && !isAdmin(user.email))
+    after(() =>
+      sendNewAgentEmail({
+        name: row.name,
+        email: user.email ?? "",
+        phone: row.phone,
+        brokerage: row.brokerage,
+        licenseNumber: row.license_number,
+      }),
+    );
   return NextResponse.json({ ok: true });
 }

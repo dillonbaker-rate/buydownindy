@@ -1,8 +1,7 @@
 import "server-only";
+import { esc, notifyTo, sendEmail, siteUrl } from "./email";
 
-// New-lead email notifications via Resend (https://resend.com), called after a lead is saved.
-// Env: RESEND_API_KEY, LEAD_NOTIFY_TO (comma-separated), LEAD_NOTIFY_FROM (a verified sender).
-// Unset key or recipients = notifications off. A failed email never fails the lead.
+// New-lead email to Dillon, called after a lead is saved (see ./email for the Resend settings).
 
 export interface LeadForEmail {
   name: string;
@@ -16,8 +15,6 @@ export interface LeadForEmail {
   consentAt: string;
   consentText: string;
 }
-
-const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 export function leadEmail(lead: LeadForEmail, siteUrl: string) {
   const about = lead.listingLabel ?? "General inquiry";
@@ -71,24 +68,5 @@ export function leadEmail(lead: LeadForEmail, siteUrl: string) {
 }
 
 export async function sendLeadEmail(lead: LeadForEmail): Promise<void> {
-  const key = process.env.RESEND_API_KEY;
-  const to = (process.env.LEAD_NOTIFY_TO ?? "").split(",").map((s) => s.trim()).filter(Boolean);
-  if (!key || !to.length) {
-    console.info("[lead-email] skipped: RESEND_API_KEY or LEAD_NOTIFY_TO not set");
-    return;
-  }
-  const from = process.env.LEAD_NOTIFY_FROM || "BuyDown Indy <onboarding@resend.dev>";
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const { subject, html, text } = leadEmail(lead, site);
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-      body: JSON.stringify({ from, to, reply_to: lead.email, subject, html, text }),
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) console.error("[lead-email] Resend error", res.status, await res.text().catch(() => ""));
-  } catch (e) {
-    console.error("[lead-email] send failed", e);
-  }
+  await sendEmail("lead-email", { to: notifyTo(), replyTo: lead.email, ...leadEmail(lead, siteUrl()) });
 }

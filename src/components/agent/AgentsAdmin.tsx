@@ -3,35 +3,16 @@
 import { Download, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useToast } from "@/components/ui/Toast";
 import type { Agent } from "@/lib/types";
 import { VerificationBadge } from "./AgentProfileForm";
-
-const LOOKUP = "https://mylicense.in.gov/everification/";
+import { LICENSE_LOOKUP, useAgentStatus } from "./useAgentStatus";
 
 /** Admin list of agents: verify licenses, export to CSV. */
 export function AgentsAdmin({ agents }: { agents: Agent[] }) {
   const router = useRouter();
-  const toast = useToast();
-  const [busy, setBusy] = useState<string | null>(null);
+  const { busy, setStatus, copyLicense } = useAgentStatus(() => router.refresh());
   const [filter, setFilter] = useState<"all" | "pending">("pending");
   const shown = filter === "pending" ? agents.filter((a) => a.verificationStatus !== "verified") : agents;
-
-  const setStatus = async (a: Agent, status: "verified" | "rejected" | "pending") => {
-    setBusy(a.id + status);
-    const r = await fetch(`/api/admin/agents/${a.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status }) });
-    setBusy(null);
-    if (!r.ok) return toast((await r.json().catch(() => ({}))).error ?? "Couldn't update.");
-    toast(status === "verified" ? `${a.name} verified.` : status === "rejected" ? `${a.name} marked unverified.` : "Reset to pending.");
-    router.refresh();
-  };
-
-  const copyLicense = async (n: string) => {
-    try {
-      await navigator.clipboard.writeText(n);
-      toast(`Copied ${n}. Paste it into the state lookup.`);
-    } catch {}
-  };
 
   return (
     <div className="min-h-0 flex-1 overflow-auto">
@@ -85,7 +66,7 @@ export function AgentsAdmin({ agents }: { agents: Agent[] }) {
             <div className="col-span-full flex flex-wrap items-start gap-1.5 lg:col-span-1">
               {a.licenseNumber && (
                 <a
-                  href={LOOKUP}
+                  href={LICENSE_LOOKUP}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => copyLicense(a.licenseNumber!)}

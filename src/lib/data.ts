@@ -167,3 +167,20 @@ export async function getAllAgents(): Promise<Agent[]> {
   }
   return data.map(agentFromRow);
 }
+
+/** Agents waiting for license verification, newest first (admin bell). */
+export async function getPendingAgents(): Promise<Agent[]> {
+  if (demoMode) return (await getAllAgents()).filter((a) => (a.verificationStatus ?? "pending") === "pending");
+  const sb = await createClient();
+  const { data, error } = await sb
+    .from("agents")
+    .select("*")
+    .eq("verification_status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) {
+    console.error("getPendingAgents", error.message);
+    return [];
+  }
+  return data.map(agentFromRow);
+}

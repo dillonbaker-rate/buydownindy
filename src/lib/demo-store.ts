@@ -32,6 +32,11 @@ export async function saveDemoAgent(patch: Partial<Agent>) {
   await fs.writeFile(AGENT_FILE, JSON.stringify({ ...(await demoAgent()), ...patch }, null, 2));
 }
 
+/** Demo stand-in for deleting an applicant: forget the demo agent's saved profile. */
+export async function resetDemoAgent() {
+  await fs.rm(AGENT_FILE, { force: true });
+}
+
 async function readAll(): Promise<Listing[]> {
   try {
     return JSON.parse(await fs.readFile(FILE, "utf8"));

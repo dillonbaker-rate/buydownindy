@@ -2,7 +2,7 @@ import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { sendAgentVerifiedEmail } from "@/lib/agent-email";
 import { getCurrentAgent } from "@/lib/data";
-import { saveDemoAgent } from "@/lib/demo-store";
+import { resetDemoAgent, saveDemoAgent } from "@/lib/demo-store";
 import { isAdmin } from "@/lib/rates";
 import { demoMode } from "@/lib/supabase/env";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
@@ -32,5 +32,29 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const agent = data[0];
   if (status === "verified" && before?.verification_status !== "verified" && agent.email)
     after(() => sendAgentVerifiedEmail({ name: agent.name ?? "", email: agent.email }));
+  return NextResponse.json({ ok: true });
+}
+
+// Admin: permanently delete an applicant whose license couldn't be verified — their sign-in account,
+// profile and listings. Only agents marked "Can't verify" (rejected) can be deleted.
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const me = await getCurrentAgent();
+  if (!me || !isAdmin(me.email)) return NextResponse.json({ error: "Admins only." }, { status: 403 });
+  if (demoMode) {
+    await resetDemoAgent();
+    return NextResponse.json({ ok: true });
+  }
+  const { id } = await params;
+  const sb = await createClient();
+  const { data: agent } = await sb.from("agents").select("verification_status").eq("id", id).maybeSingle();
+  if (!agent) return NextResponse.json({ error: "Agent not found." }, { status: 404 });
+  if (agent.verification_status !== "rejected")
+    return NextResponse.json({ error: "Mark the agent \"Can't verify\" before deleting." }, { status: 400 });
+  // Runs as the signed-in admin; the database function re-checks admin rights (migration 0011).
+  const { error } = await sb.rpc("admin_delete_agent", { target: id });
+  if (error) {
+    const missing = /admin_delete_agent/.test(error.message) && /find|exist|schema cache/i.test(error.message);
+    return NextResponse.json({ error: missing ? "Run migration 0011 in Supabase to turn on deleting." : error.message }, { status: 400 });
+  }
   return NextResponse.json({ ok: true });
 }

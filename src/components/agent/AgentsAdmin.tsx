@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import { Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Agent } from "@/lib/types";
@@ -10,7 +10,7 @@ import { LICENSE_LOOKUP, useAgentStatus } from "./useAgentStatus";
 /** Admin list of agents: verify licenses, export to CSV. */
 export function AgentsAdmin({ agents }: { agents: Agent[] }) {
   const router = useRouter();
-  const { busy, setStatus, copyLicense } = useAgentStatus(() => router.refresh());
+  const { busy, setStatus, remove, copyLicense } = useAgentStatus(() => router.refresh());
   const [filter, setFilter] = useState<"all" | "pending">("pending");
   const shown = filter === "pending" ? agents.filter((a) => a.verificationStatus !== "verified") : agents;
 
@@ -89,6 +89,12 @@ export function AgentsAdmin({ agents }: { agents: Agent[] }) {
               {a.verificationStatus !== "pending" && (
                 <button className="btn btn-ghost min-h-10 text-[13px]" disabled={busy != null} onClick={() => setStatus(a, "pending")}>
                   Reset
+                </button>
+              )}
+              {a.verificationStatus === "rejected" && (
+                <button className="btn btn-ghost min-h-10 text-[13px] text-warn-text" disabled={busy != null} onClick={() => remove(a)}>
+                  <Trash2 size={14} />
+                  {busy === a.id + "delete" ? "…" : "Delete applicant"}
                 </button>
               )}
             </div>

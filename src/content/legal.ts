@@ -3,7 +3,7 @@
 // section). If the app changes what it collects or who receives it, update this text in the same change.
 
 export const LEGAL_DRAFT = true;
-export const LEGAL_UPDATED = "October 2, 2026";
+export const LEGAL_UPDATED = "October 23, 2026";
 
 export type LegalSection = { heading: string; body: string };
 
@@ -14,7 +14,7 @@ export const PRIVACY: LegalSection[] = [
   },
   {
     heading: "What we collect",
-    body: "When you send a “Talk to a lender” request: your name, email, phone number, your quiz answers, any message you write, the listing you asked about, the consent wording you agreed to and when, and your browser type. When an agent signs up: their account email, profile details, and listings. We don't run advertising trackers or analytics on this site. Browsing homes doesn't require an account.",
+    body: "When you send a “Talk to a lender” request: your name, email, phone number, your quiz answers, any message you write, the listing you asked about, the consent wording you agreed to and when, and your browser type. When an agent signs up: their account email, profile details, and listings. We count visits with Vercel Web Analytics, which records pages viewed, the referring site, and general device, browser and country information without cookies and without identifying you. We also count how often each calculator is used, with no personal information attached. We don't run advertising trackers. Browsing homes doesn't require an account.",
   },
   {
     heading: "How we use it",

@@ -4,6 +4,7 @@ import { APR_ASSUMPTION } from "@/lib/ad-terms";
 import { aprLabel } from "@/lib/apr";
 import { pct, usd } from "@/lib/buydown";
 import { paymentBreakdown } from "@/lib/payment";
+import { useTrackUse } from "./useTrackUse";
 
 const num = (s: string) => Number(s.replace(/[^0-9.]/g, "")) || 0;
 const money = (s: string) => {
@@ -32,6 +33,7 @@ export function PaymentCalculator({ rate: marketRate, rateNote }: { rate: number
   const [taxPct, setTaxPct] = useState<number | null>(1);
   const [ins, setIns] = useState("");
   const [hoa, setHoa] = useState("");
+  useTrackUse("calc_payment", [price, downPct, rate, years, taxes, taxPct, ins, hoa]);
 
   const p = num(price);
   const d = Math.min(Math.max(num(downPct), 0), 100);

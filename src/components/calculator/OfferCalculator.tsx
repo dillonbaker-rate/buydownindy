@@ -4,6 +4,7 @@ import { CREDIT_RANGES, LOAN_TYPES, MIN_DOWN, pct, usd, type LoanType } from "@/
 import { buydownName, offerMath, type BuydownGoal, type ClosingGoal } from "@/lib/offer";
 import { APR_ASSUMPTION } from "@/lib/ad-terms";
 import { aprLabel, estimateApr } from "@/lib/apr";
+import { useTrackUse } from "./useTrackUse";
 
 const num = (s: string) => Number(s.replace(/[^0-9.]/g, "")) || 0;
 const money = (s: string) => {
@@ -66,6 +67,7 @@ export function OfferCalculator({
   const [target, setTarget] = useState("");
   const [closing, setClosing] = useState<ClosingGoal>("all");
   const [custom, setCustom] = useState("");
+  useTrackUse("calc_buydown", [price, type, down, tier, buydown, target, closing, custom]);
 
   const p = num(price);
   const d = Math.max(num(down), MIN_DOWN[type]);

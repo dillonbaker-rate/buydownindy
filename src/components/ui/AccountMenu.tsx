@@ -97,6 +97,9 @@ export function AccountMenu({ me }: { me: AccountSummary }) {
               <Link href="/agent/admin" role="menuitem" className={item} onClick={() => setOpen(false)}>
                 Agents
               </Link>
+              <Link href="/agent/metrics" role="menuitem" className={item} onClick={() => setOpen(false)}>
+                Metrics
+              </Link>
             </>
           )}
           {me.canSignOut && (

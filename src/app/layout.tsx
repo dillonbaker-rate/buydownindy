@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
+import Script from "next/script";
 import { AuthHashHandler } from "@/components/auth/AuthHashHandler";
 import { ToastProvider } from "@/components/ui/Toast";
 import { supabaseConfigured } from "@/lib/supabase/env";
@@ -28,6 +29,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {supabaseConfigured && <AuthHashHandler />}
           {children}
         </ToastProvider>
+        {/* Vercel Web Analytics: cookieless page views (enable it in the Vercel project's Analytics tab). */}
+        {process.env.VERCEL && <Script src="/_vercel/insights/script.js" strategy="afterInteractive" />}
       </body>
     </html>
   );

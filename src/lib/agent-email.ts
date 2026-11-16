@@ -107,9 +107,9 @@ export function handoffEmail(h: { address: string; city: string; claimUrl: strin
   </div>
   ${p("<b>It's private until you say go.</b> Taking it live is super easy:")}
   <ol style="margin:0 0 26px;padding-left:22px">
-    ${li("Hit <b>Take it live</b>")}
     ${li("<b>Sign in</b> with this email address")}
-    ${li("<b>Change any details</b> you want, anytime")}
+    ${li("<b>Change any details</b> you want")}
+    ${li("Hit <b>Take it live</b>")}
   </ol>
   <div style="padding:18px 0 38px">${button(h.claimUrl, "See your listing")}</div>
   ${p(`Here's a quick walkthrough of how it works: <a href="${video}" style="color:#1c5aa6">watch the video</a>.`)}
@@ -133,9 +133,9 @@ export function handoffEmail(h: { address: string; city: string; claimUrl: strin
     "Buyers and sellers are really confused by concessions. Most people hear \"seller credit\" and have no idea what it actually does for them. Now they can see it, and understand how the math works in seconds.",
     "",
     "It's private until you say go. Taking it live is super easy:",
-    "1. Hit Take it live",
-    "2. Sign in with this email address",
-    "3. Change any details you want, anytime",
+    "1. Sign in with this email address",
+    "2. Change any details you want",
+    "3. Hit Take it live",
     "",
     `See your listing: ${h.claimUrl}`,
     "",

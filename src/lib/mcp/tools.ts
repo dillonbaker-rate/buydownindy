@@ -1,8 +1,7 @@
 import "server-only";
 import { z } from "zod";
-import { sendAgentVerifiedEmail, sendHandoffEmail } from "@/lib/agent-email";
+import { sendAgentVerifiedEmail } from "@/lib/agent-email";
 import { siteUrl } from "@/lib/email";
-import { claimPath, newHandoffToken } from "@/lib/handoff";
 import { fromRow, LISTING_SELECT, type ListingRow } from "@/lib/data";
 import { LEAD_STATUSES } from "@/lib/leads-shared";
 import { listingMarketing } from "@/lib/marketing";
@@ -10,8 +9,9 @@ import { agentMetrics, leadMetrics, listingMetrics, type ListingRowLite } from "
 import { paymentBreakdown } from "@/lib/payment";
 import { getRateInfo, saveDaily } from "@/lib/rates";
 import { indyToday } from "@/lib/rate-info";
-import { createAdminClient } from "@/lib/supabase/server";
-import { agentFromRow, LISTING_DAYS } from "@/lib/types";
+import { agentFromRow } from "@/lib/types";
+import { db, DAY, DESTRUCTIVE, expiry, READ, tool, WRITE } from "./helpers";
+import { LISTING_TOOLS } from "./listing-tools";
 import { ToolError, type Tool } from "./protocol";
 
 // Full-admin tools for the BuyDown Indy MCP connector. Everything runs with the Supabase service key
@@ -19,48 +19,16 @@ import { ToolError, type Tool } from "./protocol";
 
 export const MCP_INFO = {
   name: "buydown-indy",
-  version: "1.0.0",
+  version: "1.1.0",
   instructions:
     "BuyDown Indy admin connector (www.buydownindy.com): Indianapolis-area listings where the seller pays concessions, " +
     "agent accounts and verification, buyer leads, daily rates and site metrics. Read tools are safe. Write tools change " +
     "the live site: confirm with the user before verifying or deleting agents, changing rates, or changing listings. " +
+    "Example-listing workflow: research the home, create_hidden_listing (and update_listing to fix details), then give the " +
+    "user the admin review link. The user sends hidden listings to agents from the site themselves; this connector can't " +
+    "send them, and the agent takes it live on their own. Use only photos the listing agent or seller allows. " +
     "Lead records contain buyers' personal contact information; don't share them beyond what the user asks for.",
 };
-
-function db() {
-  const sb = createAdminClient();
-  if (!sb) throw new ToolError("The connector needs SUPABASE_SERVICE_ROLE_KEY set in Vercel.");
-  return sb;
-}
-
-const DAY = 86_400_000;
-const expiry = () => new Date(Date.now() + LISTING_DAYS * DAY).toISOString();
-
-function tool<S extends z.ZodObject>(
-  name: string,
-  description: string,
-  schema: S,
-  annotations: Tool["annotations"],
-  run: (args: z.infer<S>) => Promise<unknown>,
-): Tool {
-  const inputSchema = z.toJSONSchema(schema, { io: "input" }) as Record<string, unknown>;
-  delete inputSchema.$schema;
-  return {
-    name,
-    description,
-    inputSchema,
-    annotations,
-    run: async (raw) => {
-      const parsed = schema.safeParse(raw);
-      if (!parsed.success) throw new ToolError(`Invalid arguments: ${parsed.error.issues.map((i) => `${i.path.join(".") || "input"}: ${i.message}`).join("; ")}`);
-      return run(parsed.data);
-    },
-  };
-}
-
-const READ = { readOnlyHint: true };
-const WRITE = { readOnlyHint: false, destructiveHint: false };
-const DESTRUCTIVE = { readOnlyHint: false, destructiveHint: true };
 
 const leadOut = (r: Record<string, unknown>) => ({
   id: r.id,
@@ -115,7 +83,7 @@ const listingOut = (r: ListingRow) => {
   };
 };
 
-export const TOOLS: Tool[] = [
+const BASE_TOOLS: Tool[] = [
   // ── Read ────────────────────────────────────────────────────────────────
   tool("get_rates", "Today's 30-year fixed rates the site is using (Conventional, FHA, VA) and where they came from: Dillon's daily entry or the Freddie Mac weekly average.", z.object({}), READ, async () => {
     const info = await getRateInfo();
@@ -349,23 +317,6 @@ export const TOOLS: Tool[] = [
       return { ok: true, address: cur.address, action };
     },
   ),
-
-  tool(
-    "send_listing_to_agent",
-    "Send a hidden (draft) listing to an agent: emails them a private link to preview it and take it live under their name once they sign up with that email. Replaces any earlier link.",
-    z.object({ id: z.string(), email: z.string().trim().toLowerCase().email() }),
-    WRITE,
-    async ({ id, email }) => {
-      const sb = db();
-      const { data: l } = await sb.from("listings").select("address, city, status").eq("id", id).maybeSingle();
-      if (!l) throw new ToolError("Listing not found.");
-      if (l.status !== "draft") throw new ToolError("Hide the listing first (set_listing_status action draft).");
-      const token = newHandoffToken();
-      const { error } = await sb.from("listings").update({ handoff_email: email, handoff_token: token, handoff_sent_at: new Date().toISOString() }).eq("id", id);
-      if (error) throw new ToolError(/handoff_/.test(error.message) ? "Run migration 0012 in Supabase first." : error.message);
-      const path = claimPath(token);
-      await sendHandoffEmail(email, { address: l.address, city: l.city, claimPath: path });
-      return { ok: true, sentTo: email, link: `${siteUrl()}${path}` };
-    },
-  ),
 ];
+
+export const TOOLS: Tool[] = [...BASE_TOOLS, ...LISTING_TOOLS];

@@ -1,8 +1,9 @@
 import "server-only";
 import { z } from "zod";
-import { sendAgentVerifiedEmail } from "@/lib/agent-email";
+import { sendAgentVerifiedEmail, sendHandoffEmail } from "@/lib/agent-email";
 import { siteUrl } from "@/lib/email";
 import { fromRow, LISTING_SELECT, type ListingRow } from "@/lib/data";
+import { claimPath, newHandoffToken } from "@/lib/handoff";
 import { LEAD_STATUSES } from "@/lib/leads-shared";
 import { listingMarketing } from "@/lib/marketing";
 import { agentMetrics, leadMetrics, listingMetrics, type ListingRowLite } from "@/lib/metrics-shared";
@@ -25,8 +26,8 @@ export const MCP_INFO = {
     "agent accounts and verification, buyer leads, daily rates and site metrics. Read tools are safe. Write tools change " +
     "the live site: confirm with the user before verifying or deleting agents, changing rates, or changing listings. " +
     "Example-listing workflow: research the home, create_hidden_listing (and update_listing to fix details), then give the " +
-    "user the admin review link. The user sends hidden listings to agents from the site themselves; this connector can't " +
-    "send them, and the agent takes it live on their own. Use only photos the listing agent or seller allows. " +
+    "user the preview/edit links. Only call send_listing_to_agent when the user explicitly asks to send that listing to " +
+    "that agent. The agent takes it live on their own; never claim it for them. Use only photos the listing agent or seller allows. " +
     "Lead records contain buyers' personal contact information; don't share them beyond what the user asks for.",
 };
 
@@ -315,6 +316,25 @@ const BASE_TOOLS: Tool[] = [
       const { error } = await sb.from("listings").update(patch).eq("id", id);
       if (error) throw new ToolError(error.message);
       return { ok: true, address: cur.address, action };
+    },
+  ),
+  tool(
+    "send_listing_to_agent",
+    "Email a hidden (draft) listing's private link to an agent so they can preview it and take it live under their name once they sign up with that email. " +
+      "Only call this when the user explicitly asks to send this listing to this agent. Replaces any earlier link.",
+    z.object({ id: z.string(), email: z.string().trim().toLowerCase().email() }),
+    WRITE,
+    async ({ id, email }) => {
+      const sb = db();
+      const { data: l } = await sb.from("listings").select("address, city, status").eq("id", id).maybeSingle();
+      if (!l) throw new ToolError("Listing not found.");
+      if (l.status !== "draft") throw new ToolError("Only hidden (draft) listings can be sent.");
+      const token = newHandoffToken();
+      const { error } = await sb.from("listings").update({ handoff_email: email, handoff_token: token, handoff_sent_at: new Date().toISOString() }).eq("id", id);
+      if (error) throw new ToolError(/handoff_/.test(error.message) ? "Run migration 0012 in Supabase first." : error.message);
+      const path = claimPath(token);
+      await sendHandoffEmail(email, { address: l.address, city: l.city, claimPath: path });
+      return { ok: true, sentTo: email, link: `${siteUrl()}${path}` };
     },
   ),
 ];

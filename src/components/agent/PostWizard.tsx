@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, Calculator, House, MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Suggestion } from "@/app/api/geocode/route";
+import type { Suggestion } from "@/lib/geocode";
 import { StatePill } from "@/components/listing/OptionCard";
 import { CountUp } from "@/components/ui/CountUp";
 import { Segmented } from "@/components/ui/Segmented";

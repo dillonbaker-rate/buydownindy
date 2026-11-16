@@ -4,6 +4,7 @@ import { demoDelete, demoUpdate } from "@/lib/demo-store";
 import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { LISTING_DAYS } from "@/lib/types";
+import { isAdmin } from "@/lib/rates";
 
 type Ctx = { params: Promise<{ id: string }> };
 const expiry = () => new Date(Date.now() + LISTING_DAYS * 86_400_000).toISOString();
@@ -16,7 +17,8 @@ async function authed() {
   return { sb, user };
 }
 
-// Edit a listing (full wizard payload) or change its status: { action: renew | pending | sold | live }.
+// Edit a listing (full wizard payload) or change its status: { action: renew | pending | sold | live | draft }.
+// "draft" hides the listing (admins only).
 export async function PATCH(req: Request, { params }: Ctx) {
   const { id } = await params;
   if (demoMode) {
@@ -35,6 +37,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const act = StatusAction.safeParse(body);
   if (act.success) {
     const a = act.data.action;
+    if (a === "draft" && !isAdmin(user.email)) return NextResponse.json({ error: "Only admins can hide listings." }, { status: 403 });
     patch =
       a === "renew"
         ? { expires_at: expiry() }
@@ -43,8 +46,10 @@ export async function PATCH(req: Request, { params }: Ctx) {
           : { status: a };
     // Moving back to live after expiry would hide it again immediately; give it a fresh window.
     if (a === "live") {
-      const { data: cur } = await sb.from("listings").select("expires_at").eq("id", id).single();
+      const { data: cur } = await sb.from("listings").select("expires_at, status").eq("id", id).single();
       if (cur && new Date(cur.expires_at) < new Date()) patch.expires_at = expiry();
+      // A hidden listing the admin puts live themselves: its private agent link and email no longer apply.
+      if (cur?.status === "draft") Object.assign(patch, { handoff_token: null, handoff_email: null });
     }
   } else {
     const parsed = ListingInput.safeParse(body);

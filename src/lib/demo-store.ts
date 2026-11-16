@@ -75,7 +75,7 @@ const fromInput = (d: ListingInput) => ({
 
 export const demoListings = readAll;
 
-export async function demoCreate(d: ListingInput): Promise<string> {
+export async function demoCreate(d: ListingInput, hidden = false): Promise<string> {
   const all = await readAll();
   const id = `demo-${crypto.randomUUID().slice(0, 8)}`;
   all.unshift({
@@ -86,7 +86,7 @@ export async function demoCreate(d: ListingInput): Promise<string> {
     brokerage: DEMO_AGENT.brokerage,
     agentEmail: DEMO_AGENT.email,
     agentPhone: DEMO_AGENT.phone,
-    status: "live",
+    status: hidden ? "draft" : "live",
     expiresAt: expiry(),
     isSample: false,
   });
@@ -102,7 +102,7 @@ export async function demoDelete(id: string) {
   return true;
 }
 
-export async function demoUpdate(id: string, patch: { input?: ListingInput; action?: "renew" | "pending" | "sold" | "live" }) {
+export async function demoUpdate(id: string, patch: { input?: ListingInput; action?: "renew" | "pending" | "sold" | "live" | "draft" }) {
   const all = await readAll();
   const l = all.find((x) => x.id === id);
   if (!l) return false;
@@ -111,7 +111,38 @@ export async function demoUpdate(id: string, patch: { input?: ListingInput; acti
   else if (patch.action) {
     l.status = patch.action;
     if (patch.action === "live" && new Date(l.expiresAt) < new Date()) l.expiresAt = expiry();
+    if (patch.action === "live") Object.assign(l, { handoffToken: null, handoffEmail: null });
   }
   await writeAll(all);
   return true;
+}
+
+// ── Hidden-listing handoff (demo stand-ins for the migration 0012 database functions) ──
+export async function demoSetHandoff(id: string, email: string, token: string) {
+  const all = await readAll();
+  const l = all.find((x) => x.id === id && x.status === "draft");
+  if (!l) return false;
+  Object.assign(l, { handoffEmail: email, handoffToken: token, handoffSentAt: new Date().toISOString() });
+  await writeAll(all);
+  return true;
+}
+
+export async function demoListingByHandoff(token: string): Promise<Listing | null> {
+  return (await readAll()).find((x) => x.status === "draft" && !!token && x.handoffToken === token) ?? null;
+}
+
+export async function demoMyHandoffs(email: string) {
+  return (await readAll())
+    .filter((x) => x.status === "draft" && x.handoffToken && x.handoffEmail?.toLowerCase() === email.toLowerCase())
+    .map((x) => ({ token: x.handoffToken!, address: x.address, city: x.city }));
+}
+
+/** The demo has one agent, so claiming just puts the listing live. */
+export async function demoClaim(token: string): Promise<string | null> {
+  const all = await readAll();
+  const l = all.find((x) => x.status === "draft" && !!token && x.handoffToken === token);
+  if (!l) return null;
+  Object.assign(l, { status: "live", expiresAt: expiry(), photoRightsConfirmed: true, handoffToken: null });
+  await writeAll(all);
+  return l.id;
 }

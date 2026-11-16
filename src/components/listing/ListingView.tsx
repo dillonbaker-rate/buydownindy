@@ -42,10 +42,13 @@ export function ListingView({
   listing: l,
   rateInfo,
   preferredType,
+  preview = false,
 }: {
   listing: Listing;
   rateInfo: RateInfo;
   preferredType?: LoanType;
+  /** Private preview of a hidden listing (agent handoff): no sharing, and contact buttons explain instead of dialing. */
+  preview?: boolean;
 }) {
   const desk = useIsDesktop();
   const toast = useToast();
@@ -110,7 +113,8 @@ export function ListingView({
 
   const lenderHref = `/talk-to-a-lender?listing=${encodeURIComponent(l.id)}`;
   const contact = () => {
-    if (l.agentPhone) window.location.href = `tel:${l.agentPhone.replace(/[^0-9+]/g, "")}`;
+    if (preview) toast("Once it's live, buyers call or email you from here.");
+    else if (l.agentPhone) window.location.href = `tel:${l.agentPhone.replace(/[^0-9+]/g, "")}`;
     else if (l.agentEmail)
       window.location.href = `mailto:${l.agentEmail}?subject=${encodeURIComponent(`${l.address}, ${l.city}`)}`;
     else toast(`Demo: calls or emails ${l.agentName}, ${l.brokerage}.`);
@@ -167,7 +171,7 @@ export function ListingView({
             </div>
             <div className="flex flex-wrap items-end justify-between gap-2">
               <h1 className="text-[34px] leading-[1.05] font-bold tracking-[-0.02em] lg:text-[44px]">{usd(l.price)}</h1>
-              <ShareListing id={l.id} title={share.title} text={share.text} post={share.post} />
+              {!preview && <ShareListing id={l.id} title={share.title} text={share.text} post={share.post} />}
             </div>
             <div className="text-base">
               {l.address}, {l.city}, IN{l.zip ? " " + l.zip : ""}

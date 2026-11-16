@@ -10,7 +10,7 @@ import { agentFromRow, type Agent, type Listing, type Photo } from "./types";
 // Columns + the listing agent's public contact info.
 const SELECT = "*, agent:agents(name, brokerage, email, phone, photo_url, verification_status)";
 
-interface ListingRow {
+export interface ListingRow {
   id: string;
   agent_id: string | null;
   address: string;
@@ -39,7 +39,10 @@ interface ListingRow {
   is_example: boolean;
   sample_agent_name: string | null;
   sample_brokerage: string | null;
-  agent: { name: string; brokerage: string; email: string; phone: string; photo_url: string | null; verification_status: string | null } | null;
+  handoff_email?: string | null;
+  handoff_token?: string | null;
+  handoff_sent_at?: string | null;
+  agent?: { name: string; brokerage: string; email: string; phone: string; photo_url: string | null; verification_status: string | null } | null;
 }
 
 export function fromRow(r: ListingRow): Listing {
@@ -76,6 +79,9 @@ export function fromRow(r: ListingRow): Listing {
     photoRightsConfirmed: r.photo_rights_confirmed,
     isSample: r.is_sample,
     isExample: r.is_example,
+    handoffEmail: r.handoff_email ?? null,
+    handoffToken: r.handoff_token ?? null,
+    handoffSentAt: r.handoff_sent_at ?? null,
   };
 }
 

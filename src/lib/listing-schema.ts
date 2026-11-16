@@ -64,4 +64,5 @@ export const toRow = (d: ListingInput) => ({
   external_url: d.externalUrl || null,
 });
 
-export const StatusAction = z.object({ action: z.enum(["renew", "pending", "sold", "live"]) });
+/** "draft" hides a listing (admins only). */
+export const StatusAction = z.object({ action: z.enum(["renew", "pending", "sold", "live", "draft"]) });

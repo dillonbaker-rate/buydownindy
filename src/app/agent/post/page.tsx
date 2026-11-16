@@ -4,7 +4,7 @@ import { AgentHeader, SetupNotice } from "@/components/agent/AgentHeader";
 import { PostWizard } from "@/components/agent/PostWizard";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent } from "@/lib/data";
-import { getRateInfo } from "@/lib/rates";
+import { getRateInfo, isAdmin } from "@/lib/rates";
 import { agentsEnabled } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ export default async function PostPage() {
   const rateInfo = await getRateInfo();
   return (
     <AppShell header={<AgentHeader />} mobileNav={false}>
-      <PostWizard rateInfo={rateInfo} userId={me.userId} />
+      <PostWizard rateInfo={rateInfo} userId={me.userId} canHide={isAdmin(me.email)} />
     </AppShell>
   );
 }

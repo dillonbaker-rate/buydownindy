@@ -107,7 +107,18 @@ const HINTS = [
   "",
 ];
 
-export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; userId: string; editing?: Listing }) {
+export function PostWizard({
+  rateInfo,
+  userId,
+  editing,
+  canHide = false,
+}: {
+  rateInfo: RateInfo;
+  userId: string;
+  editing?: Listing;
+  /** Admins can post a listing hidden, to hand off to an agent later. */
+  canHide?: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const desk = useIsDesktop();
@@ -116,6 +127,7 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
   const [busy, setBusy] = useState(false);
   const [estimated, setEstimated] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [hidden, setHidden] = useState(false);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((s) => ({ ...s, [k]: v }));
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -166,7 +178,7 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
   const lowWhen = pb ? (pb.key === "perm" ? "for life" : "in year 1") : "with a price cut";
 
   const valid = stepValid(step, f);
-  const nextLabel = step === 5 ? (editing ? "Save changes" : "Publish listing") : step === 4 ? "Preview listing" : "Continue";
+  const nextLabel = step === 5 ? (editing ? "Save changes" : hidden ? "Save hidden listing" : "Publish listing") : step === 4 ? "Preview listing" : "Continue";
   const titles = [
     "Where is the home?",
     "Property details",
@@ -203,7 +215,7 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
     const res = await fetch(editing ? `/api/listings/${editing.id}` : "/api/listings", {
       method: editing ? "PATCH" : "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(editing ? body : { ...body, hidden }),
     });
     setBusy(false);
     if (!res.ok) {
@@ -211,7 +223,13 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
       setErr(j.error ?? "Couldn't save the listing. Try again.");
       return;
     }
-    toast(editing ? "Changes saved. Your listing is updated." : "Listing published. It is live on the map for 30 days.");
+    toast(
+      editing
+        ? "Changes saved. Your listing is updated."
+        : hidden
+          ? "Listing saved hidden. Use Send to agent on My listings."
+          : "Listing published. It is live on the map for 30 days.",
+    );
     router.push("/agent");
     router.refresh();
   };
@@ -568,6 +586,20 @@ export function PostWizard({ rateInfo, userId, editing }: { rateInfo: RateInfo; 
                     {PHOTO_RIGHTS} <span className="text-neutral-700">(Required)</span>
                   </span>
                 </label>
+                {canHide && !editing && (
+                  <label className="flex cursor-pointer items-start gap-2.5 rounded-[14px] border border-divider p-3.5 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={hidden}
+                      onChange={() => setHidden((h) => !h)}
+                      className="mt-0.5 h-[18px] w-[18px] flex-none accent-accent"
+                    />
+                    <span>
+                      <strong>Keep it hidden.</strong> It stays off the map so you can send it to an agent as an example. They take it
+                      live once they make an account. <span className="text-neutral-700">(Admins only)</span>
+                    </span>
+                  </label>
+                )}
                 <div className="field">
                   <label htmlFor="w-link">Zillow or Redfin link (optional)</label>
                   <input

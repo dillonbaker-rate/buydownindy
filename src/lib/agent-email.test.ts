@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-const { newAgentEmail, agentVerifiedEmail } = await import("./agent-email");
+const { newAgentEmail, agentVerifiedEmail, handoffEmail } = await import("./agent-email");
 
 const agent = {
   name: "Pat <Agent>",
@@ -40,5 +40,16 @@ describe("agent verified email", () => {
     expect(e.html).toContain("Hi Pat,");
     expect(e.html).toContain('href="https://buydownindy.com/agent/post"');
     expect(e.text).toContain("Post a listing: https://buydownindy.com/agent/post");
+  });
+});
+
+describe("handoff email", () => {
+  const e = handoffEmail({ address: "1 Main <St>", city: "Fishers", claimUrl: "https://buydownindy.com/agent/claim/abc" });
+
+  it("names the home, escapes it, and links the private claim page", () => {
+    expect(e.subject).toBe("Your listing is ready on BuyDown Indy: 1 Main <St>");
+    expect(e.html).toContain("1 Main &lt;St&gt;, Fishers");
+    expect(e.html).toContain('href="https://buydownindy.com/agent/claim/abc"');
+    expect(e.text).toContain("See your listing: https://buydownindy.com/agent/claim/abc");
   });
 });

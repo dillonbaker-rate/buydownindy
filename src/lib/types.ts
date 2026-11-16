@@ -1,6 +1,7 @@
 import type { LoanType } from "./buydown";
 
-export type ListingStatus = "live" | "pending" | "sold";
+/** "draft" = hidden: an admin-prepared listing that isn't on the map, waiting to be handed to an agent. */
+export type ListingStatus = "live" | "pending" | "sold" | "draft";
 
 export interface Photo {
   url: string;
@@ -43,6 +44,10 @@ export interface Listing {
   isSample: boolean;
   /** Real home with an example concession amount (the featured listing). */
   isExample?: boolean;
+  /** Hidden listings only: the agent email it was sent to, its private claim token, and when it was sent. */
+  handoffEmail?: string | null;
+  handoffToken?: string | null;
+  handoffSentAt?: string | null;
 }
 
 export type VerificationStatus = "pending" | "verified" | "rejected";

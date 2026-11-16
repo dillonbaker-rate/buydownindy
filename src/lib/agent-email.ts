@@ -1,4 +1,5 @@
 import "server-only";
+import { LENDER } from "@/content/lender";
 import { esc, notifyTo, sendEmail, siteUrl } from "./email";
 
 // Agent account emails: Dillon hears about each new agent sign-up, and an agent hears when Dillon verifies them.
@@ -82,6 +83,35 @@ export function agentVerifiedEmail(a: Pick<AgentForEmail, "name">, site: string)
     "Questions? Just reply to this email.",
   ].join("\n");
   return { subject, html, text };
+}
+
+/** To an agent: the admin prepared a hidden listing for them; the link previews it and lets them take it live. */
+export function handoffEmail(h: { address: string; city: string; claimUrl: string }) {
+  const subject = `Your listing is ready on BuyDown Indy: ${h.address}`;
+  const home = `${h.address}, ${h.city}`;
+  const html = layout(
+    "BuyDown Indy",
+    esc(home),
+    `<p style="font-size:15px;color:#1c2530;line-height:1.6;margin:0 0 16px">${esc(LENDER.name)} set up a BuyDown Indy listing for ${esc(home)}, showing buyers what the seller concession does for their rate and payment.</p>
+  <p style="font-size:15px;color:#1c2530;line-height:1.6;margin:0 0 20px">It's private for now. Open the link to see it. If it looks right, create your free agent account with this email address and take it live under your name in one click.</p>
+  ${button(h.claimUrl, "See your listing")}
+  <p style="font-size:13px;color:#5a636e;line-height:1.5;margin:20px 0 0">Questions or changes? Just reply to this email.</p>`,
+  );
+  const text = [
+    `${LENDER.name} set up a BuyDown Indy listing for ${home}, showing buyers what the seller concession does for their rate and payment.`,
+    "",
+    "It's private for now. Open the link to see it. If it looks right, create your free agent account with this email address and take it live under your name in one click.",
+    "",
+    `See your listing: ${h.claimUrl}`,
+    "",
+    "Questions or changes? Just reply to this email.",
+  ].join("\n");
+  return { subject, html, text };
+}
+
+export async function sendHandoffEmail(to: string, h: { address: string; city: string; claimPath: string }): Promise<void> {
+  const claimUrl = `${siteUrl()}${h.claimPath}`;
+  await sendEmail("handoff-email", { to: [to], replyTo: notifyTo()[0], ...handoffEmail({ ...h, claimUrl }) });
 }
 
 export async function sendNewAgentEmail(a: AgentForEmail): Promise<void> {

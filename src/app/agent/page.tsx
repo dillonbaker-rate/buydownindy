@@ -7,6 +7,7 @@ import { mustAcceptTerms } from "@/lib/agent-terms-gate";
 import { AgentProfileForm } from "@/components/agent/AgentProfileForm";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent, getMyListings } from "@/lib/data";
+import { myHandoffs } from "@/lib/handoff";
 import { isRateAdmin } from "@/lib/rates";
 import { agentsEnabled } from "@/lib/supabase/env";
 
@@ -51,10 +52,10 @@ export default async function AgentPage() {
         <AcceptAgentTerms />
       </AppShell>
     );
-  const listings = await getMyListings(me.userId);
+  const [listings, handoffs] = await Promise.all([getMyListings(me.userId), myHandoffs(me.email)]);
   return (
     <AppShell header={<AgentHeader onDash admin={isRateAdmin(me.email)} />}>
-      <Dashboard agent={me.agent} listings={listings} isAdmin={isRateAdmin(me.email)} />
+      <Dashboard agent={me.agent} listings={listings} isAdmin={isRateAdmin(me.email)} handoffs={handoffs} />
     </AppShell>
   );
 }

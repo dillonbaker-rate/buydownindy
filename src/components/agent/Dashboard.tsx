@@ -1,5 +1,5 @@
 "use client";
-import { Plus, Trash2 } from "lucide-react";
+import { EyeOff, Link2, Plus, Send, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,9 +10,12 @@ import { daysLeft } from "@/lib/format";
 import type { Agent, Listing } from "@/lib/types";
 import { VerificationBadge } from "./AgentProfileForm";
 
-type Action = "renew" | "pending" | "sold" | "live";
+type Action = "renew" | "pending" | "sold" | "live" | "draft";
+export type Handoff = { token: string; address: string; city: string };
 
 function statusOf(l: Listing) {
+  if (l.status === "draft")
+    return { label: l.handoffEmail ? `Hidden · sent to ${l.handoffEmail}` : "Hidden · not on the map", bg: "var(--color-neutral-200)", fg: "var(--color-neutral-800)" };
   if (l.status === "sold") return { label: "Sold", bg: "var(--color-neutral-200)", fg: "var(--color-neutral-800)" };
   if (l.status === "pending") return { label: "Pending", bg: "var(--color-ink)", fg: "#fff" };
   const d = daysLeft(l.expiresAt);
@@ -25,11 +28,14 @@ export function Dashboard({
   agent,
   listings,
   isAdmin = false,
+  handoffs = [],
 }: {
   agent: Agent;
   listings: Listing[];
   /** Admins (the lender) don't hold a real estate license, so skip the license prompt. */
   isAdmin?: boolean;
+  /** Hidden listings an admin sent to this agent's email, waiting to be taken live. */
+  handoffs?: Handoff[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -48,6 +54,37 @@ export function Dashboard({
       return;
     }
     if (action === "renew") toast(`${l.address} renewed for 30 days.`);
+    if (action === "draft") toast(`${l.address} is hidden. It's off the map.`);
+    if (action === "live" && l.status === "draft") toast(`${l.address} is on the map now.`);
+    router.refresh();
+  };
+
+  const copy = async (path: string) => {
+    try {
+      await navigator.clipboard.writeText(`${location.origin}${path}`);
+      toast("Link copied. Text it to the agent, or paste it anywhere.");
+    } catch {
+      prompt("Copy this link:", `${location.origin}${path}`);
+    }
+  };
+
+  /** Admin: email a hidden listing's private link to an agent (and copy it). */
+  const sendToAgent = async (l: Listing) => {
+    const email = prompt(
+      `Send ${l.address} to which agent? Enter their email. They'll get a private link, and once they make an account with this email they can take it live.`,
+      l.handoffEmail ?? "",
+    );
+    if (!email?.trim()) return;
+    setBusy(l.id + "send");
+    const res = await fetch(`/api/listings/${l.id}/handoff`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: email.trim() }),
+    });
+    setBusy(null);
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) return toast(j.error ?? "Couldn't send it. Try again.");
+    toast(`Sent to ${email.trim()}.`);
     router.refresh();
   };
 
@@ -105,6 +142,19 @@ export function Dashboard({
           </Link>
         )}
 
+        {handoffs.map((h) => (
+          <Link
+            key={h.token}
+            href={`/agent/claim/${h.token}`}
+            className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[18px] bg-accent-100 p-4 text-sm text-ink no-underline"
+          >
+            <span>
+              <strong>A listing is ready for you:</strong> {h.address}, {h.city}. Review it and take it live under your name.
+            </span>
+            <span className="font-semibold text-accent-700">Review listing →</span>
+          </Link>
+        ))}
+
         {listings.length ? (
           listings.map((l) => {
             const st = statusOf(l);
@@ -144,12 +194,33 @@ export function Dashboard({
                   </div>
                 </div>
                 <div className="col-span-full flex flex-wrap gap-1.5 lg:col-span-1">
-                  {l.status !== "sold" && btn("Renew", "renew")}
+                  {l.status === "draft" && (
+                    <>
+                      <button className="btn btn-primary min-h-10 text-[13px]" disabled={busy != null} onClick={() => sendToAgent(l)}>
+                        <Send size={14} />
+                        {busy === l.id + "send" ? "…" : l.handoffEmail ? "Send again" : "Send to agent"}
+                      </button>
+                      {l.handoffToken && (
+                        <button className="btn btn-secondary min-h-10 text-[13px]" onClick={() => copy(`/agent/claim/${l.handoffToken}`)}>
+                          <Link2 size={14} />
+                          Copy link
+                        </button>
+                      )}
+                    </>
+                  )}
+                  {l.status !== "sold" && l.status !== "draft" && btn("Renew", "renew")}
                   <Link href={`/agent/edit/${l.id}`} className="btn btn-secondary min-h-10 text-[13px]">
                     Edit
                   </Link>
+                  {l.status === "draft" && btn("Put on map", "live")}
                   {l.status === "live" && btn("Mark pending", "pending")}
                   {l.status === "pending" && [btn("Mark sold", "sold"), btn("Back to live", "live")]}
+                  {isAdmin && (l.status === "live" || l.status === "pending") && (
+                    <button className="btn btn-ghost min-h-10 text-[13px]" disabled={busy != null} onClick={() => act(l, "draft")}>
+                      <EyeOff size={14} />
+                      {busy === l.id + "draft" ? "…" : "Hide"}
+                    </button>
+                  )}
                   <button className="btn btn-ghost min-h-10 text-[13px] text-warn-text" disabled={busy != null} onClick={() => remove(l)}>
                     <Trash2 size={14} />
                     {busy === l.id + "delete" ? "…" : "Delete"}

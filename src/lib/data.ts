@@ -8,7 +8,7 @@ import { createClient } from "./supabase/server";
 import { agentFromRow, type Agent, type Listing, type Photo } from "./types";
 
 // Columns + the listing agent's public contact info.
-const SELECT = "*, agent:agents(name, brokerage, email, phone, photo_url, verification_status)";
+export const LISTING_SELECT = "*, agent:agents(name, brokerage, email, phone, photo_url, verification_status)";
 
 export interface ListingRow {
   id: string;
@@ -105,7 +105,7 @@ export async function getLiveListings(): Promise<Listing[]> {
   const sb = await createClient();
   const { data, error } = await sb
     .from("listings")
-    .select(SELECT)
+    .select(LISTING_SELECT)
     .eq("status", "live")
     .gt("expires_at", new Date().toISOString())
     .order("is_example", { ascending: false })
@@ -127,7 +127,7 @@ export async function getListing(id: string): Promise<Listing | null> {
   }
   if (!UUID.test(id)) return null;
   const sb = await createClient();
-  const { data } = await sb.from("listings").select(SELECT).eq("id", id).maybeSingle();
+  const { data } = await sb.from("listings").select(LISTING_SELECT).eq("id", id).maybeSingle();
   return data ? fromRow(data as ListingRow) : null;
 }
 
@@ -136,7 +136,7 @@ export async function getMyListings(agentId: string): Promise<Listing[]> {
   const sb = await createClient();
   const { data } = await sb
     .from("listings")
-    .select(SELECT)
+    .select(LISTING_SELECT)
     .eq("agent_id", agentId)
     .order("created_at", { ascending: false });
   return ((data ?? []) as ListingRow[]).map(fromRow);

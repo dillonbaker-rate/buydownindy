@@ -97,10 +97,10 @@ export function handoffEmail(h: { address: string; city: string; claimUrl: strin
     : "";
   const html = layout(
     "BuyDown Indy",
-    esc(home),
+        `<a href="${esc(h.claimUrl)}" style="color:#ffffff;text-decoration:none">${esc(home)}</a>`,
     `${photo}
   ${p("Hey there,")}
-  ${p(`I saw the seller is offering a concession on <b>${esc(home)}</b>, so I built it out on BuyDown Indy for you. It shows buyers what that concession does to their <b>monthly payment</b> with a <b>2-1 buydown</b>, so your listing can <i>go toe to toe with the builders' rate incentives</i>.`)}
+  ${p(`I saw the seller is offering a concession on <a href="${esc(h.claimUrl)}" style="color:#1c2530;text-decoration:none"><b>${esc(home)}</b></a>, so I built it out on BuyDown Indy for you. It shows buyers what that concession does to their <b>monthly payment</b> with a <b>2-1 buydown</b>, so your listing can <i>go toe to toe with the builders' rate incentives</i>.`)}
   <div style="background:#f4f7fa;border-left:4px solid #1c5aa6;border-radius:8px;padding:16px 18px;margin:0 0 22px">
     <div style="font-size:16px;font-weight:700;color:#1c2530;margin:0 0 8px">Why I Built This</div>
     <div style="font-size:15px;color:#1c2530;line-height:1.75">Buyers and sellers are <b>really confused by concessions</b>. Most people hear "seller credit" and have no idea what it actually does for them. Now they can <i>see it</i>, and understand how the math works <b>in seconds</b>.</div>

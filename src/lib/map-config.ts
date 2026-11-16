@@ -6,8 +6,11 @@ const maptiler = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 export const TILE_URL =
   process.env.NEXT_PUBLIC_TILE_URL ||
   (maptiler
-    ? `https://api.maptiler.com/maps/streets-v2/256/{z}/{x}/{y}.png?key=${maptiler}`
+    ? `https://api.maptiler.com/maps/dataviz/256/{z}/{x}/{y}.png?key=${maptiler}`
     : "https://tile.openstreetmap.org/{z}/{x}/{y}.png");
+
+/** MapTiler's light "dataviz" style is already muted, so the map skips the grayscale filter. */
+export const TILE_PLAIN = !process.env.NEXT_PUBLIC_TILE_URL && !!maptiler;
 
 export const TILE_ATTRIBUTION =
   process.env.NEXT_PUBLIC_TILE_ATTRIBUTION ||
@@ -28,7 +31,8 @@ export const MAP_OPTIONS = {
   maxZoom: 17,
 } as const;
 
-export const TILE_OPTIONS = { maxZoom: 19, keepBuffer: 6, updateWhenZooming: false } as const;
+// keepBuffer: rows of off-screen tiles kept loaded. 2 keeps panning smooth without fetching dozens of extra images.
+export const TILE_OPTIONS = { maxZoom: 19, keepBuffer: 2, updateWhenZooming: false } as const;
 
 export const CENTER_PHONE: [number, number] = [39.8, -86.14];
 export const CENTER_DESK: [number, number] = [39.87, -86.15];

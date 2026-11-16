@@ -117,7 +117,8 @@ export function ListingView({
     else if (l.agentPhone) window.location.href = `tel:${l.agentPhone.replace(/[^0-9+]/g, "")}`;
     else if (l.agentEmail)
       window.location.href = `mailto:${l.agentEmail}?subject=${encodeURIComponent(`${l.address}, ${l.city}`)}`;
-    else toast(`Demo: calls or emails ${l.agentName}, ${l.brokerage}.`);
+    else if (l.isSample) toast(`Demo: calls or emails ${l.agentName}, ${l.brokerage}.`);
+    else toast("The listing agent's contact info isn't on BuyDown Indy yet. Check the Zillow or Redfin listing.");
   };
 
   const meta = l.isExample

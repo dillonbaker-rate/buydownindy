@@ -337,46 +337,81 @@ select.input {
   font-family: var(--font-sans);
   background: var(--color-neutral-200);
 }
-.leaflet-tile-pane {
-  filter: grayscale(1) contrast(0.9) brightness(1.06);
+/* Gray the map per tile (cheap) rather than filtering the whole pane, which repaints on every pan and zoom.
+   A provider style that's already light (MapTiler "dataviz") needs no filter at all: see .bd-map-plain. */
+/* More specific than leaflet.css's ".leaflet-tile { filter: inherit }", which loads after this file. */
+.leaflet-container .leaflet-tile {
+  filter: grayscale(1) contrast(0.92) brightness(1.05);
+}
+.leaflet-container.bd-map-plain .leaflet-tile {
+  filter: none;
 }
 .bd-pin {
   --pin-c: var(--color-accent);
   position: absolute;
   left: 0;
   top: 0;
-  transform: translate(-50%, calc(-100% - 6px)) scale(1);
+  transform: translate(-50%, calc(-100% - 5px));
   transform-origin: 50% 100%;
   background: var(--pin-c);
   color: #fff;
-  font: 700 14px/1 var(--font-sans);
-  letter-spacing: -0.02em;
+  font: 700 13px/1 var(--font-sans);
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 999px;
-  border: 2px solid #fff;
+  border: 1.5px solid #fff;
   white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.25), 0 3px 8px rgba(16, 24, 40, 0.12);
   cursor: pointer;
 }
 .bd-pin::after {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: -6px;
-  margin-left: -6px;
-  border: 6px solid transparent;
+  bottom: -5px;
+  margin-left: -5px;
+  border: 5px solid transparent;
   border-bottom: 0;
   border-top-color: var(--pin-c);
 }
+.bd-pin:hover {
+  --pin-c: var(--color-accent-700, #154a8a);
+}
+/* Hidden listings (signed-in agents only): solid slate, so they read as "not public" without visual noise. */
 .bd-pin.is-hidden {
-  --pin-c: #7a8592;
-  outline: 2px dashed rgba(255, 255, 255, 0.85);
-  outline-offset: -4px;
+  --pin-c: #66727f;
 }
 .bd-pin.is-sel {
   --pin-c: var(--color-ink);
-  transform: translate(-50%, calc(-100% - 6px)) scale(1.18);
+  transform: translate(-50%, calc(-100% - 5px)) scale(1.12);
+  z-index: 1;
+}
+/* Several homes close together at this zoom: one bubble with the count; click to zoom in. */
+.bd-cluster {
+  --pin-c: var(--color-accent);
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  min-width: 34px;
+  height: 34px;
+  padding: 0 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--pin-c);
+  color: #fff;
+  font: 700 13px/1 var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pin-c) 22%, transparent), 0 3px 8px rgba(16, 24, 40, 0.18);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.bd-cluster.is-hidden {
+  --pin-c: #66727f;
 }
 
 @media (prefers-reduced-motion: reduce) {

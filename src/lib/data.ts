@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { LENDER } from "@/content/lender";
 import type { LoanType } from "./buydown";
 import { SAMPLE_LISTINGS } from "./sample-data";
 import { DEMO_AGENT, demoAgent, demoListings } from "./demo-store";
@@ -46,7 +47,30 @@ export interface ListingRow {
   agent?: { name: string; brokerage: string; email: string; phone: string; photo_url: string | null; verification_status: string | null } | null;
 }
 
+/** Emails of admin accounts (the lender). Listings they own are prepared for an agent, never "listed by" them. */
+const ADMIN_OWNERS = new Set(
+  [LENDER.email, ...(process.env.ADMIN_EMAILS ?? "").split(","), ...(process.env.SUPER_ADMIN_EMAILS ?? "").split(",")]
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
+);
+
 export function fromRow(r: ListingRow): Listing {
+  const l = baseFromRow(r);
+  if (!r.agent?.email || !ADMIN_OWNERS.has(r.agent.email.toLowerCase())) return l;
+  // Owned by the admin account (a hidden listing built for an agent, or one put live by the admin): credit the
+  // listing agent it was made for, or a neutral "Listing agent", instead of the admin's name, photo and phone.
+  return {
+    ...l,
+    agentName: r.handoff_name?.trim() || "Listing agent",
+    brokerage: "",
+    agentEmail: r.handoff_email ?? null,
+    agentPhone: null,
+    agentPhotoUrl: null,
+    agentVerified: false,
+  };
+}
+
+function baseFromRow(r: ListingRow): Listing {
   return {
     id: r.id,
     address: r.address,

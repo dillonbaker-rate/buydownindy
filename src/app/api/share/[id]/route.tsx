@@ -2,10 +2,10 @@
 import { ImageResponse } from "next/og";
 import QRCode from "qrcode";
 import sharp from "sharp";
-import { getListing } from "@/lib/data";
+import { getCurrentAgent, getListing } from "@/lib/data";
 import { GRAPHIC_DESIGNS, GRAPHIC_SIZES, type GraphicSize } from "@/lib/share-graphics";
 import { listingMarketing, type ListingMarketing } from "@/lib/marketing";
-import { getRateInfo } from "@/lib/rates";
+import { getRateInfo, isAdmin } from "@/lib/rates";
 
 // Share-window graphics for a live listing. Branding and disclosures are built in and can't be edited.
 // Satori rules: any element with more than one child needs display:flex, so every text node is one string.
@@ -309,8 +309,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const size = (url.searchParams.get("size") ?? "post") as Size;
   const design = Math.min(Math.max(Number(url.searchParams.get("design") ?? 0) || 0, 0), RENDER.length - 1);
   if (!(size in SIZES)) return new Response("size must be post, story or flyer", { status: 400 });
-  const [l, info] = await Promise.all([getListing((await params).id), getRateInfo()]);
-  if (!l || l.status !== "live") return new Response("Listing not found", { status: 404 });
+  const [found, info] = await Promise.all([getListing((await params).id), getRateInfo()]);
+  // Live listings for everyone; hidden (draft) listings for admins, so flyers are ready before the agent takes it live.
+  const hidden = found?.status === "draft";
+  const me = hidden ? await getCurrentAgent().catch(() => null) : null;
+  if (!found || !(found.status === "live" || (hidden && me && isAdmin(me.email)))) return new Response("Listing not found", { status: 404 });
+  // A hidden listing is owned by the admin account: credit the listing agent it's for, not the admin.
+  const l = hidden ? { ...found, agentName: found.handoffName || "Listing agent", brokerage: "" } : found;
 
   const m = listingMarketing(l, info, url.origin);
   const { w, h } = SIZES[size];
@@ -325,6 +330,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const img = new ImageResponse(<Design m={m} w={w} h={h} photo={photo} qr={qr} size={size} heads={heads} />, { width: w, height: h, fonts: fontData });
   if (url.searchParams.get("download"))
     img.headers.set("content-disposition", `attachment; filename="${l.address.replace(/[^A-Za-z0-9]+/g, "-")}-${size}-${GRAPHIC_DESIGNS[design].toLowerCase()}.png"`);
-  img.headers.set("cache-control", "public, max-age=300, s-maxage=600");
+  // Hidden listings aren't public: don't let the CDN keep a copy.
+  img.headers.set("cache-control", hidden ? "private, no-store" : "public, max-age=300, s-maxage=600");
   return img;
 }

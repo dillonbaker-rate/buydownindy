@@ -87,24 +87,40 @@ export function agentVerifiedEmail(a: Pick<AgentForEmail, "name">, site: string)
 
 /** To an agent: the admin prepared a hidden listing for them; the link previews it and lets them take it live. */
 export function handoffEmail(h: { address: string; city: string; claimUrl: string }) {
-  const subject = `Your listing is ready on BuyDown Indy: ${h.address}`;
+  const subject = `I built your listing on BuyDown Indy: ${h.address}`;
   const home = `${h.address}, ${h.city}`;
+  const video = "https://youtu.be/v_CduvwuhkA";
+  const p = (s: string) => `<p style="font-size:15px;color:#1c2530;line-height:1.6;margin:0 0 16px">${s}</p>`;
   const html = layout(
     "BuyDown Indy",
     esc(home),
-    `<p style="font-size:15px;color:#1c2530;line-height:1.6;margin:0 0 16px">${esc(LENDER.name)} set up a BuyDown Indy listing for ${esc(home)}, showing buyers what the seller concession does for their rate and payment.</p>
-  <p style="font-size:15px;color:#1c2530;line-height:1.6;margin:0 0 20px">It's private for now. Open the link to see it. If it looks right, create your free agent account with this email address and take it live under your name in one click.</p>
+    `${p("Hey there,")}
+  ${p(`I saw the seller is offering a concession on ${esc(home)}, so I went ahead and built it out on BuyDown Indy for you. It's basically the lender version of Zillow: it shows buyers what that concession does to their monthly payment with a 2-1 buydown, so your listing can go toe to toe with the builders' rate incentives.`)}
+  ${p("It's private right now. Nobody can see it but you. Take a look, and if it looks right, create your free agent account with this email address and take it live under your name in one click.")}
   ${button(h.claimUrl, "See your listing")}
-  <p style="font-size:13px;color:#5a636e;line-height:1.5;margin:20px 0 0">Questions or changes? Just reply to this email.</p>`,
+  ${p(`Here's a quick walkthrough of how it works: <a href="${video}" style="color:#1c5aa6">watch the video</a>.`)}
+  ${p("Any changes, just reply to this email and I'll handle it.")}
+  ${p("Dillon")}
+  <p style="font-size:12px;color:#5a636e;line-height:1.5;margin:20px 0 0">Payment examples are for illustration only and are not a quote, loan offer, or commitment to lend.</p>
+  <p style="font-size:12px;color:#5a636e;line-height:1.5;margin:8px 0 0">Dillon Baker | VP of Mortgage Lending, Rate | NMLS #2681440 | Rate NMLS #2611 | Equal Housing Lender</p>`,
   );
   const text = [
-    `${LENDER.name} set up a BuyDown Indy listing for ${home}, showing buyers what the seller concession does for their rate and payment.`,
+    "Hey there,",
     "",
-    "It's private for now. Open the link to see it. If it looks right, create your free agent account with this email address and take it live under your name in one click.",
+    `I saw the seller is offering a concession on ${home}, so I went ahead and built it out on BuyDown Indy for you. It's basically the lender version of Zillow: it shows buyers what that concession does to their monthly payment with a 2-1 buydown, so your listing can go toe to toe with the builders' rate incentives.`,
+    "",
+    "It's private right now. Nobody can see it but you. Take a look, and if it looks right, create your free agent account with this email address and take it live under your name in one click.",
     "",
     `See your listing: ${h.claimUrl}`,
     "",
-    "Questions or changes? Just reply to this email.",
+    `Quick walkthrough video: ${video}`,
+    "",
+    "Any changes, just reply to this email and I'll handle it.",
+    "",
+    "Dillon",
+    "",
+    "Payment examples are for illustration only and are not a quote, loan offer, or commitment to lend.",
+    "Dillon Baker | VP of Mortgage Lending, Rate | NMLS #2681440 | Rate NMLS #2611 | Equal Housing Lender",
   ].join("\n");
   return { subject, html, text };
 }

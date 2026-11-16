@@ -1,5 +1,5 @@
 "use client";
-import { EyeOff, Link2, Plus, Send, Trash2 } from "lucide-react";
+import { EyeOff, Link2, Mail, Plus, Send, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -206,6 +206,10 @@ export function Dashboard({
                           Copy link
                         </button>
                       )}
+                      <Link href={`/agent/emails/preview/${l.id}`} className="btn btn-secondary min-h-10 text-[13px]">
+                        <Mail size={14} />
+                        Preview email
+                      </Link>
                     </>
                   )}
                   {l.status !== "sold" && l.status !== "draft" && btn("Renew", "renew")}

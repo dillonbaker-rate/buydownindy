@@ -78,6 +78,11 @@ export function AccountMenu({ me }: { me: AccountSummary }) {
               <Link href="/agent/website-tools" role="menuitem" className={item} onClick={() => setOpen(false)}>
                 Website &amp; newsletter tools
               </Link>
+              {!me.isAdmin && (
+                <Link href="/agent/examples" role="menuitem" className={item} onClick={() => setOpen(false)}>
+                  Example listings
+                </Link>
+              )}
             </>
           )}
           {me.isAdmin && (
@@ -91,8 +96,16 @@ export function AccountMenu({ me }: { me: AccountSummary }) {
                   {me.newLeads > 0 && <span className="tag bg-accent font-semibold text-white">{me.newLeads} new</span>}
                 </Link>
               )}
+              {me.isSuperAdmin && (
+                <Link href="/agent/emails" role="menuitem" className={item} onClick={() => setOpen(false)}>
+                  Emails
+                </Link>
+              )}
               <Link href="/agent/rates" role="menuitem" className={item} onClick={() => setOpen(false)}>
                 Today&apos;s rates
+              </Link>
+              <Link href="/agent/examples" role="menuitem" className={item} onClick={() => setOpen(false)}>
+                Hidden listings
               </Link>
               <Link href="/agent/admin" role="menuitem" className={item} onClick={() => setOpen(false)}>
                 Agents

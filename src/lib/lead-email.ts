@@ -68,5 +68,5 @@ export function leadEmail(lead: LeadForEmail, siteUrl: string) {
 }
 
 export async function sendLeadEmail(lead: LeadForEmail): Promise<void> {
-  await sendEmail("lead-email", { to: notifyTo(), replyTo: lead.email, ...leadEmail(lead, siteUrl()) });
+  await sendEmail("lead", { to: notifyTo(), replyTo: lead.email, ...leadEmail(lead, siteUrl()) });
 }

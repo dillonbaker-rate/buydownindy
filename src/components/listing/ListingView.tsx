@@ -47,8 +47,8 @@ export function ListingView({
   listing: Listing;
   rateInfo: RateInfo;
   preferredType?: LoanType;
-  /** Private preview of a hidden listing (agent handoff): no sharing, and contact buttons explain instead of dialing. */
-  preview?: boolean;
+  /** Preview of a hidden listing: no sharing, and contact buttons show this note (or the default) instead of dialing. */
+  preview?: boolean | string;
 }) {
   const desk = useIsDesktop();
   const toast = useToast();
@@ -113,7 +113,7 @@ export function ListingView({
 
   const lenderHref = `/talk-to-a-lender?listing=${encodeURIComponent(l.id)}`;
   const contact = () => {
-    if (preview) toast("Once it's live, buyers call or email you from here.");
+    if (preview) toast(typeof preview === "string" ? preview : "Once it's live, buyers call or email you from here.");
     else if (l.agentPhone) window.location.href = `tel:${l.agentPhone.replace(/[^0-9+]/g, "")}`;
     else if (l.agentEmail)
       window.location.href = `mailto:${l.agentEmail}?subject=${encodeURIComponent(`${l.address}, ${l.city}`)}`;

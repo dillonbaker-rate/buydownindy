@@ -159,14 +159,14 @@ export function handoffEmail(h: { address: string; city: string; claimUrl: strin
 
 export async function sendHandoffEmail(to: string, h: { address: string; city: string; claimPath: string; photo?: string }): Promise<void> {
   const claimUrl = `${siteUrl()}${h.claimPath}`;
-  await sendEmail("handoff-email", { to: [to], replyTo: notifyTo()[0], ...handoffEmail({ ...h, claimUrl }) });
+  await sendEmail("handoff", { to: [to], replyTo: notifyTo()[0], ...handoffEmail({ ...h, claimUrl }) });
 }
 
 export async function sendNewAgentEmail(a: AgentForEmail): Promise<void> {
-  await sendEmail("agent-email", { to: notifyTo(), replyTo: a.email, ...newAgentEmail(a, siteUrl()) });
+  await sendEmail("new-agent", { to: notifyTo(), replyTo: a.email, ...newAgentEmail(a, siteUrl()) });
 }
 
 export async function sendAgentVerifiedEmail(a: Pick<AgentForEmail, "name" | "email">): Promise<void> {
   // Replies go to Dillon's notify inbox.
-  await sendEmail("agent-email", { to: [a.email], replyTo: notifyTo()[0], ...agentVerifiedEmail(a, siteUrl()) });
+  await sendEmail("agent-verified", { to: [a.email], replyTo: notifyTo()[0], ...agentVerifiedEmail(a, siteUrl()) });
 }

@@ -31,12 +31,15 @@ export function ListingCard({
   loanFilter,
   selected,
   href,
+  badge,
 }: {
   listing: Listing;
   rateInfo: RateInfo;
   loanFilter?: LoanType | "Any";
   selected?: boolean;
   href: string;
+  /** Tag on the photo, e.g. "Hidden · not public" for hidden listings. */
+  badge?: string;
 }) {
   const n = cardNumbers(l, rateInfo, loanFilter);
   return (
@@ -52,6 +55,7 @@ export function ListingCard({
           <span className="text-[9px] font-semibold">from seller</span>
         </div>
         {l.isSample && <span className="tag tag-neutral absolute bottom-2.5 left-2.5">Sample</span>}
+        {badge && <span className="tag tag-ink absolute bottom-2.5 left-2.5 font-semibold">{badge}</span>}
       </div>
       <div className="flex flex-col gap-0.5 p-3">
         <div className="flex items-baseline justify-between gap-2">

@@ -1,5 +1,5 @@
 "use client";
-import { ChevronDown, ChevronUp, List, Map as MapIcon, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, ChevronUp, EyeOff, List, Map as MapIcon, SlidersHorizontal, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
@@ -22,10 +22,13 @@ const LeafletMap = dynamic(() => import("./LeafletMap").then((m) => m.LeafletMap
 
 export function MapScreen({
   listings,
+  hidden,
   rateInfo,
   area,
 }: {
   listings: Listing[];
+  /** Hidden (not public) listings for signed-in agents: all of them for admins, examples for agents. */
+  hidden?: { listings: Listing[]; admin: boolean };
   rateInfo: RateInfo;
   /** City, county, or ZIP chosen on the search screen. */
   area?: Area | null;
@@ -42,9 +45,14 @@ export function MapScreen({
   const drag = useRef<{ y: number | null; dragged: boolean }>({ y: null, dragged: false });
   const touch = useRef<{ y: number | null; top: boolean }>({ y: null, top: false });
 
+  const [showHidden, setShowHidden] = useState(true);
+
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => setF((s) => ({ ...s, [k]: v }));
 
-  const inPlace = useMemo(() => (area ? listings.filter((l) => inArea(area, l)) : listings), [listings, area]);
+  // Public listings plus, for signed-in agents, the hidden ones (shown gray and tagged).
+  const hiddenIds = useMemo(() => new Set(hidden?.listings.map((l) => l.id)), [hidden]);
+  const all = useMemo(() => (hidden && showHidden ? [...listings, ...hidden.listings] : listings), [listings, hidden, showHidden]);
+  const inPlace = useMemo(() => (area ? all.filter((l) => inArea(area, l)) : all), [all, area]);
   // Center on the area's homes if it has any, otherwise on the place itself.
   const areaView = useMemo((): { center: [number, number]; zoom: number } | null => {
     if (!area) return null;
@@ -94,7 +102,7 @@ export function MapScreen({
   const pick = (id: string) => {
     setSelId(id);
     setSheet("peek");
-    const l = listings.find((x) => x.id === id);
+    const l = all.find((x) => x.id === id);
     if (l) mapRef.current?.flyTo(l.lat, l.lng);
   };
   const toggleSheet = () => {
@@ -111,12 +119,15 @@ export function MapScreen({
     lat: l.lat,
     lng: l.lng,
     label: kUsd(l.concession),
-    title: `${l.address}, ${kUsd(l.concession)} seller concession`,
+    title: `${l.address}, ${kUsd(l.concession)} seller concession${hiddenIds.has(l.id) ? " (hidden)" : ""}`,
+    muted: hiddenIds.has(l.id),
   }));
   const anySample = listings.some((l) => l.isSample);
   const heroPhone = phone && view === "map" && heroOn && !expanded && hero;
   const heroDesk = desk && heroOn && hero;
-  const href = (l: Listing) => `/listing/${l.id}` + (f.loan !== "Any" ? `?type=${f.loan}` : "");
+  const href = (l: Listing) =>
+    hiddenIds.has(l.id) && !hidden?.admin ? `/agent/examples/${l.id}` : `/listing/${l.id}` + (f.loan !== "Any" ? `?type=${f.loan}` : "");
+  const badge = (l: Listing) => (hiddenIds.has(l.id) ? (hidden?.admin ? "Hidden · not public" : "Example · not live") : undefined);
 
   // Split: list 40%, map 60% (desktop width; phone sheet starts at 40% of the height).
   const LIST_SHARE = "40%";
@@ -286,6 +297,17 @@ export function MapScreen({
             ) : (
               <div className="text-xs text-neutral-700">Seller pays concessions · Indy metro</div>
             )}
+            {hidden && (
+              <button
+                type="button"
+                onClick={() => setShowHidden((v) => !v)}
+                aria-pressed={showHidden}
+                className={`tag mt-1.5 cursor-pointer font-semibold ${showHidden ? "tag-ink" : "tag-neutral"}`}
+              >
+                <EyeOff size={12} />
+                {showHidden ? "Showing" : "Show"} {hidden.listings.length} hidden listing{hidden.listings.length === 1 ? "" : "s"}
+              </button>
+            )}
           </div>
           {phone && (
             <button
@@ -385,11 +407,11 @@ export function MapScreen({
             </div>
           )}
 
-          {area && inPlace.length === 0 && listings.length > 0 ? (
+          {area && inPlace.length === 0 && all.length > 0 ? (
             <div className="flex flex-col items-start gap-2 border-t border-divider py-6">
               <div className="text-xl font-bold">No listings in {area.label} yet</div>
               <p className="m-0 text-sm text-neutral-700">
-                There are {listings.length} Indy-area home{listings.length === 1 ? "" : "s"} with seller concessions right now.
+                There are {all.length} Indy-area home{all.length === 1 ? "" : "s"} with seller concessions right now.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link href="/homes" className="btn btn-primary">
@@ -400,7 +422,7 @@ export function MapScreen({
                 </Link>
               </div>
             </div>
-          ) : listings.length === 0 ? (
+          ) : all.length === 0 ? (
             <div className="flex flex-col items-start gap-2 border-t border-divider py-6">
               <div className="text-xl font-bold">No listings yet</div>
               <p className="m-0 text-sm text-neutral-700">
@@ -425,6 +447,7 @@ export function MapScreen({
                   loanFilter={f.loan}
                   selected={l.id === selId}
                   href={href(l)}
+                  badge={badge(l)}
                 />
               ))}
             </div>

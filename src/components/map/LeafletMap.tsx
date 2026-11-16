@@ -10,6 +10,8 @@ export interface Pin {
   lng: number;
   label: string;
   title: string;
+  /** Hidden listing (only signed-in agents see it): drawn gray. */
+  muted?: boolean;
 }
 
 export interface LeafletMapHandle {
@@ -30,8 +32,8 @@ interface Props {
   className?: string;
 }
 
-const pinHtml = (t: string, sel: boolean) =>
-  `<div class="bd-pin${sel ? " is-sel" : ""}">${t.replace(/</g, "&lt;")}</div>`;
+const pinHtml = (t: string, sel: boolean, muted?: boolean) =>
+  `<div class="bd-pin${sel ? " is-sel" : ""}${muted ? " is-hidden" : ""}">${t.replace(/</g, "&lt;")}</div>`;
 
 /** Thin imperative Leaflet wrapper: divIcon pins showing the concession, flyTo on select. */
 export const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMap(
@@ -106,7 +108,7 @@ export const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMa
     for (const p of pinsRef.current) {
       const sel = p.id === selRef.current;
       const mk = lf.marker([p.lat, p.lng], {
-        icon: lf.divIcon({ className: "", iconSize: [0, 0], html: pinHtml(p.label, sel) }),
+        icon: lf.divIcon({ className: "", iconSize: [0, 0], html: pinHtml(p.label, sel, p.muted) }),
         zIndexOffset: sel ? 1000 : 0,
         title: p.title,
         keyboard: true,
@@ -123,7 +125,7 @@ export const LeafletMap = forwardRef<LeafletMapHandle, Props>(function LeafletMa
   const selRef = useRef(selectedId);
   selRef.current = selectedId;
 
-  const pinKey = pins.map((p) => p.id + ":" + p.label + ":" + p.lat + "," + p.lng).join("|") + "#" + selectedId;
+  const pinKey = pins.map((p) => p.id + ":" + p.label + ":" + p.lat + "," + p.lng + (p.muted ? ":m" : "")).join("|") + "#" + selectedId;
   useEffect(() => {
     try {
       drawPins();

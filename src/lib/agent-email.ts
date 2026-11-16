@@ -86,30 +86,56 @@ export function agentVerifiedEmail(a: Pick<AgentForEmail, "name">, site: string)
 }
 
 /** To an agent: the admin prepared a hidden listing for them; the link previews it and lets them take it live. */
-export function handoffEmail(h: { address: string; city: string; claimUrl: string }) {
+export function handoffEmail(h: { address: string; city: string; claimUrl: string; photo?: string }) {
   const subject = `I built your listing on BuyDown Indy: ${h.address}`;
   const home = `${h.address}, ${h.city}`;
   const video = "https://youtu.be/v_CduvwuhkA";
-  const p = (s: string) => `<p style="font-size:15px;color:#1c2530;line-height:1.6;margin:0 0 16px">${s}</p>`;
+  const p = (s: string) => `<p style="font-size:15px;color:#1c2530;line-height:1.75;margin:0 0 22px">${s}</p>`;
+  const li = (s: string) => `<li style="font-size:15px;color:#1c2530;line-height:1.75;margin:0 0 12px">${s}</li>`;
+  const photo = h.photo
+    ? `<a href="${esc(h.claimUrl)}"><img src="${esc(h.photo)}" alt="${esc(home)}" width="552" style="display:block;width:100%;max-width:552px;height:auto;border-radius:12px;margin:0 0 26px" /></a>`
+    : "";
   const html = layout(
     "BuyDown Indy",
     esc(home),
-    `${p("Hey there,")}
-  ${p(`I saw the seller is offering a concession on ${esc(home)}, so I went ahead and built it out on BuyDown Indy for you. It's basically the lender version of Zillow: it shows buyers what that concession does to their monthly payment with a 2-1 buydown, so your listing can go toe to toe with the builders' rate incentives.`)}
-  ${p("It's private right now. Nobody can see it but you. Take a look, and if it looks right, create your free agent account with this email address and take it live under your name in one click.")}
-  ${button(h.claimUrl, "See your listing")}
+    `${photo}
+  ${p("Hey there,")}
+  ${p(`I saw the seller is offering a concession on <b>${esc(home)}</b>, so I built it out on BuyDown Indy for you. It shows buyers what that concession does to their <b>monthly payment</b> with a <b>2-1 buydown</b>, so your listing can <i>go toe to toe with the builders' rate incentives</i>.`)}
+  <div style="background:#f4f7fa;border-left:4px solid #1c5aa6;border-radius:8px;padding:16px 18px;margin:0 0 22px">
+    <div style="font-size:16px;font-weight:700;color:#1c2530;margin:0 0 8px">Why I Built This</div>
+    <div style="font-size:15px;color:#1c2530;line-height:1.75">Buyers and sellers are <b>really confused by concessions</b>. Most people hear "seller credit" and have no idea what it actually does for them. Now they can <i>see it</i>, and understand how the math works <b>in seconds</b>.</div>
+  </div>
+  ${p("<b>It's private until you say go.</b> Taking it live is super easy:")}
+  <ol style="margin:0 0 26px;padding-left:22px">
+    ${li("Hit <b>Take it live</b>")}
+    ${li("<b>Sign in</b> with this email address")}
+    ${li("<b>Change any details</b> you want, anytime")}
+  </ol>
+  <div style="padding:18px 0 38px">${button(h.claimUrl, "See your listing")}</div>
   ${p(`Here's a quick walkthrough of how it works: <a href="${video}" style="color:#1c5aa6">watch the video</a>.`)}
   ${p("Any changes, just reply to this email and I'll handle it.")}
-  ${p("Dillon")}
-  <p style="font-size:12px;color:#5a636e;line-height:1.5;margin:20px 0 0">Payment examples are for illustration only and are not a quote, loan offer, or commitment to lend.</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 22px"><tr>
+    <td style="vertical-align:middle;padding-right:14px"><img src="https://www.buydownindy.com/dillon-baker.jpg" alt="Dillon Baker" width="72" height="72" style="display:block;width:72px;height:72px;border-radius:50%" /></td>
+    <td style="vertical-align:middle">
+      <div style="font-size:15px;color:#1c2530;line-height:1.5"><b>Dillon Baker</b><br/>VP of Mortgage Lending<br/>Rate Mortgage</div>
+      <div style="margin-top:8px;line-height:0"><a href="https://loanswithdillon.com/" style="text-decoration:none;margin-right:8px"><img src="https://img.icons8.com/ios-filled/100/1c5aa6/domain.png" alt="Website" width="24" height="24" style="display:inline-block;width:24px;height:24px;border:0" /></a><a href="https://www.instagram.com/loanswithdillon/" style="text-decoration:none;margin-right:8px"><img src="https://img.icons8.com/color/96/instagram-new--v1.png" alt="Instagram" width="24" height="24" style="display:inline-block;width:24px;height:24px;border:0" /></a><a href="https://www.linkedin.com/in/dillonbaker1/" style="text-decoration:none;margin-right:8px"><img src="https://img.icons8.com/color/96/linkedin.png" alt="LinkedIn" width="24" height="24" style="display:inline-block;width:24px;height:24px;border:0" /></a><a href="https://www.facebook.com/dillon.baker.58/" style="text-decoration:none;margin-right:8px"><img src="https://img.icons8.com/color/96/facebook-new.png" alt="Facebook" width="24" height="24" style="display:inline-block;width:24px;height:24px;border:0" /></a></div>
+    </td>
+  </tr></table>
+  <p style="font-size:12px;color:#5a636e;line-height:1.5;margin:28px 0 0"><i>Payment examples are for illustration only and are not a quote, loan offer, or commitment to lend.</i></p>
   <p style="font-size:12px;color:#5a636e;line-height:1.5;margin:8px 0 0">Dillon Baker | VP of Mortgage Lending, Rate | NMLS #2681440 | Rate NMLS #2611 | Equal Housing Lender</p>`,
   );
   const text = [
     "Hey there,",
     "",
-    `I saw the seller is offering a concession on ${home}, so I went ahead and built it out on BuyDown Indy for you. It's basically the lender version of Zillow: it shows buyers what that concession does to their monthly payment with a 2-1 buydown, so your listing can go toe to toe with the builders' rate incentives.`,
+    `I saw the seller is offering a concession on ${home}, so I built it out on BuyDown Indy for you. It shows buyers what that concession does to their monthly payment with a 2-1 buydown, so your listing can go toe to toe with the builders' rate incentives.`,
     "",
-    "It's private right now. Nobody can see it but you. Take a look, and if it looks right, create your free agent account with this email address and take it live under your name in one click.",
+    "WHY I BUILT THIS",
+    "Buyers and sellers are really confused by concessions. Most people hear \"seller credit\" and have no idea what it actually does for them. Now they can see it, and understand how the math works in seconds.",
+    "",
+    "It's private until you say go. Taking it live is super easy:",
+    "1. Hit Take it live",
+    "2. Sign in with this email address",
+    "3. Change any details you want, anytime",
     "",
     `See your listing: ${h.claimUrl}`,
     "",
@@ -117,7 +143,13 @@ export function handoffEmail(h: { address: string; city: string; claimUrl: strin
     "",
     "Any changes, just reply to this email and I'll handle it.",
     "",
-    "Dillon",
+    "Dillon Baker",
+    "VP of Mortgage Lending",
+    "Rate Mortgage",
+    "loanswithdillon.com",
+    "Instagram: https://www.instagram.com/loanswithdillon/",
+    "LinkedIn: https://www.linkedin.com/in/dillonbaker1/",
+    "Facebook: https://www.facebook.com/dillon.baker.58/",
     "",
     "Payment examples are for illustration only and are not a quote, loan offer, or commitment to lend.",
     "Dillon Baker | VP of Mortgage Lending, Rate | NMLS #2681440 | Rate NMLS #2611 | Equal Housing Lender",
@@ -125,7 +157,7 @@ export function handoffEmail(h: { address: string; city: string; claimUrl: strin
   return { subject, html, text };
 }
 
-export async function sendHandoffEmail(to: string, h: { address: string; city: string; claimPath: string }): Promise<void> {
+export async function sendHandoffEmail(to: string, h: { address: string; city: string; claimPath: string; photo?: string }): Promise<void> {
   const claimUrl = `${siteUrl()}${h.claimPath}`;
   await sendEmail("handoff-email", { to: [to], replyTo: notifyTo()[0], ...handoffEmail({ ...h, claimUrl }) });
 }

@@ -326,14 +326,14 @@ const BASE_TOOLS: Tool[] = [
     WRITE,
     async ({ id, email }) => {
       const sb = db();
-      const { data: l } = await sb.from("listings").select("address, city, status").eq("id", id).maybeSingle();
+      const { data: l } = await sb.from("listings").select("address, city, status, photos").eq("id", id).maybeSingle();
       if (!l) throw new ToolError("Listing not found.");
       if (l.status !== "draft") throw new ToolError("Only hidden (draft) listings can be sent.");
       const token = newHandoffToken();
       const { error } = await sb.from("listings").update({ handoff_email: email, handoff_token: token, handoff_sent_at: new Date().toISOString() }).eq("id", id);
       if (error) throw new ToolError(/handoff_/.test(error.message) ? "Run migration 0012 in Supabase first." : error.message);
       const path = claimPath(token);
-      await sendHandoffEmail(email, { address: l.address, city: l.city, claimPath: path });
+      await sendHandoffEmail(email, { address: l.address, city: l.city, claimPath: path, photo: l.photos?.[0]?.url });
       return { ok: true, sentTo: email, link: `${siteUrl()}${path}` };
     },
   ),

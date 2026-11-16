@@ -47,7 +47,7 @@ describe("handoff email", () => {
   const e = handoffEmail({ address: "1 Main <St>", city: "Fishers", claimUrl: "https://buydownindy.com/agent/claim/abc" });
 
   it("names the home, escapes it, and links the private claim page", () => {
-    expect(e.subject).toBe("Your listing is ready on BuyDown Indy: 1 Main <St>");
+    expect(e.subject).toBe("I built your listing on BuyDown Indy: 1 Main <St>");
     expect(e.html).toContain("1 Main &lt;St&gt;, Fishers");
     expect(e.html).toContain('href="https://buydownindy.com/agent/claim/abc"');
     expect(e.text).toContain("See your listing: https://buydownindy.com/agent/claim/abc");

@@ -86,9 +86,11 @@ export function agentVerifiedEmail(a: Pick<AgentForEmail, "name">, site: string)
 }
 
 /** To an agent: the admin prepared a hidden listing for them; the link previews it and lets them take it live. */
-export function handoffEmail(h: { address: string; city: string; claimUrl: string; photo?: string }) {
+export function handoffEmail(h: { address: string; city: string; claimUrl: string; photo?: string; firstName?: string | null }) {
   const subject = `I built your listing on BuyDown Indy: ${h.address}`;
   const home = `${h.address}, ${h.city}`;
+  // "Hey Jane," when we know the agent's name, otherwise "Hey there,".
+  const hey = `Hey ${h.firstName?.trim() || "there"},`;
   const video = "https://youtu.be/v_CduvwuhkA";
   const p = (s: string) => `<p style="font-size:15px;color:#1c2530;line-height:1.75;margin:0 0 22px">${s}</p>`;
   const li = (s: string) => `<li style="font-size:15px;color:#1c2530;line-height:1.75;margin:0 0 12px">${s}</li>`;
@@ -99,7 +101,7 @@ export function handoffEmail(h: { address: string; city: string; claimUrl: strin
     "BuyDown Indy",
         `<a href="${esc(h.claimUrl)}" style="color:#ffffff;text-decoration:none">${esc(home)}</a>`,
     `${photo}
-  ${p("Hey there,")}
+  ${p(esc(hey))}
   ${p(`I saw the seller is offering a concession on <a href="${esc(h.claimUrl)}" style="color:#1c2530;text-decoration:none"><b>${esc(home)}</b></a>, so I built it out on BuyDown Indy for you. It shows buyers what that concession does to their <b>monthly payment</b> with a <b>2-1 buydown</b>, so your listing can <i>go toe to toe with the builders' rate incentives</i>.`)}
   <div style="background:#f4f7fa;border-left:4px solid #1c5aa6;border-radius:8px;padding:16px 18px;margin:0 0 22px">
     <div style="font-size:16px;font-weight:700;color:#1c2530;margin:0 0 8px">Why I Built This</div>
@@ -125,7 +127,7 @@ export function handoffEmail(h: { address: string; city: string; claimUrl: strin
   <p style="font-size:12px;color:#5a636e;line-height:1.5;margin:8px 0 0">Dillon Baker | VP of Mortgage Lending, Rate | NMLS #2681440 | Rate NMLS #2611 | Equal Housing Lender</p>`,
   );
   const text = [
-    "Hey there,",
+    hey,
     "",
     `I saw the seller is offering a concession on ${home}, so I built it out on BuyDown Indy for you. It shows buyers what that concession does to their monthly payment with a 2-1 buydown, so your listing can go toe to toe with the builders' rate incentives.`,
     "",
@@ -157,7 +159,10 @@ export function handoffEmail(h: { address: string; city: string; claimUrl: strin
   return { subject, html, text };
 }
 
-export async function sendHandoffEmail(to: string, h: { address: string; city: string; claimPath: string; photo?: string }): Promise<void> {
+export async function sendHandoffEmail(
+  to: string,
+  h: { address: string; city: string; claimPath: string; photo?: string; firstName?: string | null },
+): Promise<void> {
   const claimUrl = `${siteUrl()}${h.claimPath}`;
   await sendEmail("handoff", { to: [to], replyTo: notifyTo()[0], ...handoffEmail({ ...h, claimUrl }) });
 }

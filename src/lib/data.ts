@@ -40,6 +40,7 @@ export interface ListingRow {
   sample_agent_name: string | null;
   sample_brokerage: string | null;
   handoff_email?: string | null;
+  handoff_name?: string | null;
   handoff_token?: string | null;
   handoff_sent_at?: string | null;
   agent?: { name: string; brokerage: string; email: string; phone: string; photo_url: string | null; verification_status: string | null } | null;
@@ -80,6 +81,7 @@ export function fromRow(r: ListingRow): Listing {
     isSample: r.is_sample,
     isExample: r.is_example,
     handoffEmail: r.handoff_email ?? null,
+    handoffName: r.handoff_name ?? null,
     handoffToken: r.handoff_token ?? null,
     handoffSentAt: r.handoff_sent_at ?? null,
   };

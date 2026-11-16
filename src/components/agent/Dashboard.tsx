@@ -75,11 +75,13 @@ export function Dashboard({
       l.handoffEmail ?? "",
     );
     if (!email?.trim()) return;
+    const name = prompt("Their name? (For \"Hey Jane,\" in the email. Leave blank for \"Hey there,\".)", l.handoffName ?? "");
+    if (name === null) return;
     setBusy(l.id + "send");
     const res = await fetch(`/api/listings/${l.id}/handoff`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: email.trim() }),
+      body: JSON.stringify({ email: email.trim(), ...(name.trim() ? { name: name.trim() } : {}) }),
     });
     setBusy(null);
     const j = await res.json().catch(() => ({}));

@@ -53,3 +53,19 @@ describe("handoff email", () => {
     expect(e.text).toContain("See your listing: https://buydownindy.com/agent/claim/abc");
   });
 });
+
+describe("handoff email greeting", () => {
+  const base = { address: "1 Main St", city: "Fishers", claimUrl: "https://buydownindy.com/agent/claim/abc" };
+
+  it("greets the agent by first name", () => {
+    const e = handoffEmail({ ...base, firstName: "Jane" });
+    expect(e.html).toContain(">Hey Jane,</p>");
+    expect(e.text.startsWith("Hey Jane,")).toBe(true);
+  });
+
+  it("falls back to Hey there and escapes names", () => {
+    expect(handoffEmail(base).text.startsWith("Hey there,")).toBe(true);
+    expect(handoffEmail({ ...base, firstName: "  " }).text.startsWith("Hey there,")).toBe(true);
+    expect(handoffEmail({ ...base, firstName: "<b>" }).html).toContain("Hey &lt;b&gt;,");
+  });
+});

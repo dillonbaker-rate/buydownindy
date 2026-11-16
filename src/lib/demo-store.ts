@@ -118,11 +118,11 @@ export async function demoUpdate(id: string, patch: { input?: ListingInput; acti
 }
 
 // ── Hidden-listing handoff (demo stand-ins for the migration 0012 database functions) ──
-export async function demoSetHandoff(id: string, email: string, token: string) {
+export async function demoSetHandoff(id: string, email: string, token: string, name: string | null = null) {
   const all = await readAll();
   const l = all.find((x) => x.id === id && x.status === "draft");
   if (!l) return false;
-  Object.assign(l, { handoffEmail: email, handoffToken: token, handoffSentAt: new Date().toISOString() });
+  Object.assign(l, { handoffEmail: email, handoffName: name, handoffToken: token, handoffSentAt: new Date().toISOString() });
   await writeAll(all);
   return true;
 }

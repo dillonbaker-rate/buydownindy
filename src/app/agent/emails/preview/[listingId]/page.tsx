@@ -6,7 +6,7 @@ import { AppShell } from "@/components/ui/Header";
 import { handoffEmail } from "@/lib/agent-email";
 import { getCurrentAgent, getListing } from "@/lib/data";
 import { siteUrl } from "@/lib/email";
-import { claimPath } from "@/lib/handoff";
+import { claimPath, firstName } from "@/lib/handoff";
 import { isAdmin } from "@/lib/rates";
 import { agentsEnabled } from "@/lib/supabase/env";
 
@@ -25,7 +25,7 @@ export default async function EmailPreviewPage({ params }: { params: Promise<{ l
 
   const sent = !!l.handoffToken;
   const claimUrl = sent ? `${siteUrl()}${claimPath(l.handoffToken!)}` : `${siteUrl()}/agent/claim/(private link created when you send it)`;
-  const e = handoffEmail({ address: l.address, city: l.city, claimUrl, photo: l.photos[0]?.url });
+  const e = handoffEmail({ address: l.address, city: l.city, claimUrl, photo: l.photos[0]?.url, firstName: firstName(l.handoffName) });
 
   return (
     <AppShell

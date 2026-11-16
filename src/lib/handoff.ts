@@ -14,21 +14,28 @@ export const newHandoffToken = () => randomBytes(24).toString("base64url");
 export const claimPath = (token: string) => `/agent/claim/${token}`;
 
 /** Save who a hidden listing is for and give it a fresh private link. The admin must own the listing. */
-export async function setHandoff(id: string, ownerId: string, email: string): Promise<{ token: string } | { error: string }> {
+export async function setHandoff(id: string, ownerId: string, email: string, name: string | null = null): Promise<{ token: string } | { error: string }> {
   const token = newHandoffToken();
-  if (demoMode) return (await demoSetHandoff(id, email, token)) ? { token } : { error: "Hide the listing before sending it." };
+  if (demoMode) return (await demoSetHandoff(id, email, token, name)) ? { token } : { error: "Hide the listing before sending it." };
   const sb = await createClient();
-  const { data, error } = await sb
-    .from("listings")
-    .update({ handoff_email: email, handoff_token: token, handoff_sent_at: new Date().toISOString() })
-    .eq("id", id)
-    .eq("agent_id", ownerId)
-    .eq("status", "draft")
-    .select("id");
+  const save = (withName: boolean) =>
+    sb
+      .from("listings")
+      .update({ handoff_email: email, ...(withName ? { handoff_name: name } : {}), handoff_token: token, handoff_sent_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("agent_id", ownerId)
+      .eq("status", "draft")
+      .select("id");
+  let { data, error } = await save(true);
+  // Before migration 0015 there's no handoff_name column: send without saving the name.
+  if (error && /handoff_name/.test(error.message)) ({ data, error } = await save(false));
   if (error) return { error: /handoff_/.test(error.message) ? "Run migration 0012 in Supabase first." : error.message };
   if (!data?.length) return { error: "Hide the listing before sending it." };
   return { token };
 }
+
+/** First name for an email greeting ("Jane Smith" → "Jane"), or null. */
+export const firstName = (name?: string | null) => name?.trim().split(/\s+/)[0] || null;
 
 /** The hidden listing behind a private link, or null if the link is used up or wrong. */
 export async function getListingByHandoff(token: string): Promise<Listing | null> {

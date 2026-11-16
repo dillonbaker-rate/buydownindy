@@ -3,7 +3,7 @@ import { z } from "zod";
 import { sendAgentVerifiedEmail, sendHandoffEmail } from "@/lib/agent-email";
 import { siteUrl } from "@/lib/email";
 import { fromRow, LISTING_SELECT, type ListingRow } from "@/lib/data";
-import { claimPath, newHandoffToken } from "@/lib/handoff";
+import { claimPath, firstName, newHandoffToken } from "@/lib/handoff";
 import { LEAD_STATUSES } from "@/lib/leads-shared";
 import { listingMarketing } from "@/lib/marketing";
 import { agentMetrics, leadMetrics, listingMetrics, type ListingRowLite } from "@/lib/metrics-shared";
@@ -322,18 +322,25 @@ const BASE_TOOLS: Tool[] = [
     "send_listing_to_agent",
     "Email a hidden (draft) listing's private link to an agent so they can preview it and take it live under their name once they sign up with that email. " +
       "Only call this when the user explicitly asks to send this listing to this agent. Replaces any earlier link.",
-    z.object({ id: z.string(), email: z.string().trim().toLowerCase().email() }),
+    z.object({
+      id: z.string(),
+      email: z.string().trim().toLowerCase().email(),
+      name: z.string().trim().max(120).optional().describe('The agent\'s name; the email greets them by first name ("Hey Jane,").'),
+    }),
     WRITE,
-    async ({ id, email }) => {
+    async ({ id, email, name }) => {
       const sb = db();
       const { data: l } = await sb.from("listings").select("address, city, status, photos").eq("id", id).maybeSingle();
       if (!l) throw new ToolError("Listing not found.");
       if (l.status !== "draft") throw new ToolError("Only hidden (draft) listings can be sent.");
       const token = newHandoffToken();
-      const { error } = await sb.from("listings").update({ handoff_email: email, handoff_token: token, handoff_sent_at: new Date().toISOString() }).eq("id", id);
+      const fields = { handoff_email: email, handoff_token: token, handoff_sent_at: new Date().toISOString() };
+      let { error } = await sb.from("listings").update({ ...fields, handoff_name: name || null }).eq("id", id);
+      // Before migration 0015 there's no handoff_name column: send without saving the name.
+      if (error && /handoff_name/.test(error.message)) ({ error } = await sb.from("listings").update(fields).eq("id", id));
       if (error) throw new ToolError(/handoff_/.test(error.message) ? "Run migration 0012 in Supabase first." : error.message);
       const path = claimPath(token);
-      await sendHandoffEmail(email, { address: l.address, city: l.city, claimPath: path, photo: l.photos?.[0]?.url });
+      await sendHandoffEmail(email, { address: l.address, city: l.city, claimPath: path, photo: l.photos?.[0]?.url, firstName: firstName(name) });
       return { ok: true, sentTo: email, link: `${siteUrl()}${path}` };
     },
   ),

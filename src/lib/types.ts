@@ -46,6 +46,8 @@ export interface Listing {
   isExample?: boolean;
   /** Hidden listings only: the agent email it was sent to, its private claim token, and when it was sent. */
   handoffEmail?: string | null;
+  /** The agent's name, for the email greeting. */
+  handoffName?: string | null;
   handoffToken?: string | null;
   handoffSentAt?: string | null;
 }

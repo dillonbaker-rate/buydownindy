@@ -5,7 +5,7 @@ import { z } from "zod";
 import { fromRow, type ListingRow } from "@/lib/data";
 import { siteUrl } from "@/lib/email";
 import { lookupAddress } from "@/lib/geocode";
-import { ListingInput, toRow } from "@/lib/listing-schema";
+import { contactRow, ListingInput, toRow } from "@/lib/listing-schema";
 import { COUNTIES, MAX_PHOTOS, type Photo } from "@/lib/types";
 import { db, expiry, tool, WRITE } from "./helpers";
 import { ToolError } from "./protocol";
@@ -28,6 +28,8 @@ export const CreateArgs = ListingInput.omit({ photos: true, photoRightsConfirmed
   lng: z.number().min(-87.5).max(-85).optional(),
   loanTypes: ListingInput.shape.loanTypes.default(["Conventional", "FHA", "VA"]),
   defaultDownPct: ListingInput.shape.defaultDownPct.default(5).describe("One of 3, 3.5, 5, 10, 20."),
+  agentName: z.string().trim().max(120).optional().describe("The listing agent's name (for \"Hey Jane,\" when it's sent)."),
+  agentEmail: z.string().trim().toLowerCase().email().optional().describe("The listing agent's email, saved so sending it later is one step."),
   photoUrls: z
     .array(photoUrl)
     .min(1)
@@ -124,7 +126,7 @@ export const LISTING_TOOLS = [
       "into the site's storage. Returns { id, status: \"draft\", previewUrl } (preview needs the admin signed in) plus an editUrl.",
     CreateArgs,
     WRITE,
-    async ({ photoUrls, ...a }) => {
+    async ({ photoUrls, agentName, agentEmail, ...a }) => {
       const place = await locate(a);
       const fields = { ...a, ...place, photoRightsConfirmed: true as const };
       // Check everything except photos before downloading any.
@@ -134,7 +136,7 @@ export const LISTING_TOOLS = [
       const d = validate({ ...fields, photos });
       const { data, error } = await db()
         .from("listings")
-        .insert({ ...draftRow(d), agent_id: owner, status: "draft", expires_at: expiry() })
+        .insert({ ...draftRow(d), ...contactRow({ agentName, agentEmail }), agent_id: owner, status: "draft", expires_at: expiry() })
         .select("id")
         .single();
       if (error) {
@@ -151,7 +153,7 @@ export const LISTING_TOOLS = [
       "addPhotoUrls adds to them. Never puts the listing live. Returns { id, status, previewUrl, editUrl }.",
     UpdateArgs,
     WRITE,
-    async ({ id, photoUrls, addPhotoUrls, ...patch }) => {
+    async ({ id, photoUrls, addPhotoUrls, agentName, agentEmail, ...patch }) => {
       const sb = db();
       const { data: cur, error: readErr } = await sb.from("listings").select("*").eq("id", id).maybeSingle();
       if (readErr) throw new ToolError(readErr.message);
@@ -188,7 +190,7 @@ export const LISTING_TOOLS = [
         photos = photoUrls ? added : [...l.photos, ...added];
       }
       const d = validate({ ...fields, photos });
-      const { error } = await sb.from("listings").update(draftRow(d)).eq("id", id).eq("status", "draft");
+      const { error } = await sb.from("listings").update({ ...draftRow(d), ...contactRow({ agentName, agentEmail }) }).eq("id", id).eq("status", "draft");
       if (error) {
         await removePhotos(added);
         throw new ToolError(error.message);

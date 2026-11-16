@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ListingInput, toRow } from "@/lib/listing-schema";
+import { AgentContact, contactRow, ListingInput, toRow } from "@/lib/listing-schema";
 import { demoCreate } from "@/lib/demo-store";
 import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -14,10 +14,12 @@ const expiry = () => new Date(Date.now() + LISTING_DAYS * 86_400_000).toISOStrin
 export async function POST(req: Request) {
   const raw = await req.json().catch(() => null);
   const hidden = raw?.hidden === true;
+  const contact = AgentContact.safeParse(raw ?? {});
+  if (!contact.success) return NextResponse.json({ error: contact.error.issues[0]?.message ?? "Check the agent's details." }, { status: 400 });
   if (demoMode) {
     const parsed = ListingInput.safeParse(raw);
     if (!parsed.success) return NextResponse.json({ error: "Check the listing details.", issues: parsed.error.issues }, { status: 400 });
-    return NextResponse.json({ id: await demoCreate(parsed.data, hidden) });
+    return NextResponse.json({ id: await demoCreate(parsed.data, hidden, hidden ? contact.data : {}) });
   }
   const sb = await createClient();
   const {
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await sb
     .from("listings")
-    .insert({ ...toRow(parsed.data), agent_id: user.id, status: hidden ? "draft" : "live", expires_at: expiry() })
+    .insert({ ...toRow(parsed.data), ...(hidden ? contactRow(contact.data) : {}), agent_id: user.id, status: hidden ? "draft" : "live", expires_at: expiry() })
     .select("id")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });

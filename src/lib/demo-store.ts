@@ -1,7 +1,7 @@
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import type { ListingInput } from "./listing-schema";
+import type { AgentContact, ListingInput } from "./listing-schema";
 import { LISTING_DAYS, type Agent, type Listing } from "./types";
 
 // Local demo storage for agent features when Supabase isn't connected (dev only).
@@ -75,7 +75,7 @@ const fromInput = (d: ListingInput) => ({
 
 export const demoListings = readAll;
 
-export async function demoCreate(d: ListingInput, hidden = false): Promise<string> {
+export async function demoCreate(d: ListingInput, hidden = false, contact: AgentContact = {}): Promise<string> {
   const all = await readAll();
   const id = `demo-${crypto.randomUUID().slice(0, 8)}`;
   all.unshift({
@@ -87,6 +87,8 @@ export async function demoCreate(d: ListingInput, hidden = false): Promise<strin
     agentEmail: DEMO_AGENT.email,
     agentPhone: DEMO_AGENT.phone,
     status: hidden ? "draft" : "live",
+    ...(contact.agentName ? { handoffName: contact.agentName } : {}),
+    ...(contact.agentEmail ? { handoffEmail: contact.agentEmail } : {}),
     expiresAt: expiry(),
     isSample: false,
   });
@@ -102,11 +104,18 @@ export async function demoDelete(id: string) {
   return true;
 }
 
-export async function demoUpdate(id: string, patch: { input?: ListingInput; action?: "renew" | "pending" | "sold" | "live" | "draft" }) {
+export async function demoUpdate(
+  id: string,
+  patch: { input?: ListingInput; contact?: AgentContact; action?: "renew" | "pending" | "sold" | "live" | "draft" },
+) {
   const all = await readAll();
   const l = all.find((x) => x.id === id);
   if (!l) return false;
   if (patch.input) Object.assign(l, fromInput(patch.input));
+  if (patch.contact && l.status === "draft") {
+    if (patch.contact.agentName !== undefined) l.handoffName = patch.contact.agentName || null;
+    if (patch.contact.agentEmail !== undefined) l.handoffEmail = patch.contact.agentEmail || null;
+  }
   if (patch.action === "renew") l.expiresAt = expiry();
   else if (patch.action) {
     l.status = patch.action;

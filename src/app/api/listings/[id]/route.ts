@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ListingInput, StatusAction, toRow } from "@/lib/listing-schema";
+import { AgentContact, contactRow, ListingInput, StatusAction, toRow } from "@/lib/listing-schema";
 import { demoDelete, demoUpdate } from "@/lib/demo-store";
 import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
@@ -26,7 +26,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
     const act = StatusAction.safeParse(body);
     const input = act.success ? null : ListingInput.safeParse(body);
     if (input && !input.success) return NextResponse.json({ error: "Check the listing details.", issues: input.error.issues }, { status: 400 });
-    const ok = await demoUpdate(id, act.success ? { action: act.data.action } : { input: input!.data! });
+    const contact = AgentContact.safeParse(body ?? {});
+    const ok = await demoUpdate(id, act.success ? { action: act.data.action } : { input: input!.data!, contact: contact.success ? contact.data : {} });
     return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "Listing not found." }, { status: 404 });
   }
   const { sb, user } = await authed();
@@ -60,6 +61,16 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const { data, error } = await sb.from("listings").update(patch).eq("id", id).eq("agent_id", user.id).select("id");
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   if (!data?.length) return NextResponse.json({ error: "Listing not found." }, { status: 404 });
+  // Admins editing a hidden listing can also change who it's for (the listing agent's name and email).
+  if (!act.success && isAdmin(user.email)) {
+    const contact = AgentContact.safeParse(body ?? {});
+    if (!contact.success) return NextResponse.json({ error: contact.error.issues[0]?.message ?? "Check the agent's details." }, { status: 400 });
+    const fields = contactRow(contact.data);
+    if (Object.keys(fields).length) {
+      const { error: e2 } = await sb.from("listings").update(fields).eq("id", id).eq("agent_id", user.id).eq("status", "draft");
+      if (e2) return NextResponse.json({ error: e2.message }, { status: 400 });
+    }
+  }
   return NextResponse.json({ ok: true });
 }
 

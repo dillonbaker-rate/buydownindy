@@ -321,18 +321,21 @@ const BASE_TOOLS: Tool[] = [
   tool(
     "send_listing_to_agent",
     "Email a hidden (draft) listing's private link to an agent so they can preview it and take it live under their name once they sign up with that email. " +
-      "Only call this when the user explicitly asks to send this listing to this agent. Replaces any earlier link.",
+      "Uses the agent name and email saved on the listing unless you pass others. Only call this when the user explicitly asks to send it. Replaces any earlier link.",
     z.object({
       id: z.string(),
-      email: z.string().trim().toLowerCase().email(),
-      name: z.string().trim().max(120).optional().describe('The agent\'s name; the email greets them by first name ("Hey Jane,").'),
+      email: z.string().trim().toLowerCase().email().optional().describe("Defaults to the agent email saved on the listing."),
+      name: z.string().trim().max(120).optional().describe('The agent\'s name; the email greets them by first name ("Hey Jane,"). Defaults to the saved name.'),
     }),
     WRITE,
-    async ({ id, email, name }) => {
+    async ({ id, email: givenEmail, name: givenName }) => {
       const sb = db();
-      const { data: l } = await sb.from("listings").select("address, city, status, photos").eq("id", id).maybeSingle();
+      const { data: l } = await sb.from("listings").select("*").eq("id", id).maybeSingle();
       if (!l) throw new ToolError("Listing not found.");
       if (l.status !== "draft") throw new ToolError("Only hidden (draft) listings can be sent.");
+      const email: string | null = givenEmail ?? l.handoff_email ?? null;
+      const name: string | null = givenName ?? l.handoff_name ?? null;
+      if (!email) throw new ToolError("No agent email saved on this listing; pass email.");
       const token = newHandoffToken();
       const fields = { handoff_email: email, handoff_token: token, handoff_sent_at: new Date().toISOString() };
       let { error } = await sb.from("listings").update({ ...fields, handoff_name: name || null }).eq("id", id);

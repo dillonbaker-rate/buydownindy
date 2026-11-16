@@ -14,8 +14,11 @@ type Action = "renew" | "pending" | "sold" | "live" | "draft";
 export type Handoff = { token: string; address: string; city: string };
 
 function statusOf(l: Listing) {
-  if (l.status === "draft")
-    return { label: l.handoffEmail ? `Hidden · sent to ${l.handoffEmail}` : "Hidden · not on the map", bg: "var(--color-neutral-200)", fg: "var(--color-neutral-800)" };
+  if (l.status === "draft") {
+    const who = l.handoffName || l.handoffEmail;
+    const label = l.handoffToken ? `Hidden · sent to ${l.handoffEmail}` : who ? `Hidden · for ${who}, not sent yet` : "Hidden · not on the map";
+    return { label, bg: "var(--color-neutral-200)", fg: "var(--color-neutral-800)" };
+  }
   if (l.status === "sold") return { label: "Sold", bg: "var(--color-neutral-200)", fg: "var(--color-neutral-800)" };
   if (l.status === "pending") return { label: "Pending", bg: "var(--color-ink)", fg: "#fff" };
   const d = daysLeft(l.expiresAt);
@@ -68,15 +71,23 @@ export function Dashboard({
     }
   };
 
-  /** Admin: email a hidden listing's private link to an agent (and copy it). */
+  /** Admin: email a hidden listing's private link to an agent. One click when the agent was saved with the listing. */
   const sendToAgent = async (l: Listing) => {
-    const email = prompt(
-      `Send ${l.address} to which agent? Enter their email. They'll get a private link, and once they make an account with this email they can take it live.`,
-      l.handoffEmail ?? "",
-    );
-    if (!email?.trim()) return;
-    const name = prompt("Their name? (For \"Hey Jane,\" in the email. Leave blank for \"Hey there,\".)", l.handoffName ?? "");
-    if (name === null) return;
+    let email = l.handoffEmail ?? "";
+    let name = l.handoffName ?? "";
+    const saved = !!email && !l.handoffToken;
+    const who = name ? `${name} (${email})` : email;
+    if (!saved || !confirm(`Send ${l.address} to ${who}?\n\nOK sends it now. Cancel lets you change who it goes to.`)) {
+      const typed = prompt(
+        `Send ${l.address} to which agent? Enter their email. They'll get a private link, and once they make an account with this email they can take it live.`,
+        email,
+      );
+      if (!typed?.trim()) return;
+      const typedName = prompt("Their name? (For \"Hey Jane,\" in the email. Leave blank for \"Hey there,\".)", name);
+      if (typedName === null) return;
+      email = typed;
+      name = typedName;
+    }
     setBusy(l.id + "send");
     const res = await fetch(`/api/listings/${l.id}/handoff`, {
       method: "POST",
@@ -200,7 +211,13 @@ export function Dashboard({
                     <>
                       <button className="btn btn-primary min-h-10 text-[13px]" disabled={busy != null} onClick={() => sendToAgent(l)}>
                         <Send size={14} />
-                        {busy === l.id + "send" ? "…" : l.handoffEmail ? "Send again" : "Send to agent"}
+                        {busy === l.id + "send"
+                          ? "…"
+                          : l.handoffToken
+                            ? "Send again"
+                            : l.handoffEmail
+                              ? `Send to ${l.handoffName?.trim().split(/\s+/)[0] || "agent"}`
+                              : "Send to agent"}
                       </button>
                       {l.handoffToken && (
                         <button className="btn btn-secondary min-h-10 text-[13px]" onClick={() => copy(`/agent/claim/${l.handoffToken}`)}>

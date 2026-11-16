@@ -70,10 +70,14 @@ export default async function ExamplesPage() {
                 admin ? (
                   <Card key={l.id} l={l} href={`/listing/${l.id}`}>
                     <div className="text-[13px] text-neutral-700">
-                      {l.handoffEmail ? (
+                      {l.handoffToken ? (
                         <>
-                          Sent to <strong className="text-ink">{l.handoffEmail}</strong>
+                          Sent to <strong className="text-ink">{l.handoffName || l.handoffEmail}</strong>
                           {l.handoffSentAt ? ` · ${when(l.handoffSentAt)}` : ""}
+                        </>
+                      ) : l.handoffEmail || l.handoffName ? (
+                        <>
+                          For <strong className="text-ink">{l.handoffName || l.handoffEmail}</strong> · not sent yet
                         </>
                       ) : (
                         "Not sent yet"

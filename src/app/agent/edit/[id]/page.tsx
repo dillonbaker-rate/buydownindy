@@ -3,7 +3,7 @@ import { AgentHeader } from "@/components/agent/AgentHeader";
 import { PostWizard } from "@/components/agent/PostWizard";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent, getListing } from "@/lib/data";
-import { getRateInfo } from "@/lib/rates";
+import { getRateInfo, isAdmin } from "@/lib/rates";
 import { agentsEnabled } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +18,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
   if (!l || l.agentId !== me.userId) notFound();
   return (
     <AppShell header={<AgentHeader />} mobileNav={false}>
-      <PostWizard rateInfo={rateInfo} userId={me.userId} editing={l} />
+      <PostWizard rateInfo={rateInfo} userId={me.userId} editing={l} canHide={isAdmin(me.email)} />
     </AppShell>
   );
 }

@@ -64,5 +64,17 @@ export const toRow = (d: ListingInput) => ({
   external_url: d.externalUrl || null,
 });
 
+/** Hidden listings (admins): who the listing is for, saved up front so Send to agent is one click. */
+export const AgentContact = z.object({
+  agentName: z.string().trim().max(120).optional().or(z.literal("")),
+  agentEmail: z.string().trim().toLowerCase().email("Enter the listing agent's email, or leave it blank.").optional().or(z.literal("")),
+});
+export type AgentContact = z.infer<typeof AgentContact>;
+/** Database columns for an AgentContact; only the fields that were given. */
+export const contactRow = (c: AgentContact) => ({
+  ...(c.agentName !== undefined ? { handoff_name: c.agentName || null } : {}),
+  ...(c.agentEmail !== undefined ? { handoff_email: c.agentEmail || null } : {}),
+});
+
 /** "draft" hides a listing (admins only). */
 export const StatusAction = z.object({ action: z.enum(["renew", "pending", "sold", "live", "draft"]) });

@@ -128,6 +128,11 @@ export function PostWizard({
   const [estimated, setEstimated] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [hidden, setHidden] = useState(false);
+  // Hidden listings: the listing agent it's for, so Send to agent is one click later.
+  const [agentName, setAgentName] = useState(editing?.handoffName ?? "");
+  const [agentEmail, setAgentEmail] = useState(editing?.handoffEmail ?? "");
+  const askAgent = canHide && (editing ? editing.status === "draft" : hidden);
+  const agentEmailOk = !agentEmail.trim() || /^\S+@\S+\.\S+$/.test(agentEmail.trim());
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((s) => ({ ...s, [k]: v }));
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -177,7 +182,7 @@ export function PostWizard({
   const low = pb ? pb.y1 : pc.cut;
   const lowWhen = pb ? (pb.key === "perm" ? "for life" : "in year 1") : "with a price cut";
 
-  const valid = stepValid(step, f);
+  const valid = stepValid(step, f) && (step !== 4 || agentEmailOk);
   const nextLabel = step === 5 ? (editing ? "Save changes" : hidden ? "Save hidden listing" : "Publish listing") : step === 4 ? "Preview listing" : "Continue";
   const titles = [
     "Where is the home?",
@@ -215,7 +220,11 @@ export function PostWizard({
     const res = await fetch(editing ? `/api/listings/${editing.id}` : "/api/listings", {
       method: editing ? "PATCH" : "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(editing ? body : { ...body, hidden }),
+      body: JSON.stringify({
+        ...body,
+        ...(editing ? {} : { hidden }),
+        ...(askAgent ? { agentName: agentName.trim(), agentEmail: agentEmail.trim() } : {}),
+      }),
     });
     setBusy(false);
     if (!res.ok) {
@@ -599,6 +608,32 @@ export function PostWizard({
                       live once they make an account. <span className="text-neutral-700">(Admins only)</span>
                     </span>
                   </label>
+                )}
+                {askAgent && (
+                  <div className="flex flex-col gap-2 rounded-[14px] bg-surface p-3.5">
+                    <div className="text-sm">
+                      <strong>Who is it for?</strong> <span className="text-neutral-700">Optional. Saves a step when you Send to agent.</span>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="field">
+                        <label htmlFor="w-agent-name">Listing agent&apos;s name</label>
+                        <input id="w-agent-name" className="input" placeholder="Jane Smith" value={agentName} onChange={(e) => setAgentName(e.target.value)} />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="w-agent-email">Listing agent&apos;s email</label>
+                        <input
+                          id="w-agent-email"
+                          className="input"
+                          type="email"
+                          inputMode="email"
+                          placeholder="jane@realty.com"
+                          value={agentEmail}
+                          onChange={(e) => setAgentEmail(e.target.value)}
+                        />
+                        {!agentEmailOk && <span className="text-xs text-warn-text">Check the email address.</span>}
+                      </div>
+                    </div>
+                  </div>
                 )}
                 <div className="field">
                   <label htmlFor="w-link">Zillow or Redfin link (optional)</label>

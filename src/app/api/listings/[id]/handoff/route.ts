@@ -6,7 +6,8 @@ import { claimPath, firstName, setHandoff } from "@/lib/handoff";
 import { isAdmin } from "@/lib/rates";
 
 const Body = z.object({
-  email: z.string().trim().toLowerCase().email("Enter the agent's email address."),
+  /** Optional when the listing already has the agent's email saved. */
+  email: z.string().trim().toLowerCase().email("Enter the agent's email address.").optional(),
   /** The agent's name, for "Hey Jane," in the email. Optional. */
   name: z.string().trim().max(120).optional(),
 });
@@ -22,10 +23,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const listing = await getListing(id);
   if (!listing) return NextResponse.json({ error: "Listing not found." }, { status: 404 });
 
-  const name = parsed.data.name || null;
-  const r = await setHandoff(id, me.userId, parsed.data.email, name);
+  // Use what was typed, or what was saved on the listing when it was created.
+  const email = parsed.data.email || listing.handoffEmail;
+  if (!email) return NextResponse.json({ error: "Enter the agent's email address." }, { status: 400 });
+  const name = parsed.data.name ?? listing.handoffName ?? null;
+  const r = await setHandoff(id, me.userId, email, name || null);
   if ("error" in r) return NextResponse.json({ error: r.error }, { status: 400 });
   const path = claimPath(r.token);
-  after(() => sendHandoffEmail(parsed.data.email, { address: listing.address, city: listing.city, claimPath: path, photo: listing.photos[0]?.url, firstName: firstName(name) }));
+  after(() => sendHandoffEmail(email, { address: listing.address, city: listing.city, claimPath: path, photo: listing.photos[0]?.url, firstName: firstName(name) }));
   return NextResponse.json({ ok: true, path });
 }

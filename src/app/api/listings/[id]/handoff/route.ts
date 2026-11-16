@@ -21,6 +21,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const r = await setHandoff(id, me.userId, parsed.data.email);
   if ("error" in r) return NextResponse.json({ error: r.error }, { status: 400 });
   const path = claimPath(r.token);
-  after(() => sendHandoffEmail(parsed.data.email, { address: listing.address, city: listing.city, claimPath: path }));
+  after(() => sendHandoffEmail(parsed.data.email, { address: listing.address, city: listing.city, claimPath: path, photo: listing.photos[0]?.url }));
   return NextResponse.json({ ok: true, path });
 }

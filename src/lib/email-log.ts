@@ -12,6 +12,7 @@ export const EMAIL_KINDS: Record<string, string> = {
   "new-agent": "New agent sign-up",
   "agent-verified": "Agent verified",
   handoff: "Listing sent to agent",
+  test: "Test",
 };
 
 export interface EmailLogEntry {

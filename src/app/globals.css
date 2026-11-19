@@ -428,3 +428,28 @@ select.input {
 .no-focus-ring:focus-visible {
   outline: none;
 }
+
+/* Private listing preview before sign-up: the payment math is blurred; clicking it opens the sign-up prompt. */
+.bd-locked {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+.bd-locked > * {
+  filter: blur(14px);
+  pointer-events: none;
+}
+.bd-locked::after {
+  content: "Free account to see the math";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: #fff;
+  font: 600 13px/1 var(--font-sans);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.2);
+}

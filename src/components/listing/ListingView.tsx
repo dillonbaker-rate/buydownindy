@@ -43,12 +43,15 @@ export function ListingView({
   rateInfo,
   preferredType,
   preview = false,
+  lockMath,
 }: {
   listing: Listing;
   rateInfo: RateInfo;
   preferredType?: LoanType;
   /** Preview of a hidden listing: no sharing, and contact buttons show this note (or the default) instead of dialing. */
   preview?: boolean | string;
+  /** Blur the payment math until the visitor signs up; clicking the blurred parts calls this (opens the sign-up prompt). */
+  lockMath?: () => void;
 }) {
   const desk = useIsDesktop();
   const toast = useToast();
@@ -111,6 +114,20 @@ export function ListingView({
         : pct(rateInfo.rates.Conventional),
   });
 
+  // Math locked (private preview, signed out): blurred and not clickable inside (CSS .bd-locked); a click anywhere on it
+  // opens the sign-up prompt.
+  const locked = (area: string) =>
+    lockMath
+      ? {
+          onClickCapture: (e: React.MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            lockMath();
+          },
+          title: "Create your free account to see the full math",
+          "data-locked": area,
+        }
+      : {};
   const lenderHref = `/talk-to-a-lender?listing=${encodeURIComponent(l.id)}`;
   const contact = () => {
     if (preview) toast(typeof preview === "string" ? preview : "Once it's live, buyers call or email you from here.");
@@ -228,8 +245,9 @@ export function ListingView({
           {/* Headline comparison */}
           <section
             aria-label="Price cut versus buydown"
-            className="my-5 flex flex-col gap-3.5 rounded-[24px] bg-accent-100 p-4 text-ink lg:p-6"
+            className={`my-5 flex flex-col gap-3.5 rounded-[24px] bg-accent-100 p-4 text-ink lg:p-6 ${lockMath ? "bd-locked" : ""}`}
             style={{ gridArea: "headline" }}
+            {...locked("headline")}
           >
             <div className="text-[11px] font-semibold">Same {usd(l.concession)} from the seller · {full ? "full monthly payment, est." : "monthly P&I"}</div>
             <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] gap-2">
@@ -282,8 +300,9 @@ export function ListingView({
 
           {/* Scenario */}
           <div
-            className="flex flex-col gap-4 self-start border-b border-divider py-5 lg:border-b-0"
+            className={`flex flex-col gap-4 self-start border-b border-divider py-5 lg:border-b-0 ${lockMath ? "bd-locked" : ""}`}
             style={{ gridArea: "side" }}
+            {...locked("side")}
           >
             <div className="flex items-baseline justify-between">
               <span className="text-[17px] font-bold">Your scenario</span>
@@ -390,7 +409,7 @@ export function ListingView({
           )}
 
           {/* Options */}
-          <div className="py-5" style={{ gridArea: "options" }}>
+          <div className={`py-5 ${lockMath ? "bd-locked" : ""}`} style={{ gridArea: "options" }} {...locked("options")}>
             <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-[22px]">What {usd(l.concession)} can do</h2>
               <div className="w-full sm:w-auto">{viewToggle}</div>

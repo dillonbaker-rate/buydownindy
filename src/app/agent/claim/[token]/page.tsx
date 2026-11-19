@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ClaimPanel, type ClaimState } from "@/components/agent/ClaimPanel";
+import { LockedPreview } from "@/components/agent/LockedPreview";
 import { ListingView } from "@/components/listing/ListingView";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent } from "@/lib/data";
@@ -46,6 +47,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ token: s
         ? "no-profile"
         : "ready";
 
+  const here = `/agent/claim/${token}`;
   // Show it the way buyers will see it once it's theirs.
   const shown = {
     ...listing,
@@ -60,7 +62,18 @@ export default async function ClaimPage({ params }: { params: Promise<{ token: s
   return (
     <AppShell mobileNav={false}>
       <ClaimPanel token={token} state={state} address={listing.address} sentTo={sentTo} signedInAs={me?.email ?? null} />
-      <ListingView listing={shown} rateInfo={rateInfo} preview />
+      {state === "signed-out" ? (
+        // Not signed in yet: the math is blurred and a prompt invites them to create their free account.
+        <LockedPreview
+          listing={shown}
+          rateInfo={rateInfo}
+          sentTo={sentTo}
+          signupHref={`/agent/login?next=${encodeURIComponent(here)}&mode=signup${sentTo ? `&email=${encodeURIComponent(sentTo)}` : ""}`}
+          signinHref={`/agent/login?next=${encodeURIComponent(here)}${sentTo ? `&email=${encodeURIComponent(sentTo)}` : ""}`}
+        />
+      ) : (
+        <ListingView listing={shown} rateInfo={rateInfo} preview />
+      )}
     </AppShell>
   );
 }

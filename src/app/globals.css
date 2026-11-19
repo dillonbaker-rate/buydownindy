@@ -436,7 +436,7 @@ select.input {
   user-select: none;
 }
 .bd-locked > * {
-  filter: blur(14px);
+  filter: blur(6px);
   pointer-events: none;
 }
 .bd-locked::after {

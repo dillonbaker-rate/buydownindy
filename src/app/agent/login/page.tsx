@@ -7,8 +7,8 @@ import { agentsEnabled } from "@/lib/supabase/env";
 
 export const metadata = { title: "Agent sign in · BuyDown Indy" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
-  const { next, error } = await searchParams;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; email?: string; mode?: string }> }) {
+  const { next, error, email, mode } = await searchParams;
   if (!agentsEnabled)
     return (
       <AppShell>
@@ -20,7 +20,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <AppShell hideSignIn>
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-auto max-w-[460px] p-4 lg:p-8">
-          <LoginForm next={next} linkError={!!error} />
+          <LoginForm next={next} linkError={!!error} initialEmail={email?.slice(0, 200) ?? ""} startOnSignup={mode === "signup"} />
         </div>
       </div>
     </AppShell>

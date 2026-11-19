@@ -64,7 +64,10 @@ export function ClaimPanel({
         <div className="flex flex-none flex-col gap-2 lg:items-end">
           {state === "signed-out" && (
             <div className="flex flex-wrap gap-2">
-              <Link href={`/agent/login?next=${encodeURIComponent(here)}`} className="btn btn-primary min-h-10 text-[13px]">
+              <Link
+                href={`/agent/login?next=${encodeURIComponent(here)}&mode=signup${sentTo ? `&email=${encodeURIComponent(sentTo)}` : ""}`}
+                className="btn btn-primary min-h-10 text-[13px]"
+              >
                 Create your free account to take it live
               </Link>
             </div>

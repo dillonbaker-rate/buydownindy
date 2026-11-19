@@ -4,6 +4,7 @@ import { sendAgentVerifiedEmail, sendHandoffEmail } from "@/lib/agent-email";
 import { siteUrl } from "@/lib/email";
 import { fromRow, LISTING_SELECT, type ListingRow } from "@/lib/data";
 import { claimPath, firstName, newHandoffToken } from "@/lib/handoff";
+import { listPrefills, PrefillInput, savePrefill } from "@/lib/prefill";
 import { LEAD_STATUSES } from "@/lib/leads-shared";
 import { listingMarketing } from "@/lib/marketing";
 import { agentMetrics, leadMetrics, listingMetrics, type ListingRowLite } from "@/lib/metrics-shared";
@@ -349,4 +350,26 @@ const BASE_TOOLS: Tool[] = [
   ),
 ];
 
-export const TOOLS: Tool[] = [...BASE_TOOLS, ...LISTING_TOOLS];
+const PREFILL_TOOLS: Tool[] = [
+  tool(
+    "prefill_agent_profile",
+    "Prepare a real estate agent's BuyDown Indy profile before they sign up, keyed by their email. When they create an account " +
+      "with that email, their profile form opens already filled in; they only check it, add a headshot and save. Only the fields " +
+      "you pass change. Set licenseVerified true only if the user confirmed the license on the Indiana lookup (mylicense.in.gov); " +
+      "then the agent is verified as soon as they save with the same license number. Put your sources in notes (admin-only).",
+    PrefillInput,
+    WRITE,
+    async (p) => {
+      const err = await savePrefill(p, "service");
+      if (err) throw new ToolError(err);
+      return { ok: true, email: p.email, reviewUrl: `${siteUrl()}/agent/prefill?email=${encodeURIComponent(p.email)}` };
+    },
+  ),
+  tool("list_agent_prefills", "Agent profiles prepared ahead of time, newest first, with whether each agent has signed up yet.", z.object({}), READ, async () => {
+    const list = await listPrefills("service");
+    if (list === null) throw new ToolError("Run migration 0016 in Supabase first.");
+    return { count: list.length, profiles: list.map((p) => ({ ...p, signedUp: !!p.usedAt })) };
+  }),
+];
+
+export const TOOLS: Tool[] = [...BASE_TOOLS, ...LISTING_TOOLS, ...PREFILL_TOOLS];

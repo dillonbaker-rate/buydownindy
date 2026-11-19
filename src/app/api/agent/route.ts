@@ -1,13 +1,15 @@
 import { after, NextResponse } from "next/server";
 import { z } from "zod";
-import { sendNewAgentEmail } from "@/lib/agent-email";
-import { saveDemoAgent } from "@/lib/demo-store";
+import { sendAgentVerifiedEmail, sendNewAgentEmail } from "@/lib/agent-email";
+import { DEMO_AGENT, saveDemoAgent } from "@/lib/demo-store";
 import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/rates";
 import { COUNTIES } from "@/lib/types";
 import { AGENT_SIGNUP_OPEN, AGENT_TERMS_VERSION } from "@/content/agent-terms";
 import { logTermsAcceptance } from "@/lib/agent-terms-gate";
+import { getPrefill, markPrefillUsed, sameLicense } from "@/lib/prefill";
+import { createAdminClient } from "@/lib/supabase/server";
 
 const phone = z
   .string()
@@ -78,6 +80,13 @@ export async function PUT(req: Request) {
       photoUrl: blank(d.photoUrl),
       ...(acceptTerms ? { termsVersion: AGENT_TERMS_VERSION, termsAcceptedAt: new Date().toISOString() } : {}),
     });
+    // Demo: a prepared profile with a checked license verifies the demo agent on save.
+    const pre = await getPrefill(DEMO_AGENT.email);
+    if (pre && !pre.usedAt) {
+      if (pre.licenseVerified && sameLicense(pre.licenseNumber, d.licenseNumber))
+        await saveDemoAgent({ verificationStatus: "verified", verifiedAt: new Date().toISOString() });
+      await markPrefillUsed(DEMO_AGENT.email);
+    }
     return NextResponse.json({ ok: true });
   }
 
@@ -123,6 +132,24 @@ export async function PUT(req: Request) {
   if (error && /terms_/.test(error.message)) ({ error } = await sb.from("agents").upsert(row));
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   if (agreedAt && !existing) await logTermsAcceptance(sb, user.id, user.email ?? null, agreedAt, req);
+  // First save of a profile BuyDown Indy prepared for this email: if the admin already checked the license and the agent
+  // kept the same number, mark them verified (service key; agents can't verify themselves). Then retire the prepared copy.
+  let verified = false;
+  if (!existing && user.email) {
+    const admin = createAdminClient();
+    const pre = admin ? await getPrefill(user.email, "service").catch(() => null) : null;
+    if (admin && pre && !pre.usedAt) {
+      if (pre.licenseVerified && sameLicense(pre.licenseNumber, d.licenseNumber)) {
+        const { error: vErr } = await admin
+          .from("agents")
+          .update({ verification_status: "verified", verified_at: new Date().toISOString() })
+          .eq("id", user.id);
+        verified = !vErr;
+        if (vErr) console.error("[prefill] verify", vErr.message);
+      }
+      await markPrefillUsed(user.email);
+    }
+  }
   // First profile save = a new agent sign-up. Email Dillon after the response is sent (admins excluded).
   if (!existing && !isAdmin(user.email))
     after(() =>
@@ -134,5 +161,7 @@ export async function PUT(req: Request) {
         licenseNumber: row.license_number,
       }),
     );
-  return NextResponse.json({ ok: true });
+  // Verified on save (license checked ahead of time): send the usual "You're verified" email.
+  if (verified && user.email) after(() => sendAgentVerifiedEmail({ name: row.name, email: user.email! }));
+  return NextResponse.json({ ok: true, verified });
 }

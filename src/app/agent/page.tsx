@@ -8,6 +8,7 @@ import { AgentProfileForm } from "@/components/agent/AgentProfileForm";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent, getMyListings } from "@/lib/data";
 import { myHandoffs } from "@/lib/handoff";
+import { myPrefill } from "@/lib/prefill";
 import { isRateAdmin } from "@/lib/rates";
 import { agentsEnabled } from "@/lib/supabase/env";
 
@@ -41,7 +42,14 @@ export default async function AgentPage() {
       <AppShell header={<AgentHeader />}>
         <div className="min-h-0 flex-1 overflow-auto">
           <div className="mx-auto max-w-[720px] p-4 lg:p-8">
-            <AgentProfileForm agent={null} email={me.email} userId={me.userId} onboarding termsAccepted={me.signupTermsVersion === AGENT_TERMS_VERSION} />
+            <AgentProfileForm
+              agent={null}
+              email={me.email}
+              userId={me.userId}
+              onboarding
+              termsAccepted={me.signupTermsVersion === AGENT_TERMS_VERSION}
+              prefill={await myPrefill(me.email).catch(() => null)}
+            />
           </div>
         </div>
       </AppShell>

@@ -47,6 +47,45 @@ const fromAgent = (a: Agent | null): F => ({
   photoUrl: a?.photoUrl ?? "",
 });
 
+/** The parts of a prepared profile the form uses (see lib/prefill.ts). */
+export interface PrefillFields {
+  name?: string | null;
+  teamName?: string | null;
+  brokerage?: string | null;
+  bio?: string | null;
+  phone?: string | null;
+  officePhone?: string | null;
+  officeAddress?: string | null;
+  website?: string | null;
+  instagram?: string | null;
+  facebook?: string | null;
+  linkedin?: string | null;
+  licenseNumber?: string | null;
+  mlsId?: string | null;
+  licensedSince?: number | null;
+  counties?: string[] | null;
+  licenseVerified?: boolean;
+}
+
+const fromPrefill = (p: PrefillFields): F => ({
+  name: p.name ?? "",
+  teamName: p.teamName ?? "",
+  brokerage: p.brokerage ?? "",
+  bio: p.bio ?? "",
+  phone: p.phone ?? "",
+  officePhone: p.officePhone ?? "",
+  officeAddress: p.officeAddress ?? "",
+  website: p.website ?? "",
+  instagram: p.instagram ?? "",
+  facebook: p.facebook ?? "",
+  linkedin: p.linkedin ?? "",
+  licenseNumber: p.licenseNumber ?? "",
+  mlsId: p.mlsId ?? "",
+  licensedSince: p.licensedSince ? String(p.licensedSince) : "",
+  counties: (p.counties ?? []) as F["counties"],
+  photoUrl: "",
+});
+
 /** Square-crop and shrink to 600px JPEG before upload. */
 async function squareJpeg(file: File): Promise<Blob> {
   try {
@@ -86,6 +125,7 @@ export function AgentProfileForm({
   onboarding,
   isAdmin = false,
   termsAccepted = false,
+  prefill = null,
 }: {
   agent: Agent | null;
   email: string;
@@ -94,10 +134,12 @@ export function AgentProfileForm({
   isAdmin?: boolean;
   /** Already agreed to the current Agent Terms when creating the account. */
   termsAccepted?: boolean;
+  /** A profile prepared ahead of time by BuyDown Indy (new agents only): the form starts filled in. */
+  prefill?: PrefillFields | null;
 }) {
   const router = useRouter();
   const toast = useToast();
-  const [f, setF] = useState<F>(() => fromAgent(agent));
+  const [f, setF] = useState<F>(() => (!agent && prefill ? fromPrefill(prefill) : fromAgent(agent)));
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -166,11 +208,18 @@ export function AgentProfileForm({
   return (
     <form onSubmit={save} className="flex flex-col gap-6" noValidate>
       <div className="flex flex-col gap-1">
-        <h1 className="text-[26px] lg:text-[32px]">{onboarding ? "Set up your agent profile" : "My profile"}</h1>
-        <p className="m-0 text-sm text-neutral-700">
-          Buyers see your photo, name and brokerage on your listings. Your Indiana license is verified before you get the
-          verified badge. Signed in as {email}.
-        </p>
+        <h1 className="text-[26px] lg:text-[32px]">{onboarding ? (prefill ? "Your profile is ready" : "Set up your agent profile") : "My profile"}</h1>
+        {onboarding && prefill ? (
+          <p className="m-0 rounded-[14px] bg-accent-100 p-3.5 text-sm text-ink">
+            <strong>We filled this in for you.</strong> Check that everything is right, add a headshot, and save.
+            {prefill.licenseVerified ? " Your license is already checked, so you'll be verified as soon as you save." : ""}
+          </p>
+        ) : (
+          <p className="m-0 text-sm text-neutral-700">
+            Buyers see your photo, name and brokerage on your listings. Your Indiana license is verified before you get the
+            verified badge. Signed in as {email}.
+          </p>
+        )}
         {!onboarding && (
           <div className="mt-1">
             <VerificationBadge status={agent?.verificationStatus} />

@@ -633,6 +633,16 @@ export function PostWizard({
                         {!agentEmailOk && <span className="text-xs text-warn-text">Check the email address.</span>}
                       </div>
                     </div>
+                    {agentEmail.trim() && agentEmailOk && (
+                      <a
+                        href={`/agent/prefill?email=${encodeURIComponent(agentEmail.trim().toLowerCase())}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="self-start text-[13px] font-semibold"
+                      >
+                        Pre-fill their whole profile too →
+                      </a>
+                    )}
                   </div>
                 )}
                 <div className="field">

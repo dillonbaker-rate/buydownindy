@@ -18,10 +18,22 @@ const friendly = (msg: string) =>
         ? "Confirm your email first, then sign in."
         : msg;
 
-export function LoginForm({ next, linkError }: { next?: string; linkError?: boolean }) {
+export function LoginForm({
+  next,
+  linkError,
+  initialEmail = "",
+  startOnSignup = false,
+}: {
+  next?: string;
+  linkError?: boolean;
+  /** From an invite link: the email the listing was sent to. */
+  initialEmail?: string;
+  /** Open on "Create account" (invited agents usually don't have one yet). */
+  startOnSignup?: boolean;
+}) {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("signin");
-  const [email, setEmail] = useState("");
+  const [mode, setMode] = useState<Mode>(startOnSignup && AGENT_SIGNUP_OPEN ? "signup" : "signin");
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [err, setErr] = useState<string | null>(

@@ -1,8 +1,8 @@
 "use client";
-import { EyeOff, Link2, Mail, Plus, Send, Trash2 } from "lucide-react";
+import { EyeOff, Link2, Mail, Plus, Search, Send, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PhotoOrPlaceholder } from "@/components/listing/ListingCard";
 import { useToast } from "@/components/ui/Toast";
 import { usd } from "@/lib/buydown";
@@ -43,6 +43,24 @@ export function Dashboard({
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [show, setShow] = useState<"all" | "hidden" | "live">("all");
+
+  // Search by address, city or ZIP, or by the agent (saved name/email on hidden listings, or the listing agent).
+  const counts = useMemo(
+    () => ({ all: listings.length, hidden: listings.filter((l) => l.status === "draft").length, live: listings.filter((l) => l.status !== "draft").length }),
+    [listings],
+  );
+  const shown = useMemo(() => {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    return listings.filter((l) => {
+      if (show === "hidden" && l.status !== "draft") return false;
+      if (show === "live" && l.status === "draft") return false;
+      if (!words.length) return true;
+      const hay = [l.address, l.city, l.zip, l.county, l.handoffName, l.handoffEmail, l.agentName].filter(Boolean).join(" ").toLowerCase();
+      return words.every((w) => hay.includes(w));
+    });
+  }, [listings, q, show]);
 
   const act = async (l: Listing, action: Action) => {
     setBusy(l.id + action);
@@ -169,7 +187,51 @@ export function Dashboard({
         ))}
 
         {listings.length ? (
-          listings.map((l) => {
+          <>
+            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <label className="relative min-w-0 flex-1">
+                <span className="sr-only">Search your listings</span>
+                <Search size={16} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-neutral-600" />
+                <input
+                  type="text"
+                  enterKeyHint="search"
+                  className="input w-full"
+                  style={{ paddingLeft: 36, paddingRight: 40 }}
+                  placeholder="Search by address, city, ZIP or agent"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                />
+                {q && (
+                  <button type="button" aria-label="Clear search" onClick={() => setQ("")} className="absolute top-1/2 right-2 grid h-8 w-8 -translate-y-1/2 cursor-pointer place-items-center">
+                    <X size={15} />
+                  </button>
+                )}
+              </label>
+              <div className="flex gap-1.5">
+                {(
+                  [
+                    ["all", "All"],
+                    ["hidden", "Hidden"],
+                    ["live", "On the map"],
+                  ] as const
+                ).map(([k, label]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={show === k}
+                    onClick={() => setShow(k)}
+                    className={`btn min-h-10 px-3 text-[13px] ${show === k ? "btn-primary" : "btn-secondary"}`}
+                  >
+                    {label} <span className="opacity-75">{counts[k]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mb-1 text-xs text-neutral-700">
+              {shown.length === listings.length ? `${listings.length} listing${listings.length === 1 ? "" : "s"}` : `Showing ${shown.length} of ${listings.length}`}
+            </div>
+            {shown.length === 0 && <p className="py-6 text-sm text-neutral-700">No listings match{q ? ` "${q}"` : ""}.</p>}
+            {shown.map((l) => {
             const st = statusOf(l);
             const btn = (label: string, action: Action) => (
               <button
@@ -251,7 +313,8 @@ export function Dashboard({
                 </div>
               </div>
             );
-          })
+          })}
+          </>
         ) : (
           <div className="flex flex-col items-start gap-2.5 py-8">
             <div className="text-[22px] font-bold">No listings yet</div>

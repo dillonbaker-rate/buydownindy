@@ -1,7 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { sendAgentVerifiedEmail, sendNewAgentEmail } from "@/lib/agent-email";
-import { DEMO_AGENT, saveDemoAgent } from "@/lib/demo-store";
+import { DEMO_AGENT, demoAgent, saveDemoAgent } from "@/lib/demo-store";
 import { demoMode } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/rates";
@@ -9,6 +9,7 @@ import { COUNTIES } from "@/lib/types";
 import { AGENT_SIGNUP_OPEN, AGENT_TERMS_VERSION } from "@/content/agent-terms";
 import { logTermsAcceptance } from "@/lib/agent-terms-gate";
 import { getPrefill, markPrefillUsed, sameLicense } from "@/lib/prefill";
+import { verifyFromStateList } from "@/lib/state-licenses";
 import { createAdminClient } from "@/lib/supabase/server";
 
 const phone = z
@@ -80,6 +81,9 @@ export async function PUT(req: Request) {
       photoUrl: blank(d.photoUrl),
       ...(acceptTerms ? { termsVersion: AGENT_TERMS_VERSION, termsAcceptedAt: new Date().toISOString() } : {}),
     });
+    // Demo: check the local state list, then a prepared profile with a checked license, for the demo agent.
+    const cur = await demoAgent();
+    if (cur.verificationStatus !== "verified") await verifyFromStateList({ id: cur.id, name: d.name, licenseNumber: d.licenseNumber }, null);
     // Demo: a prepared profile with a checked license verifies the demo agent on save.
     const pre = await getPrefill(DEMO_AGENT.email);
     if (pre && !pre.usedAt) {
@@ -102,7 +106,7 @@ export async function PUT(req: Request) {
   // Agents need a license number; admins (the lender) don't hold a real estate license.
   if (!d.licenseNumber && !isAdmin(user.email))
     return NextResponse.json({ error: "Enter your Indiana real estate license number, e.g. RB14012345." }, { status: 400 });
-  const { data: existing } = await sb.from("agents").select("id").eq("id", user.id).maybeSingle();
+  const { data: existing } = await sb.from("agents").select("id, verification_status").eq("id", user.id).maybeSingle();
   // New profiles must accept the Agent Terms.
   if (!existing && !AGENT_SIGNUP_OPEN && !isAdmin(user.email))
     return NextResponse.json({ error: "New agent accounts aren't open yet." }, { status: 403 });
@@ -162,6 +166,12 @@ export async function PUT(req: Request) {
       }),
     );
   // Verified on save (license checked ahead of time): send the usual "You're verified" email.
+  // Not verified yet (new sign-up, or a pending agent who fixed their license number): check Indiana's licensee list.
+  // Only a clear match (license #, name, active, not expired) verifies; anything else stays pending for the bell.
+  if (!verified && existing?.verification_status !== "verified" && !isAdmin(user.email)) {
+    const m = await verifyFromStateList({ id: user.id, name: row.name, licenseNumber: row.license_number }).catch(() => null);
+    verified = !!m?.ok;
+  }
   if (verified && user.email) after(() => sendAgentVerifiedEmail({ name: row.name, email: user.email! }));
   return NextResponse.json({ ok: true, verified });
 }

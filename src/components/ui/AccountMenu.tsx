@@ -110,6 +110,9 @@ export function AccountMenu({ me }: { me: AccountSummary }) {
               <Link href="/agent/prefill" role="menuitem" className={item} onClick={() => setOpen(false)}>
                 Pre-filled profiles
               </Link>
+              <Link href="/agent/licenses" role="menuitem" className={item} onClick={() => setOpen(false)}>
+                State license list
+              </Link>
               <Link href="/agent/admin" role="menuitem" className={item} onClick={() => setOpen(false)}>
                 Agents
               </Link>

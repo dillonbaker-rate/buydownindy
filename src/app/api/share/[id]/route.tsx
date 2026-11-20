@@ -2,6 +2,7 @@
 import { ImageResponse } from "next/og";
 import QRCode from "qrcode";
 import sharp from "sharp";
+import { ehlDataUrl } from "@/content/eho";
 import { getCurrentAgent, getListing } from "@/lib/data";
 import { GRAPHIC_DESIGNS, GRAPHIC_SIZES, type GraphicSize } from "@/lib/share-graphics";
 import { listingMarketing, type ListingMarketing } from "@/lib/marketing";
@@ -179,7 +180,10 @@ function Footer({ m, s, qr, heads, light = false }: { m: ListingMarketing; s: nu
         </div>
         {qr && <img src={qr} alt="" width={120 * s} height={120 * s} style={{ borderRadius: 8 }} />}
       </div>
-      <div style={{ fontSize: 18 * s, lineHeight: 1.35, color: light ? "rgba(255,255,255,0.85)" : "#4a525c" }}>{`${m.disclaimer} ${m.lender.email}`}</div>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 14 * s }}>
+        <img src={ehlDataUrl(light ? "#ffffff" : "#242020")} alt="" width={50 * s} height={54 * s} style={{ width: 50 * s, height: 54 * s, flexShrink: 0 }} />
+        <div style={{ fontSize: 15 * s, lineHeight: 1.28, color: light ? "rgba(255,255,255,0.85)" : "#4a525c" }}>{`${m.disclaimer} ${m.lender.email}`}</div>
+      </div>
     </div>
   );
 }
@@ -188,7 +192,7 @@ const facts = (m: ListingMarketing) => `${m.beds} bd · ${m.baths} ba · ${m.sqf
 
 function Classic({ m, w, h, photo, qr, size, heads }: P) {
   const s = w / 1080;
-  const ph = Math.round(h * (size === "post" ? 0.4 : size === "story" ? 0.54 : 0.38));
+  const ph = Math.round(h * (size === "post" ? 0.33 : size === "story" ? 0.5 : 0.36));
   return (
     <div style={{ width: w, height: h, display: "flex", flexDirection: "column", background: "#fff", fontFamily: "Figtree" }}>
       <div style={{ display: "flex", position: "relative" }}>
@@ -220,7 +224,7 @@ function Classic({ m, w, h, photo, qr, size, heads }: P) {
 
 function Bold({ m, w, h, photo, qr, size, heads }: P) {
   const s = w / 1080;
-  const ph = Math.round(h * (size === "story" ? 0.34 : size === "post" ? 0.19 : 0.27));
+  const ph = Math.round(h * (size === "story" ? 0.3 : size === "post" ? 0.12 : 0.24));
   const best = m.payments.best;
   return (
     <div style={{ width: w, height: h, display: "flex", flexDirection: "column", background: NAVY, color: "#fff", fontFamily: "Figtree", padding: `${48 * s}px ${48 * s}px ${34 * s}px`, gap: 24 * s }}>
@@ -285,7 +289,7 @@ function Numbers({ m, w, h, photo, qr, size, heads }: P) {
         <Photo
           src={photo}
           w={Math.round((size === "story" ? 984 : 470) * s)}
-          h={Math.round((size === "post" ? 290 : size === "story" ? 560 : 400) * s)}
+          h={Math.round((size === "post" ? 200 : size === "story" ? 500 : 380) * s)}
           radius={22 * s}
           label=""
         />
@@ -301,14 +305,58 @@ function Numbers({ m, w, h, photo, qr, size, heads }: P) {
   );
 }
 
+/** Wide link-preview card (iMessage, Facebook, email): photo, payments, terms and the full disclosures. */
+function LinkPreview({ m, photo }: { m: ListingMarketing; photo: string | null }) {
+  const best = m.payments.best;
+  return (
+    <div style={{ width: 1200, height: 630, display: "flex", flexDirection: "column", background: "#fff", fontFamily: "Figtree", color: INK }}>
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        <div style={{ display: "flex", position: "relative" }}>
+          <Photo src={photo} w={500} h={518} label="" />
+          <div style={{ position: "absolute", top: 22, left: 22, display: "flex", flexDirection: "column", background: ACCENT, color: "#fff", borderRadius: 20, padding: "10px 18px" }}>
+            <div style={{ fontSize: 46, fontWeight: 800, lineHeight: 1, letterSpacing: -1.5 }}>{m.concessionShort}</div>
+            <div style={{ fontSize: 17, fontWeight: 700 }}>from the seller</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "22px 30px 0", gap: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Wordmark s={0.8} />
+            <div style={{ fontSize: 18, color: MUTED }}>{facts(m)}</div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: -1.5 }}>{money(m.price)}</div>
+            <div style={{ fontSize: 20, color: "#3f4750" }}>{`${m.address}, ${m.city}, IN`}</div>
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", flex: 1, borderRadius: 16, padding: "10px 14px", background: TINT }}>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{`${m.concessionShort} price cut`}</div>
+              <div style={{ fontSize: 32, fontWeight: 800 }}>{`${money(m.payments.priceCut)}/mo`}</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", flex: 1.2, borderRadius: 16, padding: "10px 14px", background: "#fff", border: `2px solid ${ACCENT}` }}>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{best ? `${best.option}, year 1` : "Closing cost credit"}</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: ACCENT }}>{best ? `${money(best.year1)}/mo` : money(m.concession)}</div>
+              {best && <div style={{ fontSize: 14, lineHeight: 1.25 }}>{best.stepUp}</div>}
+            </div>
+          </div>
+          <div style={{ fontSize: 14, lineHeight: 1.3, color: "#3f4750" }}>{`${m.example} Principal & interest only.`}</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 22px 12px", borderTop: "1px solid #dde2e8", background: "#fafbfc" }}>
+        <img src={ehlDataUrl("#242020")} alt="" width={40} height={43} style={{ width: 40, height: 43, flexShrink: 0 }} />
+        <div style={{ fontSize: 11.5, lineHeight: 1.28, color: "#4a525c" }}>{m.disclaimer}</div>
+      </div>
+    </div>
+  );
+}
+
 const RENDER = [Classic, Bold, Numbers];
 
 // GET /api/share/:id?size=post|story|flyer&design=0..2[&download=1]
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const url = new URL(req.url);
-  const size = (url.searchParams.get("size") ?? "post") as Size;
+  const size = (url.searchParams.get("size") ?? "post") as Size | "link";
   const design = Math.min(Math.max(Number(url.searchParams.get("design") ?? 0) || 0, 0), RENDER.length - 1);
-  if (!(size in SIZES)) return new Response("size must be post, story or flyer", { status: 400 });
+  if (!(size in SIZES) && size !== "link") return new Response("size must be post, story, flyer or link", { status: 400 });
   const [found, info] = await Promise.all([getListing((await params).id), getRateInfo()]);
   // Live listings for everyone; hidden (draft) listings for admins, so flyers are ready before the agent takes it live.
   const hidden = found?.status === "draft";
@@ -318,6 +366,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const l = hidden ? { ...found, agentName: found.handoffName || "Listing agent", brokerage: "" } : found;
 
   const m = listingMarketing(l, info, url.origin);
+  if (size === "link") {
+    const [photo, fontData] = await Promise.all([photoData(m.photo), loadFonts().catch(() => undefined)]);
+    const img = new ImageResponse(<LinkPreview m={m} photo={photo} />, { width: 1200, height: 630, fonts: fontData });
+    img.headers.set("cache-control", hidden ? "private, no-store" : "public, max-age=300, s-maxage=600");
+    return img;
+  }
   const { w, h } = SIZES[size];
   const [photo, fontData, qr, lenderHead] = await Promise.all([
     photoData(m.photo),

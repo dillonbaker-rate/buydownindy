@@ -2,15 +2,15 @@
 // DRAFT FOR COUNSEL REVIEW. Written to describe what the app actually does today (see the notes on each
 // section). If the app changes what it collects or who receives it, update this text in the same change.
 
-export const LEGAL_DRAFT = true;
-export const LEGAL_UPDATED = "October 23, 2026";
+export const LEGAL_DRAFT = false;
+export const LEGAL_UPDATED = "November 20, 2026";
 
 export type LegalSection = { heading: string; body: string };
 
 export const PRIVACY: LegalSection[] = [
   {
     heading: "Who we are",
-    body: "BuyDown Indy is a free educational tool provided by Dillon Baker (NMLS #2681440), a loan officer with Rate (NMLS #2611). This policy covers information collected on BuyDown Indy. If you apply for a loan, Rate's own privacy notice also applies.",
+    body: "BuyDown Indy is a free educational tool provided by Dillon Baker (NMLS #2681440), a loan officer with Guaranteed Rate, Inc. dba Rate (NMLS #2611), 252 W Main St, Carmel, IN 46032. This policy covers information collected on BuyDown Indy. If you apply for a loan, Rate's own privacy notice also applies.",
   },
   {
     heading: "What we collect",

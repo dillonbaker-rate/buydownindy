@@ -1,15 +1,21 @@
 import { House } from "lucide-react";
 import Link from "next/link";
-import { calc, kUsd, MIN_DOWN, typeFor, usd, type LoanType } from "@/lib/buydown";
+import { exampleApr } from "@/lib/ad-terms";
+import { aprLabel } from "@/lib/apr";
+import { calc, kUsd, MIN_DOWN, pct, typeFor, usd, type LoanType } from "@/lib/buydown";
 import { rateFor, type RateInfo } from "@/lib/rate-info";
 import type { Listing } from "@/lib/types";
 
 export function cardNumbers(l: Listing, info: RateInfo, loanFilter?: LoanType | "Any") {
   const type = typeFor(l.loanTypes, loanFilter);
-  const c = calc(l.price, l.concession, type, Math.max(l.defaultDownPct, MIN_DOWN[type]), 0, rateFor(info, type));
+  const down = Math.max(l.defaultDownPct, MIN_DOWN[type]);
+  const rate = rateFor(info, type);
+  const c = calc(l.price, l.concession, type, down, 0, rate);
   const b = c.best;
   return {
     type,
+    // Reg Z: a payment amount needs the loan terms and APR on the same screen.
+    terms: `${type}, ${down}% down, 30-yr fixed at ${pct(rate)} (${aprLabel(exampleApr({ price: l.price, type, down, rate }))} APR). Est. principal & interest; taxes and insurance extra.`,
     low: usd(b ? b.y1 : c.cut),
     lowWhen: b ? (b.key === "perm" ? "for the life of the loan" : "in year 1") : "with a price cut",
     cut: usd(c.cut),
@@ -81,6 +87,7 @@ export function ListingCard({
             <div className="text-[15px] font-semibold text-neutral-700 line-through">{n.cut}</div>
           </div>
         </div>
+        <div className="mt-1.5 text-[10.5px] leading-snug text-neutral-700">{n.terms}</div>
       </div>
     </Link>
   );

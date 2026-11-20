@@ -17,10 +17,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const s = shareSummary(l, rateInfo);
   const title = `${l.address}, ${l.city} · ${kUsd(l.concession)} seller concession`;
   const description = `${usd(l.price)} · ${l.beds} bd · ${l.baths} ba. Seller pays ${usd(l.concession)}: ${s.deal}.`;
-  // Link previews (iMessage, Facebook, email) show the cover photo, price and concession.
-  const images = [
-    l.photos[0]?.url ? { url: l.photos[0].url, alt: `${l.address}, ${l.city}` } : { url: "/search-bg.jpg", alt: "BuyDown Indy" },
-  ];
+  // Link previews (iMessage, Facebook, email) show the preview card: photo, payments, APR and the lender disclosures.
+  const images = [{ url: `/api/share/${l.id}?size=link`, width: 1200, height: 630, alt: `${l.address}, ${l.city}: ${kUsd(l.concession)} from the seller` }];
   return {
     title: `${title} · BuyDown Indy`,
     description,

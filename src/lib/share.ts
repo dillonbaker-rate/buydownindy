@@ -1,5 +1,5 @@
 // Share text for a listing, used by the "Share this house" button and the link-preview description.
-import { FOOTER_LINE } from "@/content/disclosures";
+import { CREDIT_LINE, FOOTER_LINE } from "@/content/disclosures";
 import { calc, kUsd, MIN_DOWN, pct, saving, typeFor, usd } from "./buydown";
 import { APR_ASSUMPTION, exampleLine, stepUpLine } from "./ad-terms";
 import { longDate } from "./rate-info";
@@ -37,7 +37,7 @@ export function shareSummary(l: Listing, info: RateInfo) {
     "",
     [tag(l.city + "IN"), tag(l.county + "County"), "#IndyRealEstate", "#HomeBuying", "#Buydown", "#FirstTimeHomeBuyer"].join(" "),
     "",
-    `${exampleLine({ price: l.price, type, down, rate })} Est. principal & interest; taxes and insurance extra. ${pct(rate)} is ${info.source === "daily" ? `the rate as of ${longDate(info.date)}` : `a sample rate (Freddie Mac, week of ${longDate(info.date)})`}. ${APR_ASSUMPTION} Buydowns require a seller-paid concession in a signed contract. Not a commitment to lend. ${FOOTER_LINE}.`,
+    `${exampleLine({ price: l.price, type, down, rate })} Est. principal & interest; taxes and insurance extra. ${pct(rate)} is ${info.source === "daily" ? `the rate as of ${longDate(info.date)}` : `a sample rate (Freddie Mac, week of ${longDate(info.date)})`}. ${APR_ASSUMPTION} Buydowns require a seller-paid concession in a signed contract. Not a commitment to lend. ${CREDIT_LINE} ${FOOTER_LINE}`,
   ].join("\n");
   return { title, text, deal, post };
 }

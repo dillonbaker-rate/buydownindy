@@ -206,6 +206,7 @@ export function MapScreen({
           >
             <X size={16} />
           </button>
+          <div className="col-span-4 -mt-1 pr-2 text-[9.5px] leading-snug text-neutral-700">Monthly savings, year 1 · {hero.basis}</div>
         </div>
       )}
 

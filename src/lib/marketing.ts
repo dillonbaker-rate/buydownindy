@@ -2,7 +2,7 @@ import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { FOOTER_LINE } from "@/content/disclosures";
+import { CREDIT_LINE, FOOTER_LINE } from "@/content/disclosures";
 import { LENDER } from "@/content/lender";
 import { APR_ASSUMPTION, exampleApr, exampleLine, stepUpLine } from "./ad-terms";
 import { calc, kUsd, MIN_DOWN, pct, saving, typeFor, usd } from "./buydown";
@@ -138,7 +138,7 @@ export async function authorizeApiKey(header: string | null): Promise<{ ok: true
 // ── The numbers every marketing output uses ─────────────────────────────
 // COMPLIANCE: wording for ads that state payments/rates. Needs Rate compliance review.
 export const MARKETING_DISCLAIMER = (rateLabel: string) =>
-  `Estimated principal & interest only; taxes, insurance and mortgage insurance are extra. Rate: ${rateLabel}; yours depends on credit and other factors. ${APR_ASSUMPTION} Temporary buydowns are paid by the seller, require a signed contract, and you qualify at the full rate. Not a commitment to lend. ${FOOTER_LINE}.`;
+  `Estimated principal & interest only; taxes, insurance and mortgage insurance are extra. Rate: ${rateLabel}; yours depends on credit and other factors. ${APR_ASSUMPTION} Temporary buydowns are paid by the seller, require a signed contract, and you qualify at the full rate. Not a commitment to lend. ${CREDIT_LINE} ${FOOTER_LINE}`;
 
 export function listingMarketing(l: Listing, info: RateInfo, origin: string) {
   const type = typeFor(l.loanTypes);

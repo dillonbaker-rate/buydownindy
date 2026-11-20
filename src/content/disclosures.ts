@@ -1,8 +1,18 @@
 // COMPLIANCE: Every string in this file is copied verbatim from the approved design handoff and
 // must be reviewed by Rate compliance before public launch. Edit copy here only; components read it.
 
-export const FOOTER_LINE =
-  "Powered by Dillon Baker, NMLS #2681440 | Rate NMLS #2611 | Equal Housing Opportunity";
+/** Rate's legal name, NMLS and licensing link, worded as Rate requires. */
+export const COMPANY_LEGAL =
+  "Guaranteed Rate, Inc. dba Rate; NMLS #2611; For licensing information visit nmlsconsumeraccess.org.";
+export const NMLS_CONSUMER_URL = "https://www.nmlsconsumeraccess.org";
+export const BRANCH_ADDRESS = "252 W Main St, Carmel, IN 46032";
+
+/** Credit language that must always be visible (not behind a click). */
+export const CREDIT_LINE =
+  "Applicant subject to credit and underwriting approval. Not all applicants will be approved for financing. Receipt of application does not represent an approval for financing or interest rate guarantee. Restrictions may apply, contact Rate for current rates and for more information.";
+
+/** Lender identification used in footers, flyers, share text and emails. */
+export const FOOTER_LINE = `Dillon Baker, NMLS #2681440 | ${COMPANY_LEGAL} | Branch: ${BRANCH_ADDRESS} | Equal Housing Lender`;
 
 export const RATE_LINE = (info: { source: "daily" | "pmms"; date: string; rates: string }) =>
   info.source === "daily"
@@ -77,8 +87,8 @@ export const fullDisclaimer = (example: DisclosureSection): DisclosureSection[] 
   },
   {
     title: "Lender and licensing",
-    body: "Not a commitment to lend. All loans are subject to credit approval, underwriting, property appraisal, and program eligibility. Terms and programs may change without notice. You are free to work with any lender you choose. Dillon Baker, NMLS #2681440. Rate NMLS #2611.",
-    link: { href: "https://www.nmlsconsumeraccess.org", label: "nmlsconsumeraccess.org", after: ". Equal Housing Opportunity." },
+    body: "Not a commitment to lend. All loans are subject to credit approval, underwriting, property appraisal, and program eligibility. Terms and programs may change without notice. You are free to work with any lender you choose. Dillon Baker, NMLS #2681440. Guaranteed Rate, Inc. dba Rate; NMLS #2611; branch 252 W Main St, Carmel, IN 46032. For licensing information visit",
+    link: { href: "https://www.nmlsconsumeraccess.org", label: "nmlsconsumeraccess.org", after: ". Equal Housing Lender." },
   },
 ];
 

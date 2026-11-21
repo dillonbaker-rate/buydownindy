@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import type React from "react";
 import { ImageResponse } from "next/og";
 import QRCode from "qrcode";
 import sharp from "sharp";
@@ -68,7 +69,7 @@ interface P {
   size: Size;
   heads: Heads;
 }
-type Heads = { lender: string | null; agent: string | null };
+type Heads = { lender: string | null; agent: string | null; brand: Brand };
 
 /** Square-cropped headshot as a small JPEG data URL. */
 async function headshotData(url: string | null): Promise<string | null> {
@@ -131,8 +132,9 @@ function Terms({ m, s, light = false }: { m: ListingMarketing; s: number; light?
   return <div style={{ fontSize: 21 * s, lineHeight: 1.3, color: light ? "rgba(255,255,255,0.9)" : "#3f4750" }}>{`${m.example} Principal & interest only.`}</div>;
 }
 
-function Person({ s, photo, role, name, lines, light }: { s: number; photo: string | null; role?: string; name: string; lines: string[]; light: boolean }) {
-  const d = 92 * s;
+function Person({ s, photo, role, name, lines, light, scale = 1, grow = true }: { s: number; photo: string | null; role?: string; name: string; lines: string[]; light: boolean; scale?: number; grow?: boolean }) {
+  const k = s * scale;
+  const d = 92 * k;
   const initials = name
     .split(/\s+/)
     .map((w) => w[0] ?? "")
@@ -140,19 +142,19 @@ function Person({ s, photo, role, name, lines, light }: { s: number; photo: stri
     .slice(0, 2)
     .toUpperCase();
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 16 * s, flex: 1, minWidth: 0 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 18 * k, minWidth: 0, ...(grow ? { flex: 1 } : {}) }}>
       {photo ? (
-        <img src={photo} alt="" width={d} height={d} style={{ width: d, height: d, borderRadius: 999, objectFit: "cover", border: `${3 * s}px solid ${light ? "#fff" : "#fff"}` }} />
+        <img src={photo} alt="" width={d} height={d} style={{ width: d, height: d, borderRadius: 999, objectFit: "cover", border: `${3 * s}px solid #fff` }} />
       ) : (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: d, height: d, borderRadius: 999, background: light ? "rgba(255,255,255,0.18)" : "#dce7f7", color: light ? "#fff" : ACCENT, fontSize: 34 * s, fontWeight: 800 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: d, height: d, borderRadius: 999, background: light ? "rgba(255,255,255,0.18)" : "#dce7f7", color: light ? "#fff" : ACCENT, fontSize: 34 * k, fontWeight: 800 }}>
           {initials}
         </div>
       )}
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, color: light ? "#fff" : INK }}>
-        {role && <div style={{ fontSize: 15 * s, fontWeight: 800, letterSpacing: 1.5, color: light ? "#bfd2ef" : ACCENT }}>{role}</div>}
-        <div style={{ fontSize: 25 * s, fontWeight: 800, lineHeight: 1.15 }}>{name}</div>
+      <div style={{ display: "flex", flexDirection: "column", minWidth: 0, ...(grow ? { flex: 1 } : {}), color: light ? "#fff" : INK }}>
+        {role && <div style={{ fontSize: 15 * Math.max(k, s), fontWeight: 800, letterSpacing: 1.5, color: light ? "#bfd2ef" : ACCENT }}>{role}</div>}
+        <div style={{ fontSize: 25 * k, fontWeight: 800, lineHeight: 1.15 }}>{name}</div>
         {lines.map((t, i) => (
-          <div key={i} style={{ fontSize: 18 * s, lineHeight: 1.3, opacity: 0.85 }}>
+          <div key={i} style={{ fontSize: 18 * k, lineHeight: 1.3, opacity: 0.85 }}>
             {t}
           </div>
         ))}
@@ -161,25 +163,33 @@ function Person({ s, photo, role, name, lines, light }: { s: number; photo: stri
   );
 }
 
-function Footer({ m, s, qr, heads, light = false }: { m: ListingMarketing; s: number; qr: string | null; heads: Heads; light?: boolean }) {
+/** Who the flyer features: the listing agent (default), or the agent and lender co-branded. */
+type Brand = "agent" | "co";
+
+/** Contact block + disclosures. Fills the space left under the numbers and centers the people in it. */
+function Footer({ m, s, qr, heads, light = false, agentScale = 1.6 }: { m: ListingMarketing; s: number; qr: string | null; heads: Heads; light?: boolean; agentScale?: number }) {
   const a = m.listingAgent;
+  const agentLines = [a.brokerage, a.phone ?? "", a.email ?? ""].filter(Boolean);
+  const qrImg = qr ? <img key="qr" src={qr} alt="" width={130 * s} height={130 * s} style={{ borderRadius: 8, flexShrink: 0 }} /> : null;
+  const divider = `${2 * s}px solid ${light ? "rgba(255,255,255,0.25)" : "#dde2e8"}`;
+
+  // Satori lays out plain element lists reliably (not fragments), so each row is a keyed list.
+  const people: React.ReactNode[] =
+    heads.brand === "co"
+      ? [
+          <div key="a" style={{ display: "flex", flex: 1, minWidth: 0 }}>
+            <Person s={s} scale={1.1} light={light} role="LISTING AGENT" photo={heads.agent} name={a.name} lines={agentLines} />
+          </div>,
+          <div key="l" style={{ display: "flex", flex: 1, minWidth: 0, paddingLeft: 20 * s, borderLeft: divider }}>
+            <Person s={s} scale={1.1} light={light} role="LENDER" photo={heads.lender} name={m.lender.name} lines={[`${m.lender.title}, ${m.lender.company}`, m.lender.phone, `NMLS #${m.lender.nmls}`]} />
+          </div>,
+        ]
+      : [<Person key="a" s={s} scale={agentScale} grow={false} light={light} role="LISTING AGENT" photo={heads.agent} name={a.name} lines={agentLines} />];
+  if (qrImg) people.push(qrImg);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 * s }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 22 * s }}>
-        <Person
-          s={s}
-          light={light}
-          photo={heads.lender}
-          name={m.lender.name}
-          lines={[`${m.lender.title}, ${m.lender.company}`, m.lender.phone, `NMLS #${m.lender.nmls}`]}
-        />
-        {/* Consumer-only: the listing broker is credited in plain text; no agent photo or contact details. */}
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, color: light ? "#fff" : INK }}>
-          <div style={{ fontSize: 15 * s, fontWeight: 800, letterSpacing: 1.5, color: light ? "#bfd2ef" : MUTED }}>LISTING COURTESY OF</div>
-          <div style={{ fontSize: 20 * s, lineHeight: 1.3, opacity: 0.85 }}>{a.brokerage ? `${a.name}, ${a.brokerage}` : a.name}</div>
-        </div>
-        {qr && <img src={qr} alt="" width={120 * s} height={120 * s} style={{ borderRadius: 8 }} />}
-      </div>
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 14 * s }}>
+      <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", gap: (heads.brand === "co" ? 22 : 70) * s, padding: `${14 * s}px 0` }}>{people}</div>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 14 * s }}>
         <img src={ehlDataUrl(light ? "#ffffff" : "#242020")} alt="" width={50 * s} height={54 * s} style={{ width: 50 * s, height: 54 * s, flexShrink: 0 }} />
         <div style={{ fontSize: 15 * s, lineHeight: 1.28, color: light ? "rgba(255,255,255,0.85)" : "#4a525c" }}>{`${m.disclaimer} ${m.lender.email}`}</div>
@@ -215,7 +225,6 @@ function Classic({ m, w, h, photo, qr, size, heads }: P) {
         </div>
         <div style={{ fontSize: 30 * s, fontWeight: 700, color: INK }}>{`Same ${m.concessionShort} from the seller. Very different payment.`}</div>
         <Compare m={m} s={s} />
-        <div style={{ display: "flex", flex: 1 }} />
         <Footer m={m} s={s} qr={qr} heads={heads} />
       </div>
     </div>
@@ -224,7 +233,7 @@ function Classic({ m, w, h, photo, qr, size, heads }: P) {
 
 function Bold({ m, w, h, photo, qr, size, heads }: P) {
   const s = w / 1080;
-  const ph = Math.round(h * (size === "story" ? 0.3 : size === "post" ? 0.12 : 0.24));
+  const ph = Math.round(h * (size === "story" ? 0.3 : size === "post" ? 0.09 : 0.19));
   const best = m.payments.best;
   return (
     <div style={{ width: w, height: h, display: "flex", flexDirection: "column", background: NAVY, color: "#fff", fontFamily: "Figtree", padding: `${48 * s}px ${48 * s}px ${34 * s}px`, gap: 24 * s }}>
@@ -246,8 +255,7 @@ function Bold({ m, w, h, photo, qr, size, heads }: P) {
         <div style={{ fontSize: 26 * s, opacity: 0.85 }}>{`${m.address} · ${facts(m)}`}</div>
       </div>
       <Compare m={m} s={s} dark />
-      <div style={{ display: "flex", flex: 1 }} />
-      <Footer m={m} s={s} qr={qr} heads={heads} light />
+      <Footer m={m} s={s} qr={qr} heads={heads} light agentScale={1.35} />
     </div>
   );
 }
@@ -299,7 +307,6 @@ function Numbers({ m, w, h, photo, qr, size, heads }: P) {
           <div style={{ fontSize: 24 * s, color: MUTED }}>{facts(m)}</div>
         </div>
       </div>
-      <div style={{ display: "flex", flex: 1 }} />
       <Footer m={m} s={s} qr={qr} heads={heads} />
     </div>
   );
@@ -363,7 +370,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const me = hidden ? await getCurrentAgent().catch(() => null) : null;
   if (!found || !(found.status === "live" || (hidden && me && isAdmin(me.email)))) return new Response("Listing not found", { status: 404 });
   // A hidden listing is owned by the admin account: credit the listing agent it's for, not the admin.
-  const l = hidden ? { ...found, agentName: found.handoffName || "Listing agent", brokerage: "" } : found;
+  // Its contact details are the admin's, so only the saved agent name and email are used.
+  const l = hidden
+    ? { ...found, agentName: found.handoffName || "Listing agent", brokerage: "", agentPhone: null, agentPhotoUrl: null, agentEmail: found.handoffEmail ?? null }
+    : found;
+  const brand: Brand = url.searchParams.get("brand") === "co" ? "co" : "agent";
 
   const m = listingMarketing(l, info, url.origin);
   if (size === "link") {
@@ -373,17 +384,18 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return img;
   }
   const { w, h } = SIZES[size];
-  const [photo, fontData, qr, lenderHead] = await Promise.all([
+  const [photo, fontData, qr, lenderHead, agentHead] = await Promise.all([
     photoData(m.photo),
     loadFonts().catch(() => undefined),
     size === "post" ? Promise.resolve(null) : QRCode.toDataURL(m.links.listing, { margin: 1, width: 240 }),
-    headshotData(m.lender.photo),
+    brand === "co" ? headshotData(m.lender.photo) : Promise.resolve(null),
+    headshotData(m.listingAgent.photo),
   ]);
-  const heads = { lender: lenderHead, agent: null };
+  const heads: Heads = { lender: lenderHead, agent: agentHead, brand };
   const Design = RENDER[design];
   const img = new ImageResponse(<Design m={m} w={w} h={h} photo={photo} qr={qr} size={size} heads={heads} />, { width: w, height: h, fonts: fontData });
   if (url.searchParams.get("download"))
-    img.headers.set("content-disposition", `attachment; filename="${l.address.replace(/[^A-Za-z0-9]+/g, "-")}-${size}-${GRAPHIC_DESIGNS[design].toLowerCase()}.png"`);
+    img.headers.set("content-disposition", `attachment; filename="${l.address.replace(/[^A-Za-z0-9]+/g, "-")}-${size}-${GRAPHIC_DESIGNS[design].toLowerCase()}${brand === "co" ? "-with-lender" : ""}.png"`);
   // Hidden listings aren't public: don't let the CDN keep a copy.
   img.headers.set("cache-control", hidden ? "private, no-store" : "public, max-age=300, s-maxage=600");
   return img;

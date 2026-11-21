@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import { Check, Copy, Download, Mail, MessageSquare, MoreHorizontal, Share2, X } from "lucide-react";
+import { Check, Copy, Download, Mail, MessageSquare, MoreHorizontal, Share2, UserPlus, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { GRAPHIC_DESIGNS, GRAPHIC_SIZES, type GraphicSize } from "@/lib/share-graphics";
 
@@ -57,6 +57,8 @@ export function ShareListing({ id, title, text, post }: { id: string; title: str
   const { copied, copy } = useCopy();
   const [size, setSize] = useState<GraphicSize>("post");
   const [design, setDesign] = useState(0);
+  /** Graphics feature the listing agent; this adds the lender for a co-branded version. */
+  const [withLender, setWithLender] = useState(false);
   const [canShareFiles, setCanShareFiles] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const track = useRef<HTMLDivElement>(null);
@@ -86,10 +88,10 @@ export function ShareListing({ id, title, text, post }: { id: string; title: str
     };
   }, [open]);
 
-  const graphicUrl = (d: number) => `/api/share/${encodeURIComponent(id)}?size=${size}&design=${d}`;
+  const graphicUrl = (d: number) => `/api/share/${encodeURIComponent(id)}?size=${size}&design=${d}${withLender ? "&brand=co" : ""}`;
   const current = graphicUrl(design);
   const ratio = GRAPHIC_SIZES.find((g) => g.value === size)!;
-  const fileName = `buydown-indy-${GRAPHIC_DESIGNS[design].toLowerCase()}-${size}.png`;
+  const fileName = `buydown-indy-${GRAPHIC_DESIGNS[design].toLowerCase()}-${size}${withLender ? "-with-lender" : ""}.png`;
 
   // Fetch the selected graphic ahead of time: phones only allow the share sheet right after a tap,
   // so the image has to be ready before the tap, not downloaded after it.
@@ -247,11 +249,25 @@ export function ShareListing({ id, title, text, post }: { id: string; title: str
                   ))}
                 </div>
               </div>
+              <button
+                type="button"
+                aria-pressed={withLender}
+                onClick={() => setWithLender((v) => !v)}
+                className="flex min-h-10 cursor-pointer items-center gap-2 self-start rounded-full border px-3.5 text-[13px] font-semibold"
+                style={
+                  withLender
+                    ? { background: "var(--color-accent-100)", borderColor: "var(--color-accent)", color: "var(--color-accent)" }
+                    : { borderColor: "var(--color-divider)" }
+                }
+              >
+                {withLender ? <Check size={15} /> : <UserPlus size={15} />}
+                {withLender ? "Lender added (co-branded)" : "Add lender"}
+              </button>
               <div ref={track} onScroll={onScroll} className="flex snap-x snap-mandatory overflow-x-auto rounded-[16px] bg-surface [scrollbar-width:none]">
                 {GRAPHIC_DESIGNS.map((name, i) => (
                   <div key={name} className="flex w-full flex-none snap-center justify-center p-3">
                     <img
-                      key={`${size}-${i}`}
+                      key={`${size}-${i}-${withLender}`}
                       src={graphicUrl(i)}
                       alt={`${name} ${ratio.label.toLowerCase()} graphic for ${title}`}
                       loading={i === 0 ? "eager" : "lazy"}

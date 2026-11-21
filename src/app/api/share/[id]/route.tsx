@@ -166,7 +166,7 @@ function Person({ s, photo, role, name, lines, light, scale = 1, grow = true }: 
 /** Who the flyer features: the listing agent (default), or the agent and lender co-branded. */
 type Brand = "agent" | "co";
 
-/** Contact block + disclosures. Fills the space left under the numbers and centers the people in it. */
+/** Contact block + disclosures. Fills the space left under the numbers; the people sit left, centered top to bottom. */
 function Footer({ m, s, qr, heads, light = false, agentScale = 1.6 }: { m: ListingMarketing; s: number; qr: string | null; heads: Heads; light?: boolean; agentScale?: number }) {
   const a = m.listingAgent;
   const agentLines = [a.brokerage, a.phone ?? "", a.email ?? ""].filter(Boolean);
@@ -184,12 +184,12 @@ function Footer({ m, s, qr, heads, light = false, agentScale = 1.6 }: { m: Listi
             <Person s={s} scale={1.1} light={light} role="LENDER" photo={heads.lender} name={m.lender.name} lines={[`${m.lender.title}, ${m.lender.company}`, m.lender.phone, `NMLS #${m.lender.nmls}`]} />
           </div>,
         ]
-      : [<Person key="a" s={s} scale={agentScale} grow={false} light={light} role="LISTING AGENT" photo={heads.agent} name={a.name} lines={agentLines} />];
+      : [<Person key="a" s={s} scale={agentScale} light={light} role="LISTING AGENT" photo={heads.agent} name={a.name} lines={agentLines} />];
   if (qrImg) people.push(qrImg);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 14 * s }}>
-      <div style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "center", gap: (heads.brand === "co" ? 22 : 70) * s, padding: `${14 * s}px 0` }}>{people}</div>
+      <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 22 * s, padding: `${14 * s}px 0` }}>{people}</div>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 14 * s }}>
         <img src={ehlDataUrl(light ? "#ffffff" : "#242020")} alt="" width={50 * s} height={54 * s} style={{ width: 50 * s, height: 54 * s, flexShrink: 0 }} />
         <div style={{ fontSize: 15 * s, lineHeight: 1.28, color: light ? "rgba(255,255,255,0.85)" : "#4a525c" }}>{`${m.disclaimer} ${m.lender.email}`}</div>

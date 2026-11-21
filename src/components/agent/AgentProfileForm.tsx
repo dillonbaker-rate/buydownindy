@@ -4,8 +4,7 @@ import { ArrowRight, BadgeCheck, Camera, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
-import { createClient } from "@/lib/supabase/client";
-import { supabaseConfigured } from "@/lib/supabase/env";
+import { uploadHeadshot } from "@/lib/headshot-upload";
 import { COUNTIES, type Agent } from "@/lib/types";
 import { AgreeToTerms } from "./AgentTerms";
 
@@ -86,20 +85,6 @@ const fromPrefill = (p: PrefillFields): F => ({
   photoUrl: "",
 });
 
-/** Square-crop and shrink to 600px JPEG before upload. */
-async function squareJpeg(file: File): Promise<Blob> {
-  try {
-    const bmp = await createImageBitmap(file);
-    const side = Math.min(bmp.width, bmp.height);
-    const c = document.createElement("canvas");
-    c.width = c.height = Math.min(600, side);
-    c.getContext("2d")!.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, c.width, c.height);
-    return await new Promise((res) => c.toBlob((b) => res(b ?? file), "image/jpeg", 0.86));
-  } catch {
-    return file;
-  }
-}
-
 export function VerificationBadge({ status }: { status?: Agent["verificationStatus"] }) {
   if (status === "verified")
     return (
@@ -126,6 +111,7 @@ export function AgentProfileForm({
   isAdmin = false,
   termsAccepted = false,
   prefill = null,
+  startPhoto = null,
 }: {
   agent: Agent | null;
   email: string;
@@ -136,10 +122,16 @@ export function AgentProfileForm({
   termsAccepted?: boolean;
   /** A profile prepared ahead of time by BuyDown Indy (new agents only): the form starts filled in. */
   prefill?: PrefillFields | null;
+  /** A headshot an admin added to a listing made for this agent (new agents only). */
+  startPhoto?: string | null;
 }) {
   const router = useRouter();
   const toast = useToast();
-  const [f, setF] = useState<F>(() => (!agent && prefill ? fromPrefill(prefill) : fromAgent(agent)));
+  const [f, setF] = useState<F>(() => {
+    const start = !agent && prefill ? fromPrefill(prefill) : fromAgent(agent);
+    // A new agent gets the headshot an admin added to a listing made for them; they can change it.
+    return !agent && !start.photoUrl && startPhoto ? { ...start, photoUrl: startPhoto } : start;
+  });
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -152,21 +144,8 @@ export function AgentProfileForm({
     setUploading(true);
     setErr(null);
     try {
-      const blob = await squareJpeg(file);
-      if (supabaseConfigured) {
-        const sb = createClient();
-        const path = `${userId}/avatar-${crypto.randomUUID()}.jpg`;
-        const { error } = await sb.storage.from("agent-photos").upload(path, blob, { contentType: "image/jpeg", cacheControl: "31536000" });
-        if (error) throw new Error(error.message);
-        setF((s) => ({ ...s, photoUrl: sb.storage.from("agent-photos").getPublicUrl(path).data.publicUrl }));
-      } else {
-        const fd = new FormData();
-        fd.append("file", blob, "avatar.jpg");
-        const r = await fetch("/api/demo/photos", { method: "POST", body: fd });
-        const j = await r.json();
-        if (!r.ok) throw new Error(j.error);
-        setF((s) => ({ ...s, photoUrl: j.url }));
-      }
+      const url = await uploadHeadshot(file, userId);
+      setF((s) => ({ ...s, photoUrl: url }));
     } catch (e) {
       setErr(`Couldn't upload the photo: ${(e as Error).message}`);
     } finally {

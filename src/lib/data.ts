@@ -42,6 +42,7 @@ export interface ListingRow {
   sample_brokerage: string | null;
   handoff_email?: string | null;
   handoff_name?: string | null;
+  handoff_photo_url?: string | null;
   handoff_token?: string | null;
   handoff_sent_at?: string | null;
   agent?: { name: string; brokerage: string; email: string; phone: string; photo_url: string | null; verification_status: string | null } | null;
@@ -65,7 +66,7 @@ export function fromRow(r: ListingRow): Listing {
     brokerage: "",
     agentEmail: r.handoff_email ?? null,
     agentPhone: null,
-    agentPhotoUrl: null,
+    agentPhotoUrl: r.handoff_photo_url ?? null,
     agentVerified: false,
   };
 }
@@ -106,6 +107,7 @@ function baseFromRow(r: ListingRow): Listing {
     isExample: r.is_example,
     handoffEmail: r.handoff_email ?? null,
     handoffName: r.handoff_name ?? null,
+    handoffPhotoUrl: r.handoff_photo_url ?? null,
     handoffToken: r.handoff_token ?? null,
     handoffSentAt: r.handoff_sent_at ?? null,
   };

@@ -48,6 +48,8 @@ export interface Listing {
   handoffEmail?: string | null;
   /** The agent's name, for the email greeting. */
   handoffName?: string | null;
+  /** Headshot an admin added for the agent a hidden listing is for. */
+  handoffPhotoUrl?: string | null;
   handoffToken?: string | null;
   handoffSentAt?: string | null;
 }

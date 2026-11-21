@@ -372,7 +372,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   // A hidden listing is owned by the admin account: credit the listing agent it's for, not the admin.
   // Its contact details are the admin's, so only the saved agent name and email are used.
   const l = hidden
-    ? { ...found, agentName: found.handoffName || "Listing agent", brokerage: "", agentPhone: null, agentPhotoUrl: null, agentEmail: found.handoffEmail ?? null }
+    ? { ...found, agentName: found.handoffName || "Listing agent", brokerage: "", agentPhone: null, agentPhotoUrl: found.handoffPhotoUrl ?? null, agentEmail: found.handoffEmail ?? null }
     : found;
   const brand: Brand = url.searchParams.get("brand") === "co" ? "co" : "agent";
 

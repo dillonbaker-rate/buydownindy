@@ -47,11 +47,18 @@ export async function getListingByHandoff(token: string): Promise<Listing | null
 }
 
 /** Hidden listings waiting for the signed-in agent's email. */
-export async function myHandoffs(email: string): Promise<{ token: string; address: string; city: string }[]> {
+export async function myHandoffs(email: string): Promise<{ token: string; address: string; city: string; photoUrl: string | null }[]> {
   if (demoMode) return demoMyHandoffs(email);
   if (!supabaseConfigured) return [];
   const { data, error } = await (await createClient()).rpc("my_handoffs");
-  return error ? [] : ((data ?? []) as { token: string; address: string; city: string }[]);
+  if (error) return [];
+  // photo_url arrives after migration 0018.
+  return ((data ?? []) as { token: string; address: string; city: string; photo_url?: string | null }[]).map((h) => ({
+    token: h.token,
+    address: h.address,
+    city: h.city,
+    photoUrl: h.photo_url ?? null,
+  }));
 }
 
 /** Move the listing to the signed-in agent and put it live. Returns the listing id or an error message. */

@@ -30,6 +30,13 @@ export const CreateArgs = ListingInput.omit({ photos: true, photoRightsConfirmed
   defaultDownPct: ListingInput.shape.defaultDownPct.default(5).describe("One of 3, 3.5, 5, 10, 20."),
   agentName: z.string().trim().max(120).optional().describe("The listing agent's name (for \"Hey Jane,\" when it's sent)."),
   agentEmail: z.string().trim().toLowerCase().email().optional().describe("The listing agent's email, saved so sending it later is one step."),
+  agentPhotoUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .regex(/^https:\/\//, "Use an https image link.")
+    .optional()
+    .describe("A public https link to the listing agent's headshot. Shows on the flyers and becomes their profile photo if they don't have one."),
   photoUrls: z
     .array(photoUrl)
     .min(1)
@@ -126,21 +133,29 @@ export const LISTING_TOOLS = [
       "into the site's storage. Returns { id, status: \"draft\", previewUrl } (preview needs the admin signed in) plus an editUrl.",
     CreateArgs,
     WRITE,
-    async ({ photoUrls, agentName, agentEmail, ...a }) => {
+    async ({ photoUrls, agentName, agentEmail, agentPhotoUrl, ...a }) => {
       const place = await locate(a);
       const fields = { ...a, ...place, photoRightsConfirmed: true as const };
       // Check everything except photos before downloading any.
       validate({ ...fields, photos: [{ url: "https://check.invalid/photo.jpg" }] });
       const owner = await ownerId();
       const photos = await importPhotos(photoUrls, owner);
+      // The headshot is copied into storage too, so the link keeps working.
+      let head: Photo[] = [];
+      try {
+        head = agentPhotoUrl ? await importPhotos([agentPhotoUrl], owner) : [];
+      } catch (e) {
+        await removePhotos(photos);
+        throw e;
+      }
       const d = validate({ ...fields, photos });
       const { data, error } = await db()
         .from("listings")
-        .insert({ ...draftRow(d), ...contactRow({ agentName, agentEmail }), agent_id: owner, status: "draft", expires_at: expiry() })
+        .insert({ ...draftRow(d), ...contactRow({ agentName, agentEmail, agentPhotoUrl: head[0]?.url }), agent_id: owner, status: "draft", expires_at: expiry() })
         .select("id")
         .single();
       if (error) {
-        await removePhotos(photos);
+        await removePhotos([...photos, ...head]);
         throw new ToolError(/status_check|listings_status/.test(error.message) ? "Run migration 0012 in Supabase first." : error.message);
       }
       return { id: data.id, status: "draft", ...links(data.id), address: `${d.address}, ${d.city}, IN${d.zip ? " " + d.zip : ""}`, county: d.county, photos: photos.length };
@@ -153,7 +168,7 @@ export const LISTING_TOOLS = [
       "addPhotoUrls adds to them. Never puts the listing live. Returns { id, status, previewUrl, editUrl }.",
     UpdateArgs,
     WRITE,
-    async ({ id, photoUrls, addPhotoUrls, agentName, agentEmail, ...patch }) => {
+    async ({ id, photoUrls, addPhotoUrls, agentName, agentEmail, agentPhotoUrl, ...patch }) => {
       const sb = db();
       const { data: cur, error: readErr } = await sb.from("listings").select("*").eq("id", id).maybeSingle();
       if (readErr) throw new ToolError(readErr.message);
@@ -190,9 +205,14 @@ export const LISTING_TOOLS = [
         photos = photoUrls ? added : [...l.photos, ...added];
       }
       const d = validate({ ...fields, photos });
-      const { error } = await sb.from("listings").update({ ...draftRow(d), ...contactRow({ agentName, agentEmail }) }).eq("id", id).eq("status", "draft");
+      const head = agentPhotoUrl ? await importPhotos([agentPhotoUrl], cur.agent_id ?? (await ownerId())) : [];
+      const { error } = await sb
+        .from("listings")
+        .update({ ...draftRow(d), ...contactRow({ agentName, agentEmail, agentPhotoUrl: agentPhotoUrl === undefined ? undefined : head[0]?.url }) })
+        .eq("id", id)
+        .eq("status", "draft");
       if (error) {
-        await removePhotos(added);
+        await removePhotos([...added, ...head]);
         throw new ToolError(error.message);
       }
       if (photoUrls) await removePhotos(l.photos.filter((p) => !photos.includes(p)));

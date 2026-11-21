@@ -49,6 +49,7 @@ export default async function AgentPage() {
               onboarding
               termsAccepted={me.signupTermsVersion === AGENT_TERMS_VERSION}
               prefill={await myPrefill(me.email).catch(() => null)}
+              startPhoto={(await myHandoffs(me.email).catch(() => [])).find((h) => h.photoUrl)?.photoUrl ?? null}
             />
           </div>
         </div>

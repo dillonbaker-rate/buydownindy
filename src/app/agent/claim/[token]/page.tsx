@@ -53,7 +53,7 @@ export default async function ClaimPage({ params }: { params: Promise<{ token: s
     ...listing,
     agentName: me?.agent?.name ?? "Your name",
     brokerage: me?.agent?.brokerage ?? "Your brokerage",
-    agentPhotoUrl: me?.agent?.photoUrl ?? null,
+    agentPhotoUrl: me?.agent?.photoUrl || listing.handoffPhotoUrl || null,
     agentVerified: me?.agent?.verificationStatus === "verified",
     agentPhone: null,
     agentEmail: null,

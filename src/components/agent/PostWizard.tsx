@@ -1,5 +1,5 @@
 "use client";
-import { ArrowLeft, ArrowRight, Calculator, House, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calculator, Camera, House, MapPin } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,6 +12,7 @@ import { PHOTO_RIGHTS } from "@/content/disclosures";
 import { estimateTaxesAndInsurance, INSURANCE_PER_1000, PROPERTY_TAX_ESTIMATE_PCT } from "@/content/program-rules";
 import { calc, kUsd, LOAN_TYPES, MIN_DOWN, pct, usd, type LoanType } from "@/lib/buydown";
 import { commas, digitsOnly, num } from "@/lib/format";
+import { uploadHeadshot } from "@/lib/headshot-upload";
 import { useIsDesktop } from "@/lib/hooks";
 import { rateFor, rateNoun, type RateInfo } from "@/lib/rate-info";
 import type { Listing } from "@/lib/types";
@@ -131,6 +132,22 @@ export function PostWizard({
   // Hidden listings: the listing agent it's for, so Send to agent is one click later.
   const [agentName, setAgentName] = useState(editing?.handoffName ?? "");
   const [agentEmail, setAgentEmail] = useState(editing?.handoffEmail ?? "");
+  const [agentPhoto, setAgentPhoto] = useState(editing?.handoffPhotoUrl ?? "");
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const headshotRef = useRef<HTMLInputElement>(null);
+  const pickHeadshot = async (file: File | undefined) => {
+    if (!file) return;
+    setPhotoBusy(true);
+    setErr(null);
+    try {
+      setAgentPhoto(await uploadHeadshot(file, userId));
+    } catch (e) {
+      setErr(`Couldn't upload the headshot: ${(e as Error).message}`);
+    } finally {
+      setPhotoBusy(false);
+      if (headshotRef.current) headshotRef.current.value = "";
+    }
+  };
   const askAgent = canHide && (editing ? editing.status === "draft" : hidden);
   const agentEmailOk = !agentEmail.trim() || /^\S+@\S+\.\S+$/.test(agentEmail.trim());
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((s) => ({ ...s, [k]: v }));
@@ -224,6 +241,8 @@ export function PostWizard({
         ...body,
         ...(editing ? {} : { hidden }),
         ...(askAgent ? { agentName: agentName.trim(), agentEmail: agentEmail.trim() } : {}),
+        // Sent only when there is (or was) a headshot, so it never touches the database column it doesn't need.
+        ...(askAgent && (agentPhoto || editing?.handoffPhotoUrl) ? { agentPhotoUrl: agentPhoto } : {}),
       }),
     });
     setBusy(false);
@@ -613,6 +632,31 @@ export function PostWizard({
                   <div className="flex flex-col gap-2 rounded-[14px] bg-surface p-3.5">
                     <div className="text-sm">
                       <strong>Who is it for?</strong> <span className="text-neutral-700">Optional. Saves a step when you Send to agent.</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => headshotRef.current?.click()}
+                        aria-label="Add the listing agent's headshot"
+                        className="grid h-16 w-16 flex-none cursor-pointer place-items-center overflow-hidden rounded-full border-2 border-neutral-300 bg-neutral-200 text-neutral-600"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        {agentPhoto ? <img src={agentPhoto} alt="" className="h-full w-full object-cover" /> : <Camera size={22} strokeWidth={1.5} />}
+                      </button>
+                      <div className="flex flex-col items-start gap-0.5">
+                        <div className="flex gap-2">
+                          <button type="button" className="btn btn-secondary min-h-9 text-[13px]" onClick={() => headshotRef.current?.click()} disabled={photoBusy}>
+                            {photoBusy ? "Uploading…" : agentPhoto ? "Change headshot" : "Add their headshot"}
+                          </button>
+                          {agentPhoto && !photoBusy && (
+                            <button type="button" className="btn btn-ghost min-h-9 text-[13px]" onClick={() => setAgentPhoto("")}>
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                        <span className="text-xs text-neutral-700">Shows on this listing&apos;s flyers. Becomes their profile photo; they can change it.</span>
+                      </div>
+                      <input ref={headshotRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => pickHeadshot(e.target.files?.[0])} />
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <div className="field">

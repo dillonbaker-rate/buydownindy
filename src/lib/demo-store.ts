@@ -89,6 +89,7 @@ export async function demoCreate(d: ListingInput, hidden = false, contact: Agent
     status: hidden ? "draft" : "live",
     ...(contact.agentName ? { handoffName: contact.agentName } : {}),
     ...(contact.agentEmail ? { handoffEmail: contact.agentEmail } : {}),
+    ...(contact.agentPhotoUrl ? { handoffPhotoUrl: contact.agentPhotoUrl } : {}),
     expiresAt: expiry(),
     isSample: false,
   });
@@ -115,6 +116,7 @@ export async function demoUpdate(
   if (patch.contact && l.status === "draft") {
     if (patch.contact.agentName !== undefined) l.handoffName = patch.contact.agentName || null;
     if (patch.contact.agentEmail !== undefined) l.handoffEmail = patch.contact.agentEmail || null;
+    if (patch.contact.agentPhotoUrl !== undefined) l.handoffPhotoUrl = patch.contact.agentPhotoUrl || null;
   }
   if (patch.action === "renew") l.expiresAt = expiry();
   else if (patch.action) {
@@ -143,7 +145,7 @@ export async function demoListingByHandoff(token: string): Promise<Listing | nul
 export async function demoMyHandoffs(email: string) {
   return (await readAll())
     .filter((x) => x.status === "draft" && x.handoffToken && x.handoffEmail?.toLowerCase() === email.toLowerCase())
-    .map((x) => ({ token: x.handoffToken!, address: x.address, city: x.city }));
+    .map((x) => ({ token: x.handoffToken!, address: x.address, city: x.city, photoUrl: x.handoffPhotoUrl ?? null }));
 }
 
 /** The demo has one agent, so claiming just puts the listing live. */
@@ -153,5 +155,7 @@ export async function demoClaim(token: string): Promise<string | null> {
   if (!l) return null;
   Object.assign(l, { status: "live", expiresAt: expiry(), photoRightsConfirmed: true, handoffToken: null });
   await writeAll(all);
+  // Like claim_listing: the agent gets the headshot if their profile has none.
+  if (l.handoffPhotoUrl && !(await demoAgent()).photoUrl) await saveDemoAgent({ photoUrl: l.handoffPhotoUrl });
   return l.id;
 }

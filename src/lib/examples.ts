@@ -20,6 +20,7 @@ export const forAgents = (l: Listing): Listing => ({
   agentVerified: false,
   handoffEmail: null,
   handoffName: null,
+  handoffPhotoUrl: null,
   handoffToken: null,
   handoffSentAt: null,
 });

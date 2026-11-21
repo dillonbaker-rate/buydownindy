@@ -68,12 +68,20 @@ export const toRow = (d: ListingInput) => ({
 export const AgentContact = z.object({
   agentName: z.string().trim().max(120).optional().or(z.literal("")),
   agentEmail: z.string().trim().toLowerCase().email("Enter the listing agent's email, or leave it blank.").optional().or(z.literal("")),
+  /** The listing agent's headshot (an uploaded https image). */
+  agentPhotoUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((u) => !u || /^https:\/\//.test(u) || u.startsWith("/api/demo/photos/"), "Use an https image link for the headshot.")
+    .optional(),
 });
 export type AgentContact = z.infer<typeof AgentContact>;
 /** Database columns for an AgentContact; only the fields that were given. */
 export const contactRow = (c: AgentContact) => ({
   ...(c.agentName !== undefined ? { handoff_name: c.agentName || null } : {}),
   ...(c.agentEmail !== undefined ? { handoff_email: c.agentEmail || null } : {}),
+  ...(c.agentPhotoUrl !== undefined ? { handoff_photo_url: c.agentPhotoUrl || null } : {}),
 });
 
 /** "draft" hides a listing (admins only). */

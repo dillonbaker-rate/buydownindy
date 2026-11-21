@@ -13,6 +13,7 @@ import { estimateTaxesAndInsurance, INSURANCE_PER_1000, PROPERTY_TAX_ESTIMATE_PC
 import { calc, kUsd, LOAN_TYPES, MIN_DOWN, pct, usd, type LoanType } from "@/lib/buydown";
 import { commas, digitsOnly, num } from "@/lib/format";
 import { uploadHeadshot } from "@/lib/headshot-upload";
+import { HeadshotCropper } from "@/components/ui/HeadshotCropper";
 import { useIsDesktop } from "@/lib/hooks";
 import { rateFor, rateNoun, type RateInfo } from "@/lib/rate-info";
 import type { Listing } from "@/lib/types";
@@ -137,17 +138,21 @@ export function PostWizard({
   const [agentBrokerage, setAgentBrokerage] = useState(editing?.handoffBrokerage ?? "");
   const [photoBusy, setPhotoBusy] = useState(false);
   const headshotRef = useRef<HTMLInputElement>(null);
-  const pickHeadshot = async (file: File | undefined) => {
-    if (!file) return;
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const pickHeadshot = (file: File | undefined) => {
+    if (headshotRef.current) headshotRef.current.value = "";
+    if (file) setCropFile(file);
+  };
+  const saveHeadshot = async (blob: Blob) => {
+    setCropFile(null);
     setPhotoBusy(true);
     setErr(null);
     try {
-      setAgentPhoto(await uploadHeadshot(file, userId));
+      setAgentPhoto(await uploadHeadshot(blob, userId));
     } catch (e) {
       setErr(`Couldn't upload the headshot: ${(e as Error).message}`);
     } finally {
       setPhotoBusy(false);
-      if (headshotRef.current) headshotRef.current.value = "";
     }
   };
   const askAgent = canHide && (editing ? editing.status === "draft" : hidden);
@@ -661,6 +666,7 @@ export function PostWizard({
                         <span className="text-xs text-neutral-700">Shows on this listing&apos;s flyers. Becomes their profile photo; they can change it.</span>
                       </div>
                       <input ref={headshotRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => pickHeadshot(e.target.files?.[0])} />
+                      {cropFile && <HeadshotCropper file={cropFile} onCancel={() => setCropFile(null)} onCrop={saveHeadshot} />}
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <div className="field">

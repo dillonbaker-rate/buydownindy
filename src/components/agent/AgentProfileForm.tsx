@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { uploadHeadshot } from "@/lib/headshot-upload";
+import { HeadshotCropper } from "@/components/ui/HeadshotCropper";
 import { COUNTIES, type Agent } from "@/lib/types";
 import { AgreeToTerms } from "./AgentTerms";
 
@@ -139,18 +140,22 @@ export function AgentProfileForm({
   const fileRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof F) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
 
-  const upload = async (file: File | undefined) => {
-    if (!file) return;
+  const [cropFile, setCropFile] = useState<File | null>(null);
+  const upload = (file: File | undefined) => {
+    if (fileRef.current) fileRef.current.value = "";
+    if (file) setCropFile(file);
+  };
+  const saveCrop = async (blob: Blob) => {
+    setCropFile(null);
     setUploading(true);
     setErr(null);
     try {
-      const url = await uploadHeadshot(file, userId);
+      const url = await uploadHeadshot(blob, userId);
       setF((s) => ({ ...s, photoUrl: url }));
     } catch (e) {
       setErr(`Couldn't upload the photo: ${(e as Error).message}`);
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -222,6 +227,7 @@ export function AgentProfileForm({
           <span className="text-xs text-neutral-700">A clear, professional headshot. JPG or PNG.</span>
         </div>
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => upload(e.target.files?.[0])} />
+        {cropFile && <HeadshotCropper file={cropFile} onCancel={() => setCropFile(null)} onCrop={saveCrop} />}
       </section>
 
       <section className="flex flex-col gap-3">

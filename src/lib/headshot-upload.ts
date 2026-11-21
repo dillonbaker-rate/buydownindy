@@ -2,23 +2,8 @@
 import { createClient } from "@/lib/supabase/client";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
-/** Square-crop and shrink to 600px JPEG before upload. */
-export async function squareJpeg(file: File): Promise<Blob> {
-  try {
-    const bmp = await createImageBitmap(file);
-    const side = Math.min(bmp.width, bmp.height);
-    const c = document.createElement("canvas");
-    c.width = c.height = Math.min(600, side);
-    c.getContext("2d")!.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, c.width, c.height);
-    return await new Promise((res) => c.toBlob((b) => res(b ?? file), "image/jpeg", 0.86));
-  } catch {
-    return file;
-  }
-}
-
-/** Upload a headshot to the signed-in user's folder and return its public URL. */
-export async function uploadHeadshot(file: File, userId: string): Promise<string> {
-  const blob = await squareJpeg(file);
+/** Upload a cropped headshot (a square JPEG from HeadshotCropper) to the signed-in user's folder and return its public URL. */
+export async function uploadHeadshot(blob: Blob, userId: string): Promise<string> {
   if (supabaseConfigured) {
     const sb = createClient();
     const path = `${userId}/avatar-${crypto.randomUUID()}.jpg`;

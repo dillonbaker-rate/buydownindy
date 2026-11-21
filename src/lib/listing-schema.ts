@@ -75,6 +75,8 @@ export const AgentContact = z.object({
     .max(500)
     .refine((u) => !u || /^https:\/\//.test(u) || u.startsWith("/api/demo/photos/"), "Use an https image link for the headshot.")
     .optional(),
+  agentPhone: z.string().trim().max(40).optional().or(z.literal("")),
+  agentBrokerage: z.string().trim().max(120).optional().or(z.literal("")),
 });
 export type AgentContact = z.infer<typeof AgentContact>;
 /** Database columns for an AgentContact; only the fields that were given. */
@@ -82,6 +84,8 @@ export const contactRow = (c: AgentContact) => ({
   ...(c.agentName !== undefined ? { handoff_name: c.agentName || null } : {}),
   ...(c.agentEmail !== undefined ? { handoff_email: c.agentEmail || null } : {}),
   ...(c.agentPhotoUrl !== undefined ? { handoff_photo_url: c.agentPhotoUrl || null } : {}),
+  ...(c.agentPhone !== undefined ? { handoff_phone: c.agentPhone || null } : {}),
+  ...(c.agentBrokerage !== undefined ? { handoff_brokerage: c.agentBrokerage || null } : {}),
 });
 
 /** "draft" hides a listing (admins only). */

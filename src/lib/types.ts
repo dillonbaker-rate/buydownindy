@@ -50,6 +50,9 @@ export interface Listing {
   handoffName?: string | null;
   /** Headshot an admin added for the agent a hidden listing is for. */
   handoffPhotoUrl?: string | null;
+  /** Phone and brokerage an admin added for the agent a hidden listing is for. */
+  handoffPhone?: string | null;
+  handoffBrokerage?: string | null;
   handoffToken?: string | null;
   handoffSentAt?: string | null;
 }

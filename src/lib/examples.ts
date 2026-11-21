@@ -21,6 +21,8 @@ export const forAgents = (l: Listing): Listing => ({
   handoffEmail: null,
   handoffName: null,
   handoffPhotoUrl: null,
+  handoffPhone: null,
+  handoffBrokerage: null,
   handoffToken: null,
   handoffSentAt: null,
 });

@@ -49,6 +49,13 @@ describe("listing agent credit", () => {
     expect(l.agentVerified).toBe(false);
   });
 
+  it("uses the phone and brokerage saved for that agent", () => {
+    const l = fromRow(row("dillon.baker@rate.com", { handoff_name: "Jane Smith", handoff_phone: "317-555-0199", handoff_brokerage: "Tucker" }));
+    expect(l.agentPhone).toBe("317-555-0199");
+    expect(l.brokerage).toBe("Tucker");
+    expect(l.handoffPhone).toBe("317-555-0199");
+  });
+
   it("says Listing agent when no one is saved", () => {
     expect(fromRow(row("dillon.baker@rate.com")).agentName).toBe("Listing agent");
   });

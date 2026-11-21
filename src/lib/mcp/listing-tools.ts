@@ -37,6 +37,8 @@ export const CreateArgs = ListingInput.omit({ photos: true, photoRightsConfirmed
     .regex(/^https:\/\//, "Use an https image link.")
     .optional()
     .describe("A public https link to the listing agent's headshot. Shows on the flyers and becomes their profile photo if they don't have one."),
+  agentPhone: z.string().trim().max(40).optional().describe("The listing agent's phone number, shown under their name on the flyers."),
+  agentBrokerage: z.string().trim().max(120).optional().describe('The listing agent\'s brokerage, e.g. "F.C. Tucker Company". Shown under their name on the flyers.'),
   photoUrls: z
     .array(photoUrl)
     .min(1)
@@ -130,10 +132,10 @@ export const LISTING_TOOLS = [
     "Create a hidden (draft) listing under the admin's account: not on the map and not public, ready to send to the listing " +
       "agent (send_listing_to_agent when the user asks, or My listings on the site). Never goes live and sends no email. The address must be in Boone, Hamilton, Hancock, Hendricks, " +
       "Johnson or Marion county; it's geocoded unless lat, lng, city and county are all given. Photos (1-7 public https links) are copied " +
-      "into the site's storage. Returns { id, status: \"draft\", previewUrl } (preview needs the admin signed in) plus an editUrl.",
+      "into the site's storage. Fill in the listing agent's name, email, phone, brokerage and headshot when you can find them: they show on the flyers. Returns { id, status: \"draft\", previewUrl } (preview needs the admin signed in) plus an editUrl.",
     CreateArgs,
     WRITE,
-    async ({ photoUrls, agentName, agentEmail, agentPhotoUrl, ...a }) => {
+    async ({ photoUrls, agentName, agentEmail, agentPhotoUrl, agentPhone, agentBrokerage, ...a }) => {
       const place = await locate(a);
       const fields = { ...a, ...place, photoRightsConfirmed: true as const };
       // Check everything except photos before downloading any.
@@ -151,7 +153,7 @@ export const LISTING_TOOLS = [
       const d = validate({ ...fields, photos });
       const { data, error } = await db()
         .from("listings")
-        .insert({ ...draftRow(d), ...contactRow({ agentName, agentEmail, agentPhotoUrl: head[0]?.url }), agent_id: owner, status: "draft", expires_at: expiry() })
+        .insert({ ...draftRow(d), ...contactRow({ agentName, agentEmail, agentPhone, agentBrokerage, agentPhotoUrl: head[0]?.url }), agent_id: owner, status: "draft", expires_at: expiry() })
         .select("id")
         .single();
       if (error) {
@@ -168,7 +170,7 @@ export const LISTING_TOOLS = [
       "addPhotoUrls adds to them. Never puts the listing live. Returns { id, status, previewUrl, editUrl }.",
     UpdateArgs,
     WRITE,
-    async ({ id, photoUrls, addPhotoUrls, agentName, agentEmail, agentPhotoUrl, ...patch }) => {
+    async ({ id, photoUrls, addPhotoUrls, agentName, agentEmail, agentPhotoUrl, agentPhone, agentBrokerage, ...patch }) => {
       const sb = db();
       const { data: cur, error: readErr } = await sb.from("listings").select("*").eq("id", id).maybeSingle();
       if (readErr) throw new ToolError(readErr.message);
@@ -208,7 +210,7 @@ export const LISTING_TOOLS = [
       const head = agentPhotoUrl ? await importPhotos([agentPhotoUrl], cur.agent_id ?? (await ownerId())) : [];
       const { error } = await sb
         .from("listings")
-        .update({ ...draftRow(d), ...contactRow({ agentName, agentEmail, agentPhotoUrl: agentPhotoUrl === undefined ? undefined : head[0]?.url }) })
+        .update({ ...draftRow(d), ...contactRow({ agentName, agentEmail, agentPhone, agentBrokerage, agentPhotoUrl: agentPhotoUrl === undefined ? undefined : head[0]?.url }) })
         .eq("id", id)
         .eq("status", "draft");
       if (error) {

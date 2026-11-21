@@ -370,9 +370,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const me = hidden ? await getCurrentAgent().catch(() => null) : null;
   if (!found || !(found.status === "live" || (hidden && me && isAdmin(me.email)))) return new Response("Listing not found", { status: 404 });
   // A hidden listing is owned by the admin account: credit the listing agent it's for, not the admin.
-  // Its contact details are the admin's, so only the saved agent name and email are used.
+  // Its contact details are the admin's, so only the agent details saved on the listing are used.
   const l = hidden
-    ? { ...found, agentName: found.handoffName || "Listing agent", brokerage: "", agentPhone: null, agentPhotoUrl: found.handoffPhotoUrl ?? null, agentEmail: found.handoffEmail ?? null }
+    ? { ...found, agentName: found.handoffName || "Listing agent", brokerage: found.handoffBrokerage ?? "", agentPhone: found.handoffPhone ?? null, agentPhotoUrl: found.handoffPhotoUrl ?? null, agentEmail: found.handoffEmail ?? null }
     : found;
   const brand: Brand = url.searchParams.get("brand") === "co" ? "co" : "agent";
 

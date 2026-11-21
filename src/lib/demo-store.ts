@@ -90,6 +90,8 @@ export async function demoCreate(d: ListingInput, hidden = false, contact: Agent
     ...(contact.agentName ? { handoffName: contact.agentName } : {}),
     ...(contact.agentEmail ? { handoffEmail: contact.agentEmail } : {}),
     ...(contact.agentPhotoUrl ? { handoffPhotoUrl: contact.agentPhotoUrl } : {}),
+    ...(contact.agentPhone ? { handoffPhone: contact.agentPhone } : {}),
+    ...(contact.agentBrokerage ? { handoffBrokerage: contact.agentBrokerage } : {}),
     expiresAt: expiry(),
     isSample: false,
   });
@@ -117,6 +119,8 @@ export async function demoUpdate(
     if (patch.contact.agentName !== undefined) l.handoffName = patch.contact.agentName || null;
     if (patch.contact.agentEmail !== undefined) l.handoffEmail = patch.contact.agentEmail || null;
     if (patch.contact.agentPhotoUrl !== undefined) l.handoffPhotoUrl = patch.contact.agentPhotoUrl || null;
+    if (patch.contact.agentPhone !== undefined) l.handoffPhone = patch.contact.agentPhone || null;
+    if (patch.contact.agentBrokerage !== undefined) l.handoffBrokerage = patch.contact.agentBrokerage || null;
   }
   if (patch.action === "renew") l.expiresAt = expiry();
   else if (patch.action) {

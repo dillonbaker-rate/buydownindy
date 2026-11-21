@@ -133,6 +133,8 @@ export function PostWizard({
   const [agentName, setAgentName] = useState(editing?.handoffName ?? "");
   const [agentEmail, setAgentEmail] = useState(editing?.handoffEmail ?? "");
   const [agentPhoto, setAgentPhoto] = useState(editing?.handoffPhotoUrl ?? "");
+  const [agentPhone, setAgentPhone] = useState(editing?.handoffPhone ?? "");
+  const [agentBrokerage, setAgentBrokerage] = useState(editing?.handoffBrokerage ?? "");
   const [photoBusy, setPhotoBusy] = useState(false);
   const headshotRef = useRef<HTMLInputElement>(null);
   const pickHeadshot = async (file: File | undefined) => {
@@ -243,6 +245,8 @@ export function PostWizard({
         ...(askAgent ? { agentName: agentName.trim(), agentEmail: agentEmail.trim() } : {}),
         // Sent only when there is (or was) a headshot, so it never touches the database column it doesn't need.
         ...(askAgent && (agentPhoto || editing?.handoffPhotoUrl) ? { agentPhotoUrl: agentPhoto } : {}),
+        ...(askAgent && (agentPhone.trim() || editing?.handoffPhone) ? { agentPhone: agentPhone.trim() } : {}),
+        ...(askAgent && (agentBrokerage.trim() || editing?.handoffBrokerage) ? { agentBrokerage: agentBrokerage.trim() } : {}),
       }),
     });
     setBusy(false);
@@ -675,6 +679,22 @@ export function PostWizard({
                           onChange={(e) => setAgentEmail(e.target.value)}
                         />
                         {!agentEmailOk && <span className="text-xs text-warn-text">Check the email address.</span>}
+                      </div>
+                      <div className="field">
+                        <label htmlFor="w-agent-phone">Listing agent&apos;s phone</label>
+                        <input
+                          id="w-agent-phone"
+                          className="input"
+                          type="tel"
+                          inputMode="tel"
+                          placeholder="(317) 555-0123"
+                          value={agentPhone}
+                          onChange={(e) => setAgentPhone(e.target.value)}
+                        />
+                      </div>
+                      <div className="field">
+                        <label htmlFor="w-agent-brokerage">Brokerage</label>
+                        <input id="w-agent-brokerage" className="input" placeholder="F.C. Tucker Company" value={agentBrokerage} onChange={(e) => setAgentBrokerage(e.target.value)} />
                       </div>
                     </div>
                     {agentEmail.trim() && agentEmailOk && (

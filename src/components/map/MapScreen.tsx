@@ -1,8 +1,8 @@
 "use client";
-import { ChevronDown, ChevronUp, EyeOff, List, Map as MapIcon, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpDown, ChevronDown, ChevronUp, EyeOff, List, Map as MapIcon, SlidersHorizontal, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ListingCard } from "@/components/listing/ListingCard";
 import { PriceRange } from "@/components/ui/DualRange";
 import { Segmented } from "@/components/ui/Segmented";
@@ -18,6 +18,17 @@ import { MapErrorBoundary } from "./MapErrorBoundary";
 import { FilterBar, NO_FILTERS, type Filters } from "./FilterBar";
 
 const LeafletMap = dynamic(() => import("./LeafletMap").then((m) => m.LeafletMap), { ssr: false });
+
+/** How the list can be ordered. "Newest" keeps the server's order (featured example first, then newest). */
+const SORTS = {
+  newest: { label: "Newest", cmp: () => 0 },
+  "price-desc": { label: "Price: high to low", cmp: (a: Listing, b: Listing) => b.price - a.price },
+  "price-asc": { label: "Price: low to high", cmp: (a: Listing, b: Listing) => a.price - b.price },
+  "conc-desc": { label: "Seller money: most first", cmp: (a: Listing, b: Listing) => b.concession - a.concession },
+  "sqft-desc": { label: "Square feet: largest first", cmp: (a: Listing, b: Listing) => b.sqft - a.sqft },
+  "beds-desc": { label: "Bedrooms: most first", cmp: (a: Listing, b: Listing) => b.beds - a.beds || b.baths - a.baths },
+} as const;
+type SortKey = keyof typeof SORTS;
 
 
 export function MapScreen({
@@ -46,6 +57,20 @@ export function MapScreen({
   const touch = useRef<{ y: number | null; top: boolean }>({ y: null, top: false });
 
   const [showHidden, setShowHidden] = useState(true);
+  const [sort, setSortState] = useState<SortKey>("newest");
+  // Remember the sort for this visit, so coming back from a listing keeps it.
+  useEffect(() => {
+    try {
+      const v = sessionStorage.getItem("bd-sort") as SortKey | null;
+      if (v && v in SORTS) setSortState(v);
+    } catch {}
+  }, []);
+  const setSort = (v: SortKey) => {
+    setSortState(v);
+    try {
+      sessionStorage.setItem("bd-sort", v);
+    } catch {}
+  };
 
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => setF((s) => ({ ...s, [k]: v }));
 
@@ -77,7 +102,7 @@ export function MapScreen({
     [inPlace, f],
   );
   // The list keeps its order when a home is picked (picking only moves the map; a pin click scrolls to its card).
-  const sorted = shown;
+  const sorted = useMemo(() => (sort === "newest" ? shown : [...shown].sort(SORTS[sort].cmp)), [shown, sort]);
   const nf =
     Number(f.county !== "All counties") + Number(!!f.min) + Number(!!f.max) + Number(!!f.conc) + Number(f.loan !== "Any");
 
@@ -335,6 +360,27 @@ export function MapScreen({
             ]}
           />
         </div>
+
+        {shown.length > 1 && (
+          <div className="flex items-center gap-2 px-4 pb-2">
+            <label htmlFor="list-sort" className="flex flex-none items-center gap-1 text-xs font-semibold text-neutral-700">
+              <ArrowUpDown size={13} />
+              Sort
+            </label>
+            <select
+              id="list-sort"
+              className="input min-h-9 w-auto py-1 pr-8 pl-2.5 text-[13px] font-semibold"
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+            >
+              {(Object.keys(SORTS) as SortKey[]).map((k) => (
+                <option key={k} value={k}>
+                  {SORTS[k].label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div
           className="min-h-0 flex-1 overflow-auto overscroll-contain px-4 pb-4"

@@ -1,4 +1,4 @@
-import { House } from "lucide-react";
+import { ArrowRight, House } from "lucide-react";
 import Link from "next/link";
 import { exampleApr } from "@/lib/ad-terms";
 import { aprLabel } from "@/lib/apr";
@@ -38,12 +38,15 @@ export function ListingCard({
   selected,
   href,
   badge,
+  onSelect,
 }: {
   listing: Listing;
   rateInfo: RateInfo;
   loanFilter?: LoanType | "Any";
   selected?: boolean;
   href: string;
+  /** Beside the map: the first click selects the home (highlights its pin) and the next click opens it. */
+  onSelect?: () => void;
   /** Tag on the photo, e.g. "Hidden · not public" for hidden listings. */
   badge?: string;
 }) {
@@ -51,6 +54,14 @@ export function ListingCard({
   return (
     <Link
       href={href}
+      data-listing-id={l.id}
+      aria-current={selected || undefined}
+      onClick={(e) => {
+        // Plain click on a home that isn't selected yet: highlight it on the map instead of opening it.
+        if (!onSelect || selected || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+        e.preventDefault();
+        onSelect();
+      }}
       className="lift flex flex-col overflow-hidden rounded-[20px] border border-divider bg-bg text-ink no-underline hover:text-ink"
       style={{ outline: selected ? "2px solid var(--color-ink)" : undefined, outlineOffset: -2 }}
     >
@@ -62,6 +73,11 @@ export function ListingCard({
         </div>
         {l.isSample && <span className="tag tag-neutral absolute bottom-2.5 left-2.5">Sample</span>}
         {badge && <span className="tag tag-ink absolute bottom-2.5 left-2.5 font-semibold">{badge}</span>}
+        {selected && onSelect && (
+          <span className="tag tag-ink absolute top-2.5 right-2.5 font-semibold shadow-md">
+            View home <ArrowRight size={13} />
+          </span>
+        )}
       </div>
       <div className="flex flex-col gap-0.5 p-3">
         <div className="flex items-baseline justify-between gap-2">

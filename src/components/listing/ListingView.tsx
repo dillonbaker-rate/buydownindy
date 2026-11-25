@@ -36,6 +36,7 @@ import { aprLabel, estimateApr } from "@/lib/apr";
 import type { Listing } from "@/lib/types";
 import { LenderCard } from "@/components/lender/LenderCard";
 import { Gallery } from "./Gallery";
+import { ListingMiniMap } from "./ListingMiniMap";
 import { OptionCard } from "./OptionCard";
 
 export function ListingView({
@@ -177,8 +178,8 @@ export function ListingView({
           style={{
             gridTemplateColumns: desk ? "minmax(0,1fr) 360px" : "minmax(0,1fr)",
             gridTemplateAreas: desk
-              ? '"details side" "headline side" "options side" "disc side"'
-              : '"details" "headline" "side" "options" "lender" "disc"',
+              ? '"details side" "headline side" "options side" "map side" "disc side"'
+              : '"details" "headline" "side" "options" "map" "lender" "disc"',
           }}
         >
           {/* Details */}
@@ -446,6 +447,10 @@ export function ListingView({
                 />
               ))}
             </div>
+          </div>
+
+          <div style={{ gridArea: "map" }}>
+            <ListingMiniMap listing={l} />
           </div>
 
           {/* Disclosures */}

@@ -99,11 +99,14 @@ export function MapScreen({
   }, [listings, rateInfo]);
 
   const expanded = sheet === "full" || filtersOpen;
-  const pick = (id: string) => {
+  const pick = (id: string, from: "map" | "list" = "map") => {
     setSelId(id);
     setSheet("peek");
     const l = all.find((x) => x.id === id);
     if (l) mapRef.current?.flyTo(l.lat, l.lng);
+    // Picked on the map: bring its card into view in the list.
+    if (from === "map")
+      requestAnimationFrame(() => document.querySelector(`[data-listing-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
   };
   const toggleSheet = () => {
     if (drag.current.dragged) {
@@ -150,7 +153,7 @@ export function MapScreen({
             zoom={areaView?.zoom ?? 10}
             zoomControl={desk}
             viewKey={desk ? "desk" : "phone"}
-            onPick={pick}
+            onPick={(id) => pick(id)}
             onMapClick={() => {
               if (phone && expanded) {
                 setSheet("peek");
@@ -449,6 +452,7 @@ export function MapScreen({
                   selected={l.id === selId}
                   href={href(l)}
                   badge={badge(l)}
+                  onSelect={view === "map" ? () => pick(l.id, "list") : undefined}
                 />
               ))}
             </div>

@@ -468,3 +468,12 @@ select.input {
   font: 600 13px/1 var(--font-sans);
   box-shadow: 0 4px 14px rgba(16, 24, 40, 0.2);
 }
+
+/* Phone map under the homes sheet: keep Leaflet's own layers below the sheet, and lift the map credit
+   (OpenStreetMap attribution) to sit just above the sheet instead of on top of the first home. */
+.bd-map-sheet {
+  isolation: isolate;
+}
+.bd-map-sheet .leaflet-bottom {
+  bottom: calc(40% + 2px);
+}

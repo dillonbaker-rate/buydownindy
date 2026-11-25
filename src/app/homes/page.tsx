@@ -19,12 +19,16 @@ export default async function Homes({ searchParams }: { searchParams: Promise<{ 
   const hidden = !me?.agent ? [] : admin ? await adminHiddenListings().catch(() => []) : ((await exampleListings().catch(() => null)) ?? []);
   return (
     <AppShell
+      footerOnPhone={false}
       header={
         // Signed out: the header shows only "Agent sign in". Signed in: a shortcut to post (desktop).
         me ? (
-          <Link href="/agent/post" className="btn btn-ghost hidden text-[13px] font-semibold sm:inline-flex">
-            Post a listing
-          </Link>
+          // Wrapped: .btn's display would override `hidden`. Phones use "List a home" in the bottom bar.
+          <span className="hidden sm:inline-flex">
+            <Link href="/agent/post" className="btn btn-ghost text-[13px] font-semibold">
+              Post a listing
+            </Link>
+          </span>
         ) : null
       }
     >

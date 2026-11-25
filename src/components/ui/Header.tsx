@@ -69,12 +69,15 @@ export function AppShell({
   header,
   hideSignIn,
   mobileNav = true,
+  footerOnPhone = true,
   children,
 }: {
   header?: ReactNode;
   hideSignIn?: boolean;
   /** Bottom tab bar on phones. Off for pages with their own sticky bottom actions. */
   mobileNav?: boolean;
+  /** Off for the map: phones show just the map and homes; each listing page carries the disclosures. */
+  footerOnPhone?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -84,7 +87,13 @@ export function AppShell({
         <SideNav mobile={mobileNav} />
         <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       </div>
-      <Footer />
+      {footerOnPhone ? (
+        <Footer />
+      ) : (
+        <div className="hidden lg:block">
+          <Footer />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 "use client";
-import { ArrowUpDown, ChevronDown, ChevronUp, EyeOff, List, Map as MapIcon, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpDown, EyeOff, List, Map as MapIcon, Search, SlidersHorizontal, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -152,7 +152,7 @@ export function MapScreen({
     muted: hiddenIds.has(l.id),
   }));
   const anySample = listings.some((l) => l.isSample);
-  const heroPhone = phone && view === "map" && heroOn && !expanded && hero;
+  // Phones keep the map clean: no comparison card over it (desktop shows it above the list).
   const heroDesk = desk && heroOn && hero;
   const href = (l: Listing) =>
     hiddenIds.has(l.id) && !hidden?.admin ? `/agent/examples/${l.id}` : `/listing/${l.id}` + (f.loan !== "Any" ? `?type=${f.loan}` : "");
@@ -186,14 +186,14 @@ export function MapScreen({
                 setFiltersOpen(false);
               }
             }}
-            className="absolute inset-0 bg-neutral-200"
+            className={`absolute inset-0 bg-neutral-200${phone ? " bd-map-sheet" : ""}`}
           />
           </MapErrorBoundary>
           </div>
           {anySample && (
             <span
               className="tag tag-ink absolute z-[500] font-semibold"
-              style={{ top: heroPhone ? 92 : BAR + 12, left: desk ? `calc(${LIST_SHARE} + 16px)` : 12 }}
+              style={{ top: phone ? 72 : BAR + 12, left: desk ? `calc(${LIST_SHARE} + 16px)` : 12 }}
             >
               Sample listings
             </span>
@@ -207,35 +207,35 @@ export function MapScreen({
         </div>
       )}
 
-      {heroPhone && (
-        <div className="absolute inset-x-2.5 top-2.5 z-[550] grid grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-3 rounded-[18px] bg-bg py-2.5 pr-1.5 pl-3.5 text-ink shadow-md">
-          <div className="text-[10px] leading-tight font-semibold">
-            Same
-            <br />
-            {hero.k}
-          </div>
-          <div className="border-l border-divider pl-2.5">
-            <div className="text-[11px] text-neutral-700">As a price cut</div>
-            <div className="text-[22px] leading-[1.1] font-bold tracking-[-0.03em]">
-              {hero.cut}
-              <span className="text-[11px] font-semibold">/mo</span>
-            </div>
-          </div>
-          <div className="border-l border-divider pl-2.5">
-            <div className="text-[11px] text-neutral-700">As a buydown</div>
-            <div className="text-[22px] leading-[1.1] font-bold tracking-[-0.03em] text-accent">
-              {hero.best}
-              <span className="text-[11px] font-semibold">/mo</span>
-            </div>
-          </div>
-          <button
-            onClick={() => setHeroOn(false)}
-            aria-label="Dismiss"
-            className="grid h-11 w-9 cursor-pointer place-items-center text-neutral-600"
+      {phone && view === "map" && (
+        <div className="absolute inset-x-3 top-3 z-[550] flex items-center gap-2">
+          <Link
+            href="/"
+            className="flex min-h-12 min-w-0 flex-1 items-center gap-2.5 rounded-full bg-bg px-4 text-[15px] text-ink no-underline shadow-md hover:text-ink"
           >
-            <X size={16} />
+            <Search size={18} className="flex-none text-neutral-700" />
+            <span className={`truncate ${area ? "font-semibold" : "text-neutral-700"}`}>{area ? area.label : "City, ZIP or county"}</span>
+          </Link>
+          {area && (
+            <Link href="/homes" aria-label={`Clear ${area.label}`} className="grid h-12 w-12 flex-none place-items-center rounded-full bg-bg text-ink shadow-md">
+              <X size={18} />
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setFiltersOpen((o) => !o);
+              setSheet("full");
+            }}
+            aria-expanded={filtersOpen}
+            aria-label={`Filters and sort${nf ? ` (${nf} on)` : ""}`}
+            className="relative grid h-12 w-12 flex-none cursor-pointer place-items-center rounded-full bg-bg text-ink shadow-md"
+          >
+            <SlidersHorizontal size={19} />
+            {nf > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] font-bold text-white">{nf}</span>
+            )}
           </button>
-          <div className="col-span-4 -mt-1 pr-2 text-[9.5px] leading-snug text-neutral-700">Monthly savings, year 1 · {hero.basis}</div>
         </div>
       )}
 
@@ -270,9 +270,8 @@ export function MapScreen({
             className="flex min-h-11 cursor-grab touch-none flex-col items-center gap-1.5 pt-2.5 pb-1"
           >
             <span className="h-[5px] w-11 rounded-full bg-neutral-400" />
-            <span className="flex items-center gap-1 text-xs font-semibold text-accent">
-              {expanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-              {expanded ? "Show map" : `Show all ${shown.length} listings`}
+            <span className="text-[17px] font-bold text-ink">
+              {shown.length} home{shown.length === 1 ? "" : "s"} with seller money{area ? ` in ${area.value}` : ""}
             </span>
           </button>
         )}
@@ -308,7 +307,20 @@ export function MapScreen({
           </div>
         )}
 
-        <div className="flex items-center gap-2 px-4 py-2">
+        {phone && view === "map" && hidden && (
+          <div className="flex justify-center px-4 pb-1">
+            <button
+              type="button"
+              onClick={() => setShowHidden((v) => !v)}
+              aria-pressed={showHidden}
+              className={`tag cursor-pointer font-semibold ${showHidden ? "tag-ink" : "tag-neutral"}`}
+            >
+              <EyeOff size={12} />
+              {showHidden ? "Showing" : "Show"} {hidden.listings.length} hidden
+            </button>
+          </div>
+        )}
+        <div className={`items-center gap-2 px-4 py-2 ${phone && view === "map" ? "hidden" : "flex"}`}>
           <div className="mr-auto min-w-0">
             <div className="text-base font-bold">
               {shown.length} listing{shown.length === 1 ? "" : "s"}
@@ -361,7 +373,7 @@ export function MapScreen({
           />
         </div>
 
-        {shown.length > 1 && (
+        {shown.length > 1 && !(phone && view === "map") && (
           <div className="flex items-center gap-2 px-4 pb-2">
             <label htmlFor="list-sort" className="flex flex-none items-center gap-1 text-xs font-semibold text-neutral-700">
               <ArrowUpDown size={13} />
@@ -410,6 +422,16 @@ export function MapScreen({
         >
           {phone && filtersOpen && (
             <div className="mb-4 grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-x-4 gap-y-3 border-y border-divider pt-3 pb-4">
+              <div className="field">
+                <label htmlFor="f-sort">Sort</label>
+                <select id="f-sort" className="input" value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+                  {(Object.keys(SORTS) as SortKey[]).map((k) => (
+                    <option key={k} value={k}>
+                      {SORTS[k].label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="field">
                 <label htmlFor="f-county">County</label>
                 <select

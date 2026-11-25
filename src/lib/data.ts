@@ -160,7 +160,11 @@ export async function getListing(id: string): Promise<Listing | null> {
   if (!UUID.test(id)) return null;
   const sb = await createClient();
   const { data } = await sb.from("listings").select(LISTING_SELECT).eq("id", id).maybeSingle();
-  return data ? fromRow(data as ListingRow) : null;
+  if (data) return fromRow(data as ListingRow);
+  // Not visible to this viewer (hidden, expired, pending or sold): anyone with the link can still open it.
+  const { data: byLink, error } = await sb.rpc("listing_by_link", { listing_id: id });
+  if (error) console.error("listing_by_link", error.message);
+  return byLink ? fromRow(byLink as ListingRow) : null;
 }
 
 export async function getMyListings(agentId: string): Promise<Listing[]> {

@@ -24,6 +24,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     description,
     openGraph: { type: "website", siteName: "BuyDown Indy", title, description, images },
     twitter: { card: "summary_large_image", title, description, images },
+    // Hidden, expired, pending and sold listings open for anyone with the link but stay out of search engines.
+    ...(l.status === "live" && new Date(l.expiresAt).getTime() > Date.now() ? {} : { robots: { index: false, follow: false } }),
   };
 }
 

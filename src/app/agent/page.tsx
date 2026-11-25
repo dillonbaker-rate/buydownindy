@@ -9,7 +9,8 @@ import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent, getMyListings } from "@/lib/data";
 import { myHandoffs } from "@/lib/handoff";
 import { myPrefill } from "@/lib/prefill";
-import { isRateAdmin } from "@/lib/rates";
+import { getRateInfo, isRateAdmin } from "@/lib/rates";
+import { StaleRateBanner } from "@/components/agent/StaleRateBanner";
 import { agentsEnabled } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
@@ -61,9 +62,11 @@ export default async function AgentPage() {
         <AcceptAgentTerms />
       </AppShell>
     );
-  const [listings, handoffs] = await Promise.all([getMyListings(me.userId), myHandoffs(me.email)]);
+  const admin = isRateAdmin(me.email);
+  const [listings, handoffs, rateInfo] = await Promise.all([getMyListings(me.userId), myHandoffs(me.email), admin ? getRateInfo() : null]);
   return (
     <AppShell header={<AgentHeader onDash admin={isRateAdmin(me.email)} />}>
+      {rateInfo && <StaleRateBanner info={rateInfo} />}
       <Dashboard agent={me.agent} listings={listings} isAdmin={isRateAdmin(me.email)} handoffs={handoffs} />
     </AppShell>
   );

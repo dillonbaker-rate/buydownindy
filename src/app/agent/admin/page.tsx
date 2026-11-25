@@ -3,7 +3,8 @@ import { AgentHeader } from "@/components/agent/AgentHeader";
 import { AgentsAdmin } from "@/components/agent/AgentsAdmin";
 import { AppShell } from "@/components/ui/Header";
 import { getAllAgents, getCurrentAgent } from "@/lib/data";
-import { isAdmin } from "@/lib/rates";
+import { getRateInfo, isAdmin } from "@/lib/rates";
+import { StaleRateBanner } from "@/components/agent/StaleRateBanner";
 import { agentsEnabled } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export default async function AdminAgentsPage() {
   if (!isAdmin(me.email)) notFound();
   return (
     <AppShell header={<AgentHeader admin />}>
+      <StaleRateBanner info={await getRateInfo()} />
       <AgentsAdmin agents={await getAllAgents()} />
     </AppShell>
   );

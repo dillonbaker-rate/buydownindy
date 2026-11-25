@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { AgentHeader } from "@/components/agent/AgentHeader";
 import { RatesForm } from "@/components/agent/RatesForm";
+import { StaleRateBanner } from "@/components/agent/StaleRateBanner";
 import { AppShell } from "@/components/ui/Header";
 import { getCurrentAgent } from "@/lib/data";
 import { indyToday } from "@/lib/rate-info";
@@ -21,6 +22,7 @@ export default async function RatesPage() {
   const [live, last] = await Promise.all([getRateInfo(), getLatestDaily()]);
   return (
     <AppShell header={<AgentHeader />}>
+      <StaleRateBanner info={live} />
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="mx-auto max-w-[560px] p-4 lg:p-8">
           <RatesForm live={live} today={indyToday()} last={last} />

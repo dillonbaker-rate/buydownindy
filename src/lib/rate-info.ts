@@ -26,3 +26,12 @@ export const longDate = (iso: string) =>
 /** Today's date in Indianapolis as YYYY-MM-DD. */
 export const indyToday = (now = new Date()) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "America/Indiana/Indianapolis" }).format(now);
+
+/** A rate older than this many days means the rate feed is broken (Freddie Mac publishes weekly). */
+export const STALE_RATE_DAYS = 10;
+
+/** Whole days since the rate's date (0 for a daily rate entered today). */
+export const rateAgeDays = (info: RateInfo, now = new Date()) =>
+  Math.floor((new Date(indyToday(now) + "T12:00:00Z").getTime() - new Date(info.date + "T12:00:00Z").getTime()) / 86_400_000);
+
+export const isRateStale = (info: RateInfo, now = new Date()) => rateAgeDays(info, now) > STALE_RATE_DAYS;

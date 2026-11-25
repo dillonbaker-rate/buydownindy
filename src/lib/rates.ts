@@ -63,7 +63,11 @@ export async function saveDaily(d: DailyRates, userId: string | null): Promise<s
 }
 
 // ── Freddie Mac PMMS (weekly) ──────────────────────────────────────────
+/** A snapshot this many days old is stale: Freddie Mac publishes weekly, so read the CSV instead. */
+const STALE_DAYS = 8;
+
 async function getPmms(): Promise<{ weekOf: string; rate: number } | null> {
+  let saved: { weekOf: string; rate: number } | null = null;
   if (supabaseConfigured) {
     const sb = await createClient();
     const { data } = await sb
@@ -72,14 +76,16 @@ async function getPmms(): Promise<{ weekOf: string; rate: number } | null> {
       .order("week_of", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (data) return { weekOf: data.week_of, rate: Number(data.rate_30yr) };
+    if (data) saved = { weekOf: data.week_of, rate: Number(data.rate_30yr) };
   }
-  // No snapshot yet (or demo mode): read Freddie Mac's CSV directly, cached for 6 hours.
+  if (saved && Date.now() - new Date(`${saved.weekOf}T12:00:00Z`).getTime() < STALE_DAYS * 86_400_000) return saved;
+  // No recent snapshot (or demo mode): read Freddie Mac's CSV directly, cached for 6 hours. Use whichever is newer.
   try {
     const r = await fetch(PMMS_CSV, { next: { revalidate: 21600 } });
-    return r.ok ? parsePmms(await r.text()) : null;
+    const live = r.ok ? parsePmms(await r.text()) : null;
+    return live && (!saved || live.weekOf > saved.weekOf) ? live : saved;
   } catch {
-    return null;
+    return saved;
   }
 }
 

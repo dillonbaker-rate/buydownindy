@@ -76,7 +76,8 @@ export function MapScreen({
       ),
     [inPlace, f],
   );
-  const sorted = selId ? [...shown].sort((a, b) => Number(b.id === selId) - Number(a.id === selId)) : shown;
+  // The list keeps its order when a home is picked (picking only moves the map; a pin click scrolls to its card).
+  const sorted = shown;
   const nf =
     Number(f.county !== "All counties") + Number(!!f.min) + Number(!!f.max) + Number(!!f.conc) + Number(f.loan !== "Any");
 

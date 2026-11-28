@@ -109,7 +109,7 @@ export async function revokeApiKey(agentId: string, id: string): Promise<string 
 }
 
 /** Check a request's "Authorization: Bearer bdi_…" key. */
-export async function authorizeApiKey(header: string | null): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
+export async function authorizeApiKey(header: string | null): Promise<{ ok: true; admin: boolean } | { ok: false; status: number; error: string }> {
   const key = header?.match(/^Bearer\s+(bdi_[A-Za-z0-9_-]+)$/)?.[1];
   if (!key) return { ok: false, status: 401, error: "Send your API key as: Authorization: Bearer bdi_…" };
   const hash = hashKey(key);
@@ -129,10 +129,10 @@ export async function authorizeApiKey(header: string | null): Promise<{ ok: true
     if (r) owner = { email: r.agent_email, verified: r.verified, admin: r.is_admin };
   }
   if (!owner) return { ok: false, status: 401, error: "Invalid or revoked API key." };
-  if (owner.admin || isAdmin(owner.email)) return { ok: true };
+  if (owner.admin || isAdmin(owner.email)) return { ok: true, admin: true };
   if (!(await marketingEnabled())) return { ok: false, status: 403, error: "Marketing API isn't enabled yet." };
   if (!owner.verified) return { ok: false, status: 403, error: "Your license must be verified to use the API." };
-  return { ok: true };
+  return { ok: true, admin: false };
 }
 
 // ── The numbers every marketing output uses ─────────────────────────────

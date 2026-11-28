@@ -5,7 +5,7 @@ import type { LoanType } from "./buydown";
 import { SAMPLE_LISTINGS } from "./sample-data";
 import { DEMO_AGENT, demoAgent, demoListings } from "./demo-store";
 import { demoMode, supabaseConfigured } from "./supabase/env";
-import { createClient } from "./supabase/server";
+import { createAdminClient, createClient } from "./supabase/server";
 import { agentFromRow, type Agent, type Listing, type Photo } from "./types";
 
 // Columns + the listing agent's public contact info.
@@ -144,6 +144,27 @@ export async function getLiveListings(): Promise<Listing[]> {
     .order("created_at", { ascending: false });
   if (error) {
     console.error("getLiveListings", error.message);
+    return [];
+  }
+  return (data as ListingRow[]).map(fromRow);
+}
+
+/** Hidden listings (status "draft": built by the admin, not on the map). Admin API keys only, e.g. Solomon's
+ *  lead emails to Dillon. Needs the service-role key; returns [] without it. */
+export async function getHiddenListings(): Promise<Listing[]> {
+  if (!supabaseConfigured) {
+    if (!demoMode) return [];
+    return (await withDemoAgent(await demoListings())).filter((l) => l.status === "draft");
+  }
+  const admin = createAdminClient();
+  if (!admin) return [];
+  const { data, error } = await admin
+    .from("listings")
+    .select(LISTING_SELECT)
+    .eq("status", "draft")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("getHiddenListings", error.message);
     return [];
   }
   return (data as ListingRow[]).map(fromRow);
